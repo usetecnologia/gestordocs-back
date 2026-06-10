@@ -1,0 +1,4 @@
+export enum AuthorizationTokenEnum {
+  CONFIRM_EMAIL = 'CONFIRM_EMAIL',
+  RECOVERY_PASSWORD = 'RECOVERY_PASSWORD',
+}

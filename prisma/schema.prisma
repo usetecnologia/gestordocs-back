@@ -1,0 +1,133 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "./generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum UserStatus {
+  SIN_DOCUMENTOS
+  DOCUMENTOS_INCOMPLETOS
+  PENDIENTE_REVISAR
+  OBSERVADO
+  RETENIDO_USE
+  PREPARACION
+  ENVIADO_SPONSOR
+  OBSERVADO_SPONSOR
+  RECHAZADO_SPONSOR
+  APROBADO_SPONSOR
+  DS2019_EMITIDO
+  RETIRADO
+  ACTIVO
+
+  @@map("user_status")
+}
+
+model Country {
+  id       String   @id @default(uuid())
+  code     String   @unique
+  name     String
+  currency String?
+  countryCode String?
+  status      Boolean  @default(true)
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  users User[]
+  optionPrograms OptionProgram[]
+}
+
+model Program {
+  id       String   @id @default(uuid())
+  code     String   @unique
+  name     String
+  status      Boolean  @default(true)
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  users User[]
+  optionPrograms OptionProgram[]
+}
+
+model Sponsor {
+  id       String   @id @default(uuid())
+  code     String   @unique
+  name     String
+  status      Boolean  @default(true)
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  users User[]
+  optionPrograms OptionProgram[]
+}
+
+model OptionProgram {
+  id       String   @id @default(uuid())
+  name     String
+  shortName    String
+  shortDatabase String
+  countryId   String
+  programId String
+  sponsorId String
+  status      Boolean  @default(true)
+  hideJobFair Boolean
+  createAt DateTime @default(now())
+  updateAt DateTime @updatedAt
+
+  country   Country?     @relation(fields: [countryId], references: [id])
+  sponsor   Sponsor?     @relation(fields: [sponsorId], references: [id])
+  program   Program?     @relation(fields: [programId], references: [id])
+
+  users User[]
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  name        String   @db.VarChar(100)
+  code        String?  @unique @db.VarChar(50)
+  description String?  @db.Text
+  isSystem    Boolean  @default(false) @map("is_system")
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  users        User[]
+}
+
+model Person {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  firstname       String
+  middlename      String?
+  lastfathername  String
+  lastmothername  String?
+  birthdate       String?
+  phone     String?   @db.VarChar(20)
+  avatar    String?   @db.VarChar(500)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.VarChar(36)
+  username  String?
+  password  String?
+  email     String?
+  roleId    String    @map("role_id") @db.VarChar(36)
+  countryId String?
+  sponsorId String?
+  programId String?
+  optionProgramId  String?
+  status    UserStatus @default(ACTIVO)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  role      Role         @relation(fields: [roleId], references: [id])
+  country   Country?     @relation(fields: [countryId], references: [id])
+  sponsor   Sponsor?     @relation(fields: [sponsorId], references: [id])
+  program   Program?     @relation(fields: [programId], references: [id])
+  optionProgram OptionProgram?  @relation(fields: [optionProgramId], references: [id])
+}
