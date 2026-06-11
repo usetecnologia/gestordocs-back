@@ -1,0 +1,42 @@
+# Dependencias y builds
+node_modules
+npm-debug.log
+dist
+coverage
+*.log
+
+# Archivos de entorno y configuración local
+.env
+.env.local
+.env.*.local
+.git
+.gitignore
+
+# Documentación y archivos de desarrollo
+README.md
+.vscode
+.idea
+*.md
+
+# Archivos de testing
+test
+*.spec.ts
+*.test.ts
+jest.config.js
+test/
+
+# Archivos de desarrollo (pero mantener tsconfig para build)
+.eslintrc*
+.prettierrc*
+
+# Archivos temporales y del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose*.yml
