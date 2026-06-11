@@ -1,9 +1,12 @@
+import type { AuthPersonData } from './auth-credentials';
+
 export interface AuthUserSnapshot {
   id: string;
   username: string | null;
   email: string | null;
   role: { id: string; name: string; code: string | null };
   status: string;
+  person: AuthPersonData | null;
 }
 
 export class LoginResult {

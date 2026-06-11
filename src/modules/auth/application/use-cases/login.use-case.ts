@@ -2,18 +2,15 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { IAuthRepository, AUTH_REPOSITORY } from '../../domain/auth.repository';
 import { IPasswordVerifier, PASSWORD_VERIFIER } from '../../domain/password-verifier.port';
-import { IAuthTokenStore, AUTH_TOKEN_STORE } from '../../domain/auth-token-store.port';
 import { LoginResult } from '../../domain/login-result.entity';
 import { JwtTokenService } from '@shared/jwt/jwt.service';
 import { LoginDto } from '../../infrastructure/http/dtos/login.dto';
-import { envs } from '@config/envs';
 
 @Injectable()
 export class LoginUseCase {
   constructor(
     @Inject(AUTH_REPOSITORY) private readonly authRepository: IAuthRepository,
     @Inject(PASSWORD_VERIFIER) private readonly passwordVerifier: IPasswordVerifier,
-    @Inject(AUTH_TOKEN_STORE) private readonly tokenStore: IAuthTokenStore,
     private readonly jwtTokenService: JwtTokenService,
   ) {}
 
@@ -39,7 +36,6 @@ export class LoginUseCase {
       throw new UnauthorizedException('Cuenta inactiva o suspendida.');
     }
 
-    const jti = randomUUID();
     const role = credentials.role.code ?? credentials.role.name;
 
     const accessToken = this.jwtTokenService.sign({
@@ -49,9 +45,7 @@ export class LoginUseCase {
       role,
     });
 
-    const refreshToken = this.jwtTokenService.signRefresh(credentials.id, jti);
-
-    await this.tokenStore.save(jti, credentials.id);
+    const refreshToken = this.jwtTokenService.signRefresh(credentials.id, randomUUID());
 
     return new LoginResult(accessToken, refreshToken, {
       id: credentials.id,
@@ -59,6 +53,7 @@ export class LoginUseCase {
       email: credentials.email,
       role: credentials.role,
       status: credentials.status,
+      person: credentials.person,
     });
   }
 }

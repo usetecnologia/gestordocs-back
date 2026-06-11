@@ -5,12 +5,10 @@ import {
   ApiOkResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
-  ApiNoContentResponse,
 } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case';
-import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
 import { LoginDto } from './dtos/login.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { LoginResponseDto, TokensResponseDto } from './dtos/auth-response.dto';
@@ -21,7 +19,6 @@ export class AuthController {
   constructor(
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
-    private readonly logoutUseCase: LogoutUseCase,
   ) {}
 
   @Post('login')
@@ -43,14 +40,5 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: 'Refresh token inválido o expirado.' })
   refresh(@Body() dto: RefreshTokenDto): Promise<TokensResponseDto> {
     return this.refreshTokenUseCase.execute(dto) as Promise<TokensResponseDto>;
-  }
-
-  @Post('logout')
-  @Public()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Cerrar sesión' })
-  @ApiNoContentResponse({ description: 'Sesión cerrada.' })
-  logout(@Body() dto: RefreshTokenDto): Promise<void> {
-    return this.logoutUseCase.execute(dto);
   }
 }

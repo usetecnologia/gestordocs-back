@@ -18,7 +18,12 @@ export class FindOptionProgramsQueryDto {
   @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ obj, key }) => {
+    const raw = (obj as Record<string, unknown>)[key as string];
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return undefined;
+  })
   status?: boolean;
 
   @ApiPropertyOptional({ example: 'uuid-del-pais' })

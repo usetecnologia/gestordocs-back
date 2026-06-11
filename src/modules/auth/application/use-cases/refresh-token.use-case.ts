@@ -1,36 +1,33 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { IAuthTokenStore, AUTH_TOKEN_STORE } from '../../domain/auth-token-store.port';
+import { IAuthRepository, AUTH_REPOSITORY } from '../../domain/auth.repository';
 import { JwtTokenService } from '@shared/jwt/jwt.service';
 import { RefreshTokenDto } from '../../infrastructure/http/dtos/refresh-token.dto';
 
 @Injectable()
 export class RefreshTokenUseCase {
   constructor(
-    @Inject(AUTH_TOKEN_STORE) private readonly tokenStore: IAuthTokenStore,
+    @Inject(AUTH_REPOSITORY) private readonly authRepository: IAuthRepository,
     private readonly jwtTokenService: JwtTokenService,
   ) {}
 
   async execute(dto: RefreshTokenDto): Promise<{ accessToken: string; refreshToken: string }> {
     const payload = this.jwtTokenService.verifyRefresh(dto.refreshToken);
 
-    const userId = await this.tokenStore.getUserId(payload.jti);
-    if (!userId) {
-      throw new UnauthorizedException('Sesión expirada o inválida.');
+    const credentials = await this.authRepository.findById(payload.sub);
+    if (!credentials) {
+      throw new UnauthorizedException('Sesión inválida.');
     }
 
-    await this.tokenStore.revoke(payload.jti);
+    const role = credentials.role.code ?? credentials.role.name;
 
-    const newJti = randomUUID();
     const accessToken = this.jwtTokenService.sign({
-      sub: userId,
-      email: '',
-      username: '',
-      role: '',
+      sub: credentials.id,
+      email: credentials.email ?? '',
+      username: credentials.username ?? '',
+      role,
     });
-    const refreshToken = this.jwtTokenService.signRefresh(userId, newJti);
-
-    await this.tokenStore.save(newJti, userId);
+    const refreshToken = this.jwtTokenService.signRefresh(credentials.id, randomUUID());
 
     return { accessToken, refreshToken };
   }

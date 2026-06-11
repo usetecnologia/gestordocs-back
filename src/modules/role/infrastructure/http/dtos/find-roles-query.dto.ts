@@ -18,7 +18,12 @@ export class FindRolesQueryDto {
 
   @ApiPropertyOptional({ type: Boolean })
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
+  @Transform(({ obj, key }) => {
+    const raw = (obj as Record<string, unknown>)[key as string];
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return undefined;
+  })
   @IsBoolean()
   status?: boolean;
 

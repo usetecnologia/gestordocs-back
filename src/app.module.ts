@@ -16,7 +16,12 @@ import { UserModule } from '@modules/user/user.module';
       isGlobal: true,
       useFactory: async () => ({
         ttl: 5000,
-        stores: [new KeyvRedis(envs.REDIS_URL)],
+        stores: [
+          new KeyvRedis({
+            url: envs.REDIS_URL,
+            socket: { connectTimeout: 3000, reconnectStrategy: false },
+          }),
+        ],
       }),
     }),
     AuthModule,
