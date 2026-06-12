@@ -6,6 +6,10 @@ import type { PersonModel } from 'prisma/generated/prisma/models';
 
 const AUTH_USER_INCLUDE = {
   role: { select: { id: true, name: true, code: true } },
+  country: { select: { id: true, name: true, code: true } },
+  sponsor: { select: { id: true, name: true, code: true } },
+  program: { select: { id: true, name: true, code: true } },
+  optionProgram: { select: { id: true, name: true, shortName: true } },
 } as const;
 
 type PrismaAuthUser = {
@@ -15,6 +19,10 @@ type PrismaAuthUser = {
   password: string | null;
   status: string;
   role: { id: string; name: string; code: string | null };
+  country: { id: string; name: string; code: string } | null;
+  sponsor: { id: string; name: string; code: string } | null;
+  program: { id: string; name: string; code: string } | null;
+  optionProgram: { id: string; name: string; shortName: string } | null;
 };
 
 function toCredentials(user: PrismaAuthUser, person: PersonModel | null): AuthCredentials {
@@ -33,8 +41,13 @@ function toCredentials(user: PrismaAuthUser, person: PersonModel | null): AuthCr
           lastmothername: person.lastmothername,
           phone: person.phone,
           avatar: person.avatar,
+          dni: person.dni ?? null,
         }
       : null,
+    country: user.country,
+    program: user.program,
+    sponsor: user.sponsor,
+    optionProgram: user.optionProgram,
   };
 }
 

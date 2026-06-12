@@ -54,6 +54,10 @@ export class LoginUseCase {
       role: credentials.role,
       status: credentials.status,
       person: credentials.person,
+      country: credentials.country,
+      program: credentials.program,
+      sponsor: credentials.sponsor,
+      optionProgram: credentials.optionProgram,
     });
   }
 }

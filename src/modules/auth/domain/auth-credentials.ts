@@ -5,6 +5,7 @@ export interface AuthPersonData {
   lastmothername: string | null;
   phone: string | null;
   avatar: string | null;
+  dni: string | null;
 }
 
 export interface AuthCredentials {
@@ -15,4 +16,8 @@ export interface AuthCredentials {
   role: { id: string; name: string; code: string | null };
   status: string;
   person: AuthPersonData | null;
+  country?: { id: string; name: string; code: string } | null;
+  program?: { id: string; name: string; code: string } | null;
+  sponsor?: { id: string; name: string; code: string } | null;
+  optionProgram?: { id: string; name: string; shortName: string } | null;
 }

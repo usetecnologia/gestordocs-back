@@ -26,6 +26,17 @@ enum UserStatus {
   @@map("user_status")
 }
 
+enum TypeDocument {
+  DOCUMENT
+  INFORMATIVE
+}
+
+enum TypeHired {
+  HIRED
+  NOT_HIRED
+  ALL
+}
+
 model Country {
   id       String   @id @default(uuid())
   code     String   @unique
@@ -62,6 +73,7 @@ model Sponsor {
 
   users User[]
   optionPrograms OptionProgram[]
+  documentSponsors DocumentSponsor[]
 }
 
 model OptionProgram {
@@ -106,6 +118,7 @@ model Person {
   birthdate       String?
   phone     String?   @db.VarChar(20)
   avatar    String?   @db.VarChar(500)
+  dni       String?   @unique @db.VarChar(20)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
@@ -130,4 +143,57 @@ model User {
   sponsor   Sponsor?     @relation(fields: [sponsorId], references: [id])
   program   Program?     @relation(fields: [programId], references: [id])
   optionProgram OptionProgram?  @relation(fields: [optionProgramId], references: [id])
+
+  documentsCreated        Documents[]       @relation("DocumentsCreatedBy")
+  documentsUpdated        Documents[]       @relation("DocumentsUpdatedBy")
+  documentSponsorsCreated DocumentSponsor[] @relation("DocumentSponsorCreatedBy")
+  documentSponsorsUpdated DocumentSponsor[] @relation("DocumentSponsorUpdatedBy")
 }
+
+model Documents {
+  id           String       @id @default(uuid()) @db.VarChar(36)
+  name         String       @db.VarChar(200)
+  type         TypeDocument
+  formats      String?      @db.VarChar(500)
+  showHired    TypeHired    @map("show_hired")
+  instructions String       @db.Text
+  required     Boolean      @default(false)
+  status       Boolean      @default(true)
+  createdById  String?      @map("created_by_id") @db.VarChar(36)
+  updatedById  String?      @map("updated_by_id") @db.VarChar(36)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  createdBy        User?             @relation("DocumentsCreatedBy", fields: [createdById], references: [id])
+  updatedBy        User?             @relation("DocumentsUpdatedBy", fields: [updatedById], references: [id])
+  documentSponsors DocumentSponsor[]
+
+  @@index([type], map: "idx_documents_type")
+  @@index([showHired], map: "idx_documents_show_hired")
+  @@index([status], map: "idx_documents_status")
+  @@index([createdById], map: "idx_documents_created_by")
+  @@map("documents")
+}
+
+model DocumentSponsor {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  documentId  String   @map("document_id") @db.VarChar(36)
+  sponsorId   String   @map("sponsor_id") @db.VarChar(36)
+  createdById String?  @map("created_by_id") @db.VarChar(36)
+  updatedById String?  @map("updated_by_id") @db.VarChar(36)
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  document  Documents @relation(fields: [documentId], references: [id])
+  sponsor   Sponsor   @relation(fields: [sponsorId], references: [id])
+  createdBy User?     @relation("DocumentSponsorCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?     @relation("DocumentSponsorUpdatedBy", fields: [updatedById], references: [id])
+
+  @@unique([documentId, sponsorId], map: "uq_document_sponsor")
+  @@index([documentId], map: "idx_document_sponsors_document")
+  @@index([sponsorId], map: "idx_document_sponsors_sponsor")
+  @@index([createdById], map: "idx_document_sponsors_created_by")
+  @@map("document_sponsors")
+}
+

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RoleSnapshotDto {
   @ApiProperty({ example: 'uuid-del-rol' }) id!: string;
@@ -13,6 +13,19 @@ export class PersonSnapshotDto {
   @ApiProperty({ example: 'García', nullable: true }) lastmothername!: string | null;
   @ApiProperty({ example: '+51999999999', nullable: true }) phone!: string | null;
   @ApiProperty({ example: 'https://res.cloudinary.com/...', nullable: true }) avatar!: string | null;
+  @ApiProperty({ example: '12345678', nullable: true }) dni!: string | null;
+}
+
+export class EntitySnapshotDto {
+  @ApiProperty({ example: 'uuid' }) id!: string;
+  @ApiProperty({ example: 'Nombre' }) name!: string;
+  @ApiProperty({ example: 'CODE' }) code!: string;
+}
+
+export class OptionProgramSnapshotDto {
+  @ApiProperty({ example: 'uuid' }) id!: string;
+  @ApiProperty({ example: 'Connect (3250-Mar20-3+)' }) name!: string;
+  @ApiProperty({ example: 'Connect' }) shortName!: string;
 }
 
 export class AuthUserSnapshotDto {
@@ -22,6 +35,10 @@ export class AuthUserSnapshotDto {
   @ApiProperty({ type: RoleSnapshotDto }) role!: RoleSnapshotDto;
   @ApiProperty({ example: 'ACTIVO' }) status!: string;
   @ApiProperty({ type: PersonSnapshotDto, nullable: true }) person!: PersonSnapshotDto | null;
+  @ApiPropertyOptional({ type: EntitySnapshotDto, nullable: true }) country?: EntitySnapshotDto | null;
+  @ApiPropertyOptional({ type: EntitySnapshotDto, nullable: true }) program?: EntitySnapshotDto | null;
+  @ApiPropertyOptional({ type: EntitySnapshotDto, nullable: true }) sponsor?: EntitySnapshotDto | null;
+  @ApiPropertyOptional({ type: OptionProgramSnapshotDto, nullable: true }) optionProgram?: OptionProgramSnapshotDto | null;
 }
 
 export class LoginResponseDto {
