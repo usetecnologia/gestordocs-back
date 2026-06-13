@@ -8,10 +8,29 @@ import {
   IsUUID,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TypeDocument, TypeHired } from '../../../domain/document.enums';
 
+export class DocumentSponsorInputDto {
+  @ApiProperty({ example: 'uuid-sponsor' })
+  @IsUUID()
+  sponsorId!: string;
+
+  @ApiPropertyOptional({ example: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+}
+
 export class CreateDocumentDto {
+  @ApiProperty({ example: 'Pasaporte Vigente' })
+  @IsString()
+  @MinLength(2)
+  @MaxLength(200)
+  title!: string;
+
   @ApiProperty({ example: 'Pasaporte' })
   @IsString()
   @MinLength(2)
@@ -40,17 +59,13 @@ export class CreateDocumentDto {
   @MinLength(5)
   instructions!: string;
 
-  @ApiProperty({ example: true })
-  @IsBoolean()
-  required!: boolean;
-
   @ApiPropertyOptional({
-    type: [String],
-    description: 'UUIDs de los sponsors a asociar al documento',
-    example: ['uuid-sponsor-1', 'uuid-sponsor-2'],
+    type: [DocumentSponsorInputDto],
+    description: 'Sponsors a asociar al documento con su flag de requerido',
   })
   @IsOptional()
   @IsArray()
-  @IsUUID('all', { each: true })
-  sponsorIds?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => DocumentSponsorInputDto)
+  sponsors?: DocumentSponsorInputDto[];
 }

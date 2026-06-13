@@ -8,6 +8,7 @@ class RelatedEntityDto {
 
 export class OptionProgramResponseDto {
   @ApiProperty({ example: 'uuid-de-la-opcion' }) id!: string;
+  @ApiPropertyOptional({ example: 'EXT-001' }) idExterno!: string | null;
   @ApiProperty({ example: 'Program Name' }) name!: string;
   @ApiProperty({ example: 'PN' }) shortName!: string;
   @ApiProperty({ example: 'pn_db' }) shortDatabase!: string;

@@ -5,6 +5,7 @@ export class CountryMapper {
   static toDomain(raw: CountryModel): Country {
     return new Country(
       raw.id,
+      raw.idExterno ?? null,
       raw.code,
       raw.name,
       raw.currency ?? null,

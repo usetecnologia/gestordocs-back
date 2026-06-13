@@ -8,11 +8,13 @@ export interface ProgramFilters {
 }
 
 export interface CreateProgramData {
+  idExterno?: string;
   code: string;
   name: string;
 }
 
 export interface UpdateProgramData {
+  idExterno?: string;
   code?: string;
   name?: string;
   status?: boolean;

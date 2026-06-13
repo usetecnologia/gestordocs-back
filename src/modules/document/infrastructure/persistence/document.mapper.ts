@@ -21,17 +21,18 @@ export class DocumentMapper {
       id: ds.id,
       sponsorId: ds.sponsorId,
       sponsor: ds.sponsor,
+      required: ds.required,
       status: ds.status,
     }));
 
     return new Document(
       raw.id,
+      raw.title ?? '',
       raw.name,
       raw.type as unknown as TypeDocument,
       raw.formats,
       raw.showHired as unknown as TypeHired,
       raw.instructions,
-      raw.required,
       raw.status,
       raw.createdById,
       raw.updatedById,

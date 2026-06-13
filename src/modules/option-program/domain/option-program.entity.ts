@@ -1,6 +1,7 @@
 export class OptionProgram {
   constructor(
     public readonly id: string,
+    public idExterno: string | null,
     public name: string,
     public shortName: string,
     public shortDatabase: string,

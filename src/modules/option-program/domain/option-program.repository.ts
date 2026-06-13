@@ -11,6 +11,7 @@ export interface OptionProgramFilters {
 }
 
 export interface CreateOptionProgramData {
+  idExterno?: string;
   name: string;
   shortName: string;
   shortDatabase: string;
@@ -21,6 +22,7 @@ export interface CreateOptionProgramData {
 }
 
 export interface UpdateOptionProgramData {
+  idExterno?: string;
   name?: string;
   shortName?: string;
   shortDatabase?: string;

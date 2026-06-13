@@ -11,6 +11,7 @@ import {
   UseGuards,
   Query,
   ParseUUIDPipe,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -31,6 +33,7 @@ import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import { CreateDocumentUseCase } from '../../application/use-cases/create-document.use-case';
 import { FindAllDocumentUseCase } from '../../application/use-cases/find-all-document.use-case';
 import { FindOneDocumentUseCase } from '../../application/use-cases/find-one-document.use-case';
+import { FindPendingDocumentsUseCase } from '../../application/use-cases/find-pending-documents.use-case';
 import { UpdateDocumentUseCase } from '../../application/use-cases/update-document.use-case';
 import { DeleteDocumentUseCase } from '../../application/use-cases/delete-document.use-case';
 import { CreateDocumentDto } from './dtos/create-document.dto';
@@ -48,6 +51,7 @@ export class DocumentController {
     private readonly createDocument: CreateDocumentUseCase,
     private readonly findAllDocument: FindAllDocumentUseCase,
     private readonly findOneDocument: FindOneDocumentUseCase,
+    private readonly findPendingDocuments: FindPendingDocumentsUseCase,
     private readonly updateDocument: UpdateDocumentUseCase,
     private readonly deleteDocument: DeleteDocumentUseCase,
   ) {}
@@ -76,6 +80,19 @@ export class DocumentController {
       query.page ?? 1,
       query.limit ?? 20,
     );
+  }
+
+  @Get('pending')
+  @ApiOperation({
+    summary: 'Documentos pendientes por sponsor',
+    description: 'Retorna todos los documentos que tienen asociado un sponsor específico, filtrado por el código del sponsor.',
+  })
+  @ApiQuery({ name: 'sponsorCode', required: true, example: 'ASPIRE', description: 'Código del sponsor' })
+  @ApiOkResponse({ type: [DocumentResponseDto] })
+  @ApiBadRequestResponse({ description: 'El parámetro sponsorCode es requerido.' })
+  findPending(@Query('sponsorCode') sponsorCode: string) {
+    if (!sponsorCode?.trim()) throw new BadRequestException('El parámetro sponsorCode es requerido.');
+    return this.findPendingDocuments.execute(sponsorCode.trim());
   }
 
   @Get(':id')

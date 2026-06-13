@@ -8,6 +8,7 @@ export interface CountryFilters {
 }
 
 export interface CreateCountryData {
+  idExterno?: string;
   code: string;
   name: string;
   currency?: string;
@@ -15,6 +16,7 @@ export interface CreateCountryData {
 }
 
 export interface UpdateCountryData {
+  idExterno?: string;
   code?: string;
   name?: string;
   currency?: string;

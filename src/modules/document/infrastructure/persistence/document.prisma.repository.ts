@@ -38,6 +38,19 @@ export class DocumentPrismaRepository implements IDocumentRepository {
     return { data: (data as PrismaDocumentFull[]).map(DocumentMapper.toDomain), total };
   }
 
+  async findBySponsorCode(sponsorCode: string): Promise<Document[]> {
+    const rows = await this.prisma.documents.findMany({
+      where: {
+        documentSponsors: {
+          some: { sponsor: { code: sponsorCode } },
+        },
+      },
+      include: DOCUMENT_FULL_INCLUDE,
+      orderBy: { createdAt: 'desc' },
+    });
+    return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
+  }
+
   async findById(id: string): Promise<Document | null> {
     const row = await this.prisma.documents.findUnique({
       where: { id },
@@ -47,16 +60,17 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   }
 
   async create(data: CreateDocumentData): Promise<Document> {
-    const { sponsorIds, createdById, ...fields } = data;
+    const { sponsors, createdById, ...fields } = data;
 
     const row = await this.prisma.documents.create({
       data: {
         ...fields,
         ...(createdById && { createdById }),
-        ...(sponsorIds?.length && {
+        ...(sponsors?.length && {
           documentSponsors: {
-            create: sponsorIds.map((sponsorId) => ({
+            create: sponsors.map(({ sponsorId, required }) => ({
               sponsorId,
+              required: required ?? false,
               ...(createdById && { createdById }),
             })),
           },
@@ -69,7 +83,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   }
 
   async update(id: string, data: UpdateDocumentData): Promise<Document> {
-    const { sponsorIds, updatedById, ...fields } = data;
+    const { sponsors, updatedById, ...fields } = data;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.documents.update({
@@ -80,14 +94,15 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         },
       });
 
-      if (sponsorIds !== undefined) {
+      if (sponsors !== undefined) {
         await tx.documentSponsor.deleteMany({ where: { documentId: id } });
 
-        if (sponsorIds.length > 0) {
+        if (sponsors.length > 0) {
           await tx.documentSponsor.createMany({
-            data: sponsorIds.map((sponsorId) => ({
+            data: sponsors.map(({ sponsorId, required }) => ({
               documentId: id,
               sponsorId,
+              required: required ?? false,
               ...(updatedById && { createdById: updatedById }),
             })),
           });

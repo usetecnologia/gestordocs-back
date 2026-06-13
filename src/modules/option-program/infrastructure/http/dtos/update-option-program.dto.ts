@@ -3,6 +3,12 @@ import { Transform } from 'class-transformer';
 import { IsBoolean, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 
 export class UpdateOptionProgramDto {
+  @ApiPropertyOptional({ example: 'EXT-001', description: 'ID externo del sistema de origen' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  idExterno?: string;
+
   @ApiPropertyOptional({ example: 'Program Name' })
   @IsOptional()
   @IsString()

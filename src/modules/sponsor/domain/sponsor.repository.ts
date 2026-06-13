@@ -8,11 +8,13 @@ export interface SponsorFilters {
 }
 
 export interface CreateSponsorData {
+  idExterno?: string;
   code: string;
   name: string;
 }
 
 export interface UpdateSponsorData {
+  idExterno?: string;
   code?: string;
   name?: string;
   status?: boolean;

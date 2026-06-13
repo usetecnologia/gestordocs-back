@@ -4,18 +4,19 @@ export interface DocumentSponsorItem {
   id: string;
   sponsorId: string;
   sponsor: { id: string; name: string; code: string };
+  required: boolean;
   status: boolean;
 }
 
 export class Document {
   constructor(
     public readonly id: string,
+    public title: string,
     public name: string,
     public type: TypeDocument,
     public formats: string | null,
     public showHired: TypeHired,
     public instructions: string,
-    public required: boolean,
     public status: boolean,
     public readonly createdById: string | null,
     public updatedById: string | null,

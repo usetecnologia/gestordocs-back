@@ -39,6 +39,7 @@ enum TypeHired {
 
 model Country {
   id       String   @id @default(uuid())
+  idExterno String?
   code     String   @unique
   name     String
   currency String?
@@ -53,6 +54,7 @@ model Country {
 
 model Program {
   id       String   @id @default(uuid())
+  idExterno String?
   code     String   @unique
   name     String
   status      Boolean  @default(true)
@@ -65,6 +67,7 @@ model Program {
 
 model Sponsor {
   id       String   @id @default(uuid())
+  idExterno String?
   code     String   @unique
   name     String
   status      Boolean  @default(true)
@@ -78,6 +81,7 @@ model Sponsor {
 
 model OptionProgram {
   id       String   @id @default(uuid())
+  idExterno String?
   name     String
   shortName    String
   shortDatabase String
@@ -156,8 +160,8 @@ model Documents {
   type         TypeDocument
   formats      String?      @db.VarChar(500)
   showHired    TypeHired    @map("show_hired")
+  title        String?
   instructions String       @db.Text
-  required     Boolean      @default(false)
   status       Boolean      @default(true)
   createdById  String?      @map("created_by_id") @db.VarChar(36)
   updatedById  String?      @map("updated_by_id") @db.VarChar(36)
@@ -179,6 +183,7 @@ model DocumentSponsor {
   id          String   @id @default(uuid()) @db.VarChar(36)
   documentId  String   @map("document_id") @db.VarChar(36)
   sponsorId   String   @map("sponsor_id") @db.VarChar(36)
+  required     Boolean      @default(false)
   createdById String?  @map("created_by_id") @db.VarChar(36)
   updatedById String?  @map("updated_by_id") @db.VarChar(36)
   status      Boolean  @default(true)

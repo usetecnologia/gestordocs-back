@@ -17,17 +17,18 @@ class DocumentSponsorItemDto {
   @ApiProperty() id!: string;
   @ApiProperty() sponsorId!: string;
   @ApiProperty({ type: SponsorRefDto }) sponsor!: SponsorRefDto;
+  @ApiProperty({ example: false }) required!: boolean;
   @ApiProperty() status!: boolean;
 }
 
 export class DocumentResponseDto {
   @ApiProperty({ example: 'uuid-del-documento' }) id!: string;
+  @ApiProperty({ example: 'Pasaporte Vigente' }) title!: string;
   @ApiProperty({ example: 'Pasaporte' }) name!: string;
   @ApiProperty({ enum: TypeDocument }) type!: TypeDocument;
   @ApiPropertyOptional({ example: 'pdf,jpg,png' }) formats!: string | null;
   @ApiProperty({ enum: TypeHired }) showHired!: TypeHired;
   @ApiProperty({ example: 'El documento debe estar vigente.' }) instructions!: string;
-  @ApiProperty({ example: true }) required!: boolean;
   @ApiProperty({ example: true }) status!: boolean;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) createdById!: string | null;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) updatedById!: string | null;

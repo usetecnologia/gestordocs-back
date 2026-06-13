@@ -15,6 +15,7 @@ export class OptionProgramMapper {
   static toDomain(raw: PrismaOptionProgramFull): OptionProgram {
     return new OptionProgram(
       raw.id,
+      raw.idExterno ?? null,
       raw.name,
       raw.shortName,
       raw.shortDatabase,
