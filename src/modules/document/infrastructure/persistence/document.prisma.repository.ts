@@ -41,9 +41,10 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   async findBySponsorCode(sponsorCode: string): Promise<Document[]> {
     const rows = await this.prisma.documents.findMany({
       where: {
-        documentSponsors: {
-          some: { sponsor: { code: sponsorCode } },
-        },
+        OR: [
+          { documentSponsors: { some: { sponsor: { code: sponsorCode } } } },
+          { documentSponsors: { none: {} } },
+        ],
       },
       include: DOCUMENT_FULL_INCLUDE,
       orderBy: { createdAt: 'desc' },

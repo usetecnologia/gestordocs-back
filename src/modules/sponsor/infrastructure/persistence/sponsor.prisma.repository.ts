@@ -34,6 +34,11 @@ export class SponsorPrismaRepository implements ISponsorRepository {
     return { data: data.map(SponsorMapper.toDomain), total };
   }
 
+  async findAllForSync(): Promise<Sponsor[]> {
+    const rows = await this.prisma.sponsor.findMany({ orderBy: { name: 'asc' } });
+    return rows.map(SponsorMapper.toDomain);
+  }
+
   async findAllActive(): Promise<Sponsor[]> {
     const rows = await this.prisma.sponsor.findMany({
       where: { status: true },

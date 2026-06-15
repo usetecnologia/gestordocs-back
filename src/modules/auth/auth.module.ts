@@ -13,8 +13,13 @@ import { AuthController } from './infrastructure/http/auth.controller';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from './application/use-cases/refresh-token.use-case';
 import { AutoLoginUseCase } from './application/use-cases/autologin.use-case';
+import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
+import { USER_DOCUMENTS_REPOSITORY } from '@modules/user-documents/domain/user-documents.repository';
+import { UserDocumentsPrismaRepository } from '@modules/user-documents/infrastructure/persistence/user-documents.prisma.repository';
+import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
+import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
 
-const useCases = [LoginUseCase, RefreshTokenUseCase, AutoLoginUseCase];
+const useCases = [LoginUseCase, RefreshTokenUseCase, AutoLoginUseCase, SyncUserDocumentsUseCase];
 
 @Module({
   imports: [PrismaModule, AppJwtModule, BcryptModule],
@@ -25,6 +30,8 @@ const useCases = [LoginUseCase, RefreshTokenUseCase, AutoLoginUseCase];
     { provide: PASSWORD_VERIFIER, useClass: BcryptService },
     { provide: PASSWORD_HASHER, useClass: BcryptService },
     { provide: AUTOLOGIN_REPOSITORY, useClass: AutoLoginPrismaRepository },
+    { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
+    { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
   ],
   exports: [AppJwtModule],
 })

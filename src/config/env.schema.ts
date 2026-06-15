@@ -30,6 +30,11 @@ export const envSchema = z.object({
   MAIL_USER: z.string().email(),
   MAIL_PASS: z.string().min(1),
   ADMIN_EMAIL: z.string().email(),
+  // AWS S3
+  AWS_ACCESS_KEY_ID: z.string().min(1),
+  AWS_SECRET_ACCESS_KEY: z.string().min(1),
+  AWS_REGION: z.string().min(1),
+  AWS_S3_BUCKET: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

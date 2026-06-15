@@ -17,7 +17,7 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   console.log('Seeding database...');
 
-  // 1. Rol Administrador
+  // 1. Roles
   const adminRole = await prisma.role.upsert({
     where: { code: 'ADMIN' },
     update: {},
@@ -28,6 +28,17 @@ async function main() {
     },
   });
   console.log(`✔ Role: ${adminRole.name} (${adminRole.id})`);
+
+  const participanteRole = await prisma.role.upsert({
+    where: { code: 'PARTICIPANTE' },
+    update: {},
+    create: {
+      name: 'Participante',
+      code: 'PARTICIPANTE',
+      isSystem: true,
+    },
+  });
+  console.log(`✔ Role: ${participanteRole.name} (${participanteRole.id})`);
 
   // 2. Usuario administrador (Person + User comparten el mismo UUID)
   const userId = randomUUID();

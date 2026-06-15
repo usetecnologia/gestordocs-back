@@ -23,6 +23,7 @@ export interface UpdateSponsorData {
 export interface ISponsorRepository {
   findAll(filters: SponsorFilters): Promise<{ data: Sponsor[]; total: number }>;
   findAllActive(): Promise<Sponsor[]>;
+  findAllForSync(): Promise<Sponsor[]>;
   findById(id: string): Promise<Sponsor | null>;
   isCodeTaken(code: string, excludeId?: string): Promise<boolean>;
   create(data: CreateSponsorData): Promise<Sponsor>;

@@ -1,0 +1,25 @@
+import { Module } from '@nestjs/common';
+import { PrismaModule } from '@shared/prisma/prisma.module';
+import { AppJwtModule } from '@shared/jwt/jwt.module';
+import { AwsS3Module } from '@shared/aws/aws-s3.module';
+import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { USER_DOCUMENTS_REPOSITORY } from './domain/user-documents.repository';
+import { USER_STATUS_PORT } from './domain/user-status.port';
+import { UserDocumentsPrismaRepository } from './infrastructure/persistence/user-documents.prisma.repository';
+import { UserStatusPrisma } from './infrastructure/persistence/user-status.prisma';
+import { UserDocumentsController } from './infrastructure/http/user-documents.controller';
+import { UploadFileDocumentUseCase } from './application/use-cases/upload-file-document.use-case';
+import { FindUserDocumentsUseCase } from './application/use-cases/find-user-documents.use-case';
+
+@Module({
+  imports: [PrismaModule, AppJwtModule, AwsS3Module],
+  controllers: [UserDocumentsController],
+  providers: [
+    UploadFileDocumentUseCase,
+    FindUserDocumentsUseCase,
+    { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
+    { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
+    JwtAuthGuard,
+  ],
+})
+export class UserDocumentsModule {}

@@ -23,6 +23,7 @@ export interface UpdateProgramData {
 export interface IProgramRepository {
   findAll(filters: ProgramFilters): Promise<{ data: Program[]; total: number }>;
   findAllActive(): Promise<Program[]>;
+  findAllForSync(): Promise<Program[]>;
   findById(id: string): Promise<Program | null>;
   isCodeTaken(code: string, excludeId?: string): Promise<boolean>;
   create(data: CreateProgramData): Promise<Program>;

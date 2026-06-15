@@ -37,6 +37,11 @@ export class CountryPrismaRepository implements ICountryRepository {
     return { data: data.map(CountryMapper.toDomain), total };
   }
 
+  async findAllForSync(): Promise<Country[]> {
+    const rows = await this.prisma.country.findMany({ orderBy: { name: 'asc' } });
+    return rows.map(CountryMapper.toDomain);
+  }
+
   async findAllActive(): Promise<Country[]> {
     const rows = await this.prisma.country.findMany({
       where: { status: true },

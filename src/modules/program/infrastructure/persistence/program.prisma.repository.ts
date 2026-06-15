@@ -34,6 +34,11 @@ export class ProgramPrismaRepository implements IProgramRepository {
     return { data: data.map(ProgramMapper.toDomain), total };
   }
 
+  async findAllForSync(): Promise<Program[]> {
+    const rows = await this.prisma.program.findMany({ orderBy: { name: 'asc' } });
+    return rows.map(ProgramMapper.toDomain);
+  }
+
   async findAllActive(): Promise<Program[]> {
     const rows = await this.prisma.program.findMany({
       where: { status: true },

@@ -27,6 +27,7 @@ export interface UpdateCountryData {
 export interface ICountryRepository {
   findAll(filters: CountryFilters): Promise<{ data: Country[]; total: number }>;
   findAllActive(): Promise<Country[]>;
+  findAllForSync(): Promise<Country[]>;
   findById(id: string): Promise<Country | null>;
   isCodeTaken(code: string, excludeId?: string): Promise<boolean>;
   create(data: CreateCountryData): Promise<Country>;

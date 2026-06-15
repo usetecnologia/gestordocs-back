@@ -9,6 +9,7 @@ import { IAutoLoginRepository, AUTOLOGIN_REPOSITORY } from '../../domain/autolog
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
 import { LoginResult } from '../../domain/login-result.entity';
 import { JwtTokenService } from '@shared/jwt/jwt.service';
+import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 
 const WORKUSE_USER_URL = 'https://secure.workuse.com/api/user/user.php';
 const DEFAULT_PASSWORD = 'password26';
@@ -33,6 +34,7 @@ export class AutoLoginUseCase {
     @Inject(AUTOLOGIN_REPOSITORY) private readonly autoLoginRepo: IAutoLoginRepository,
     @Inject(PASSWORD_HASHER) private readonly passwordHasher: IPasswordHasher,
     private readonly jwtTokenService: JwtTokenService,
+    private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
   ) {}
 
   async execute(dni: string): Promise<LoginResult> {
@@ -70,6 +72,8 @@ export class AutoLoginUseCase {
       optionProgramId,
       passwordHash,
     });
+
+    await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);
 
     const role = credentials.role.code ?? credentials.role.name;
     const accessToken = this.jwtTokenService.sign({
