@@ -61,8 +61,11 @@ async function bootstrap() {
   });
 
   await app.listen(envs.PORT);
-  console.log(`\n🚀 App running on: http://localhost:${envs.PORT}`);
-  console.log(`📄 Swagger docs:   http://localhost:${envs.PORT}/docs\n`);
+
+  if (envs.NODE_ENV !== 'production') {
+    console.log(`\n🚀 App running on: http://localhost:${envs.PORT}`);
+    console.log(`📄 Swagger docs:   http://localhost:${envs.PORT}/docs\n`);
+  }
 }
 
 bootstrap().catch((err) => {
