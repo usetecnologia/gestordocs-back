@@ -12,26 +12,18 @@ COPY package*.json ./
 # Instalar dependencias (npm ci respeta exactamente el package-lock.json)
 RUN npm ci
 
-# Copiar prisma schema
-COPY prisma ./prisma/
+# Copiar el código fuente completo (incluye tsconfig.json y prisma/schema.prisma)
+# IMPORTANTE: tsconfig.json debe existir ANTES de "prisma generate", porque
+# Prisma detecta su presencia para decidir el formato de los imports relativos
+# (con tsconfig.json genera CommonJS clásico sin extensión; sin él, genera
+# imports con extensión ".ts" que rompen la compilación con tsc).
+COPY . .
 
 # Generar Prisma Client
 RUN npx prisma generate
 
-# --- DIAGNOSTICO TEMPORAL ---
-RUN echo "=== prisma version ===" && npx prisma --version \
-  && echo "=== import line en client.ts ===" && grep -n "internal/class" prisma/generated/prisma/client.ts \
-  && echo "=== typescript version ===" && npx tsc --version
-
-# Copiar el código fuente
-COPY . .
-
 # Build de NestJS
 RUN npm run build
-
-# --- DIAGNOSTICO TEMPORAL (post-build) ---
-RUN echo "=== import line en client.js compilado ===" && grep -n "internal/class" dist/prisma/generated/prisma/client.js \
-  && echo "=== archivos en dist internal ===" && ls -la dist/prisma/generated/prisma/internal/
 
 # Etapa 2: Production
 FROM node:20-alpine AS production
