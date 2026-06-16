@@ -19,7 +19,11 @@ const USER_DOCS_INCLUDE = {
   },
   documents: true,
   userDocumentHistory: {
-    include: { etiquetas: { select: { id: true, name: true } } },
+    include: {
+      userDocumentHistoryEtiquetas: {
+        include: { etiquetas: { select: { id: true, name: true } } },
+      },
+    },
     orderBy: { createdAt: 'asc' as const },
   },
 } as const;
@@ -66,8 +70,7 @@ function mapUserDocToHistory(ud: UserDocRow): UserDocumentWithHistory {
       status: h.status as string,
       url: h.url,
       observation: h.observation,
-      etiquetaId: h.etiquetaId,
-      etiqueta: h.etiquetas ?? null,
+      etiquetas: h.userDocumentHistoryEtiquetas.map((e) => e.etiquetas),
       createdById: h.createdById,
       createdAt: h.createdAt,
       updatedAt: h.updatedAt,

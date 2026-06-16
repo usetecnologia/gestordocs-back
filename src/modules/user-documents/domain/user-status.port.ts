@@ -1,4 +1,5 @@
 export interface IUserStatusPort {
+  getStatus(userId: string): Promise<string | null>;
   updateStatus(userId: string, status: string): Promise<void>;
 }
 

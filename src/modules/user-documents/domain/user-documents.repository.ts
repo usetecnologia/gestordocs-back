@@ -19,8 +19,7 @@ export interface UserDocumentHistoryItem {
   status: string;
   url: string | null;
   observation: string | null;
-  etiquetaId: string | null;
-  etiqueta: { id: string; name: string } | null;
+  etiquetas: { id: string; name: string }[];
   createdById: string | null;
   createdAt: Date;
   updatedAt: Date;

@@ -7,6 +7,14 @@ import { IUserStatusPort } from '../../domain/user-status.port';
 export class UserStatusPrisma implements IUserStatusPort {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getStatus(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { status: true },
+    });
+    return user?.status ?? null;
+  }
+
   async updateStatus(userId: string, status: string): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },

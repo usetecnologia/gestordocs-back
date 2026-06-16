@@ -34,9 +34,8 @@ export class UserDocumentHistoryItemDto {
   @ApiProperty() status!: string;
   @ApiPropertyOptional({ nullable: true }) url!: string | null;
   @ApiPropertyOptional({ nullable: true }) observation!: string | null;
-  @ApiPropertyOptional({ nullable: true }) etiquetaId!: string | null;
-  @ApiPropertyOptional({ type: UserDocumentEtiquetaDto, nullable: true })
-  etiqueta!: UserDocumentEtiquetaDto | null;
+  @ApiProperty({ type: [UserDocumentEtiquetaDto] })
+  etiquetas!: UserDocumentEtiquetaDto[];
   @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;

@@ -1,4 +1,4 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AwsS3Service } from '@shared/aws/aws-s3.service';
 import { MulterFile } from '../../domain/multer-file.interface';
 import { UploadFileDocumentDto } from '../../infrastructure/http/dtos/upload-file-document.dto';
@@ -21,6 +21,11 @@ export class UploadFileDocumentUseCase {
   async execute(file: MulterFile, dto: UploadFileDocumentDto): Promise<void> {
     const userDoc = await this.userDocumentsRepo.findByIdWithHistory(dto.userDocumentId);
     if (!userDoc) throw new NotFoundException(`UserDocument #${dto.userDocumentId} not found`);
+
+    const currentStatus = await this.userStatusPort.getStatus(userDoc.userId);
+    if (currentStatus === 'EN_REVISION') {
+      throw new ConflictException('Tus documentos están en revisión, por favor espere.');
+    }
 
     const { url } = await this.awsS3Service.uploadOne(file, 'user-documents');
 

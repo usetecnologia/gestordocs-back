@@ -12,6 +12,7 @@ enum UserStatus {
   SIN_DOCUMENTOS
   DOCUMENTOS_INCOMPLETOS
   PENDIENTE_REVISAR
+  EN_REVISION
   OBSERVADO
   RETENIDO_USE
   PREPARACION
@@ -180,7 +181,7 @@ model Etiquetas {
   createdBy        User?             @relation("EtiquetasCreatedBy", fields: [createdById], references: [id])
   updatedBy        User?             @relation("EtiquetasUpdatedBy", fields: [updatedById], references: [id])
 
-  userDocumentHistories  UserDocumentHistory[]
+  userDocumentHistoryEtiquetas  UserDocumentHistoryEtiquetas[]
 }
 
 model Documents {
@@ -257,12 +258,22 @@ model UserDocumentHistory {
   status              DocumentSponsorStatus
   url                 String? @db.Text
   observation         String?
-  etiquetaId          String?
   createdById         String?  @map("created_by_id") @db.VarChar(36)
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
   createdBy User?     @relation("UserDocumentHistoryCreatedBy", fields: [createdById], references: [id])
-  etiquetas Etiquetas? @relation(fields: [etiquetaId], references: [id])
   userDocuments UserDocuments @relation(fields: [userDocumentsId], references: [id])
+
+  userDocumentHistoryEtiquetas UserDocumentHistoryEtiquetas[]
+}
+
+model UserDocumentHistoryEtiquetas {
+  id                      String   @id @default(uuid()) @db.VarChar(36)
+  userDocumentHistoryId   String   @db.VarChar(36)
+  etiquetaId              String   @db.VarChar(36)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  userDocumentHistory UserDocumentHistory @relation(fields: [userDocumentHistoryId], references: [id])
+  etiquetas Etiquetas @relation(fields: [etiquetaId], references: [id])
 }

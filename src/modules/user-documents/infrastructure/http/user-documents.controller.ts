@@ -15,6 +15,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConflictResponse,
   ApiConsumes,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -70,6 +71,7 @@ export class UserDocumentsController {
   })
   @ApiOkResponse({ description: 'File uploaded and history created successfully' })
   @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
+  @ApiConflictResponse({ description: 'Los documentos del usuario están en revisión.' })
   uploadFileDocument(
     @UploadedFile(new MaxFileSizePipe()) file: MulterFile,
     @Body() dto: UploadFileDocumentDto,
