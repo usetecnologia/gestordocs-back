@@ -9,9 +9,12 @@ import {
   HttpCode,
   HttpStatus,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -22,19 +25,33 @@ import {
   ApiOkResponse,
   ApiNoContentResponse,
   ApiUnauthorizedResponse,
+  ApiConsumes,
+  ApiBody,
   ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
-import { PaginationResultDto, toPaginationResult } from '@common/dtos/pagination-result.dto';
+import { ParseImagePipe } from '@common/pipes/parse-image.pipe';
+import {
+  PaginationResultDto,
+  toPaginationResult,
+} from '@common/dtos/pagination-result.dto';
 import { CreateUserUseCase } from '../../application/use-cases/create-user.use-case';
 import { FindAllUserUseCase } from '../../application/use-cases/find-all-user.use-case';
 import { FindOneUserUseCase } from '../../application/use-cases/find-one-user.use-case';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case';
 import { DeleteUserUseCase } from '../../application/use-cases/delete-user.use-case';
+import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
+import { UploadAvatarUseCase } from '../../application/use-cases/upload-avatar.use-case';
+import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
+import { UploadAvatarDto } from './dtos/upload-avatar.dto';
+import { ChangePasswordDto } from './dtos/change-password.dto';
+import { ChangePasswordResponseDto } from './dtos/change-password-response.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
+import type { MulterFile } from '../../domain/multer-file.interface';
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -48,6 +65,9 @@ export class UserController {
     private readonly findOneUser: FindOneUserUseCase,
     private readonly updateUser: UpdateUserUseCase,
     private readonly deleteUser: DeleteUserUseCase,
+    private readonly updateUserProfile: UpdateUserProfileUseCase,
+    private readonly uploadAvatar: UploadAvatarUseCase,
+    private readonly changePassword: ChangePasswordUseCase,
   ) {}
 
   @Post()
@@ -61,7 +81,9 @@ export class UserController {
   @Get()
   @ApiOperation({ summary: 'Listar usuarios (paginado)' })
   @ApiOkResponse({ type: PaginationResultDto })
-  async findAll(@Query() query: FindUsersQueryDto): Promise<PaginationResultDto<UserResponseDto>> {
+  async findAll(
+    @Query() query: FindUsersQueryDto,
+  ): Promise<PaginationResultDto<UserResponseDto>> {
     const result = await this.findAllUser.execute(query);
     return toPaginationResult(
       result.data as UserResponseDto[],
@@ -69,6 +91,66 @@ export class UserController {
       query.page ?? 1,
       query.limit ?? 20,
     );
+  }
+
+  @Patch('update-user')
+  @ApiOperation({ summary: 'Actualizar perfil del usuario (datos personales)' })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
+  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
+  updateProfile(@Body() dto: UpdateUserProfileDto) {
+    return this.updateUserProfile.execute(dto);
+  }
+
+  @Post('upload-avatar')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Subir avatar del usuario (sube a AWS S3 y actualiza el perfil)',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'userId'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Imagen (jpeg, png, webp, gif, avif — máx. 10 MB)',
+        },
+        userId: { type: 'string', format: 'uuid', example: 'uuid-del-usuario' },
+      },
+    },
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
+  @ApiBadRequestResponse({ description: 'Archivo inválido o ausente.' })
+  uploadUserAvatar(
+    @UploadedFile(new ParseImagePipe()) file: MulterFile,
+    @Body() dto: UploadAvatarDto,
+  ) {
+    return this.uploadAvatar.execute(dto.userId, file);
+  }
+
+  @Post('change-password-interno')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Cambiar contraseña validando la contraseña actual',
+  })
+  @ApiOkResponse({ type: ChangePasswordResponseDto })
+  @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
+  @ApiBadRequestResponse({
+    description: 'El usuario no tiene contraseña configurada.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'La contraseña actual es incorrecta.',
+  })
+  async changeUserPassword(
+    @Body() dto: ChangePasswordDto,
+  ): Promise<ChangePasswordResponseDto> {
+    await this.changePassword.execute(dto);
+    return { message: 'Contraseña actualizada correctamente.' };
   }
 
   @Get(':id')
