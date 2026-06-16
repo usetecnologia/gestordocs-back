@@ -39,11 +39,10 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copiar archivos necesarios desde builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
 
 # Exponer puerto
 EXPOSE 3011
 
-# Ejecutar migraciones y iniciar app
-CMD ["sh", "-c", "npx prisma generate && node dist/main"]
+# Iniciar app (Prisma Client ya viene generado desde el builder en prisma/generated/prisma)
+CMD ["node", "dist/main"]
