@@ -45,4 +45,4 @@ COPY --from=builder /app/prisma ./prisma
 EXPOSE 3011
 
 # Iniciar app (Prisma Client ya viene generado desde el builder en prisma/generated/prisma)
-CMD ["node", "dist/main"]
+CMD ["node", "dist/src/main"]
