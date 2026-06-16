@@ -4,6 +4,7 @@ npm-debug.log
 dist
 coverage
 *.log
+prisma/generated
 
 # Archivos de entorno y configuración local
 .env
