@@ -18,11 +18,20 @@ COPY prisma ./prisma/
 # Generar Prisma Client
 RUN npx prisma generate
 
+# --- DIAGNOSTICO TEMPORAL ---
+RUN echo "=== prisma version ===" && npx prisma --version \
+  && echo "=== import line en client.ts ===" && grep -n "internal/class" prisma/generated/prisma/client.ts \
+  && echo "=== typescript version ===" && npx tsc --version
+
 # Copiar el código fuente
 COPY . .
 
 # Build de NestJS
 RUN npm run build
+
+# --- DIAGNOSTICO TEMPORAL (post-build) ---
+RUN echo "=== import line en client.js compilado ===" && grep -n "internal/class" dist/prisma/generated/prisma/client.js \
+  && echo "=== archivos en dist internal ===" && ls -la dist/prisma/generated/prisma/internal/
 
 # Etapa 2: Production
 FROM node:20-alpine AS production
