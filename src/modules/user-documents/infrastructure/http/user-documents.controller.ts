@@ -25,11 +25,16 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
+import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import { MulterFile } from '../../domain/multer-file.interface';
 import { UploadFileDocumentUseCase } from '../../application/use-cases/upload-file-document.use-case';
 import { FindUserDocumentsUseCase } from '../../application/use-cases/find-user-documents.use-case';
+import { AceptarDocumentUseCase } from '../../application/use-cases/aceptar-document.use-case';
+import { ObservarDocumentUseCase } from '../../application/use-cases/observar-document.use-case';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
+import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 
 @ApiTags('user-documents')
@@ -41,6 +46,8 @@ export class UserDocumentsController {
   constructor(
     private readonly uploadFileDocumentUseCase: UploadFileDocumentUseCase,
     private readonly findUserDocumentsUseCase: FindUserDocumentsUseCase,
+    private readonly aceptarDocumentUseCase: AceptarDocumentUseCase,
+    private readonly observarDocumentUseCase: ObservarDocumentUseCase,
   ) {}
 
   @Get('by-user/:userId')
@@ -52,6 +59,30 @@ export class UserDocumentsController {
     @Param('userId', ParseUUIDPipe) userId: string,
   ): Promise<UserDocumentWithHistoryDto[]> {
     return this.findUserDocumentsUseCase.execute(userId);
+  }
+
+  @Post('aceptar-document')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Aceptar un documento — cambia estado a REVISADO' })
+  @ApiOkResponse({ description: 'Documento aceptado correctamente.' })
+  @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
+  aceptarDocument(
+    @Body() dto: AceptarDocumentDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<void> {
+    return this.aceptarDocumentUseCase.execute(dto.userDocumentId, user.sub);
+  }
+
+  @Post('observar-document')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Observar un documento — cambia estado a OBSERVADO y registra observación con etiquetas' })
+  @ApiOkResponse({ description: 'Documento observado correctamente.' })
+  @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
+  observarDocument(
+    @Body() dto: ObservarDocumentDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<void> {
+    return this.observarDocumentUseCase.execute(dto, user.sub);
   }
 
   @Post('upload-file-document')

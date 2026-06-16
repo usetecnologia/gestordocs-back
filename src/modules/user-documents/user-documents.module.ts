@@ -10,6 +10,8 @@ import { UserStatusPrisma } from './infrastructure/persistence/user-status.prism
 import { UserDocumentsController } from './infrastructure/http/user-documents.controller';
 import { UploadFileDocumentUseCase } from './application/use-cases/upload-file-document.use-case';
 import { FindUserDocumentsUseCase } from './application/use-cases/find-user-documents.use-case';
+import { AceptarDocumentUseCase } from './application/use-cases/aceptar-document.use-case';
+import { ObservarDocumentUseCase } from './application/use-cases/observar-document.use-case';
 
 @Module({
   imports: [PrismaModule, AppJwtModule, AwsS3Module],
@@ -17,6 +19,8 @@ import { FindUserDocumentsUseCase } from './application/use-cases/find-user-docu
   providers: [
     UploadFileDocumentUseCase,
     FindUserDocumentsUseCase,
+    AceptarDocumentUseCase,
+    ObservarDocumentUseCase,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     JwtAuthGuard,

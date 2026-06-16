@@ -177,6 +177,12 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
             status: 'SIN_DOCUMENTOS',
           },
         }),
+        this.prisma.userHistoryStatus.create({
+          data: {
+            userId: id,
+            status: 'SIN_DOCUMENTOS',
+          },
+        }),
       ]);
     }
 

@@ -16,9 +16,14 @@ export class UserStatusPrisma implements IUserStatusPort {
   }
 
   async updateStatus(userId: string, status: string): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data: { status: status as $Enums.UserStatus },
-    });
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { status: status as $Enums.UserStatus },
+      }),
+      this.prisma.userHistoryStatus.create({
+        data: { userId, status: status as $Enums.UserStatus },
+      }),
+    ]);
   }
 }

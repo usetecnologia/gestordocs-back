@@ -166,6 +166,41 @@ model User {
   userDocumentHistories UserDocumentHistory[] @relation("UserDocumentHistoryCreatedBy")
   etiquetasCreated Etiquetas[] @relation("EtiquetasCreatedBy")
   etiquetasUpdated  Etiquetas[]  @relation("EtiquetasUpdatedBy")
+
+  userObservations  UserObservations[]
+  userHistories  UserHistoryStatus[]
+}
+
+model UserObservations {
+  id            String     @id @default(uuid()) @db.VarChar(36)
+  userId        String
+  observation   String     @db.Text
+  status        Boolean    @default(true)
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+  endDate       DateTime
+
+  users         User      @relation(fields: [userId], references: [id])
+  userObservationEtiquetas UserObservationEtiquetas[]
+}
+
+model UserObservationEtiquetas {
+  id                  String     @id @default(uuid()) @db.VarChar(36)
+  userObservationId   String
+  etiquetaId          String
+
+  userObservations    UserObservations @relation(fields: [userObservationId], references: [id])
+  etiquetas           Etiquetas @relation(fields: [etiquetaId], references: [id])
+}
+
+model UserHistoryStatus {
+  id            String    @id @default(uuid()) @db.VarChar(36)
+  userId        String
+  status        UserStatus
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  users     User      @relation(fields: [userId], references: [id])
 }
 
 model Etiquetas {
@@ -182,6 +217,7 @@ model Etiquetas {
   updatedBy        User?             @relation("EtiquetasUpdatedBy", fields: [updatedById], references: [id])
 
   userDocumentHistoryEtiquetas  UserDocumentHistoryEtiquetas[]
+  userObservationEtiquetas UserObservationEtiquetas[]
 }
 
 model Documents {

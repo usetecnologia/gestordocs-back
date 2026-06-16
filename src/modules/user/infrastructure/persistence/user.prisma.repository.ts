@@ -151,4 +151,10 @@ export class UserPrismaRepository implements IUserRepository {
       this.prisma.person.delete({ where: { id } }),
     ]);
   }
+
+  async addStatusHistory(userId: string, status: string): Promise<void> {
+    await this.prisma.userHistoryStatus.create({
+      data: { userId, status: status as never },
+    });
+  }
 }

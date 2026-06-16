@@ -25,6 +25,7 @@ import {
   ApiOkResponse,
   ApiNoContentResponse,
   ApiUnauthorizedResponse,
+  ApiConflictResponse,
   ApiConsumes,
   ApiBody,
   ApiParam,
@@ -43,12 +44,14 @@ import { DeleteUserUseCase } from '../../application/use-cases/delete-user.use-c
 import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
 import { UploadAvatarUseCase } from '../../application/use-cases/upload-avatar.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
+import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user-status.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
 import { UploadAvatarDto } from './dtos/upload-avatar.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { ChangePasswordResponseDto } from './dtos/change-password-response.dto';
+import { ChangeUserStatusDto } from './dtos/change-user-status.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
@@ -68,6 +71,7 @@ export class UserController {
     private readonly updateUserProfile: UpdateUserProfileUseCase,
     private readonly uploadAvatar: UploadAvatarUseCase,
     private readonly changePassword: ChangePasswordUseCase,
+    private readonly changeUserStatus: ChangeUserStatusUseCase,
   ) {}
 
   @Post()
@@ -151,6 +155,21 @@ export class UserController {
   ): Promise<ChangePasswordResponseDto> {
     await this.changePassword.execute(dto);
     return { message: 'Contraseña actualizada correctamente.' };
+  }
+
+  @Patch('change-status')
+  @ApiOperation({
+    summary: 'Cambiar el estado del usuario validando el estado actual',
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
+  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
+  @ApiConflictResponse({
+    description:
+      'El estado actual enviado no coincide con el estado registrado.',
+  })
+  changeStatus(@Body() dto: ChangeUserStatusDto) {
+    return this.changeUserStatus.execute(dto);
   }
 
   @Get(':id')

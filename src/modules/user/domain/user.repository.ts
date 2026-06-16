@@ -56,6 +56,7 @@ export interface IUserRepository {
   create(data: CreateUserData): Promise<User>;
   update(id: string, data: UpdateUserData): Promise<User>;
   delete(id: string): Promise<void>;
+  addStatusHistory(userId: string, status: UserStatus): Promise<void>;
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');

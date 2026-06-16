@@ -8,6 +8,8 @@ import {
   UserDocumentWithHistory,
   UserDocumentDocumentInfo,
   RequiredDocsCount,
+  AceptarDocumentData,
+  ObservarDocumentData,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -37,9 +39,10 @@ function toDocInfo(d: {
   name: string;
   title: string | null;
   type: string;
+  formats: string | null;
   instructions: string;
 }): UserDocumentDocumentInfo {
-  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, instructions: d.instructions };
+  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions };
 }
 
 function mapUserDocToHistory(ud: UserDocRow): UserDocumentWithHistory {
@@ -144,6 +147,41 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         data: { status: castedStatus },
       }),
     ]);
+  }
+
+  async aceptarDocument({ userDocumentId, reviewedById, url }: AceptarDocumentData): Promise<void> {
+    const status = $Enums.DocumentSponsorStatus.REVISADO;
+    await this.prisma.$transaction([
+      this.prisma.userDocuments.update({
+        where: { id: userDocumentId },
+        data: { status },
+      }),
+      this.prisma.userDocumentHistory.create({
+        data: { userDocumentsId: userDocumentId, status, createdById: reviewedById, url },
+      }),
+    ]);
+  }
+
+  async observarDocument({ userDocumentId, observation, etiquetaIds, reviewedById, url }: ObservarDocumentData): Promise<void> {
+    const status = $Enums.DocumentSponsorStatus.OBSERVADO;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userDocuments.update({
+        where: { id: userDocumentId },
+        data: { status },
+      });
+      await tx.userDocumentHistory.create({
+        data: {
+          userDocumentsId: userDocumentId,
+          status,
+          observation,
+          createdById: reviewedById,
+          url,
+          userDocumentHistoryEtiquetas: {
+            create: etiquetaIds.map((etiquetaId) => ({ etiquetaId })),
+          },
+        },
+      });
+    });
   }
 
   async countRequiredDocs(userId: string): Promise<RequiredDocsCount> {

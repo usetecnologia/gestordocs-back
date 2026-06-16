@@ -30,6 +30,7 @@ export interface UserDocumentDocumentInfo {
   name: string;
   title: string;
   type: string;
+  formats: string | null;
   instructions: string;
 }
 
@@ -59,6 +60,20 @@ export interface RequiredDocsCount {
   submittedRequired: number;
 }
 
+export interface AceptarDocumentData {
+  userDocumentId: string;
+  reviewedById: string;
+  url: string | null;
+}
+
+export interface ObservarDocumentData {
+  userDocumentId: string;
+  observation: string;
+  etiquetaIds: string[];
+  reviewedById: string;
+  url: string | null;
+}
+
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
   findByUserIdWithHistory(userId: string): Promise<UserDocumentWithHistory[]>;
@@ -67,6 +82,8 @@ export interface IUserDocumentsRepository {
   updateStatusDocument(id: string, statusDocument: boolean): Promise<void>;
   addHistory(userDocumentsId: string, status: string, url: string): Promise<void>;
   countRequiredDocs(userId: string): Promise<RequiredDocsCount>;
+  aceptarDocument(data: AceptarDocumentData): Promise<void>;
+  observarDocument(data: ObservarDocumentData): Promise<void>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

@@ -18,6 +18,7 @@ import { DeleteUserUseCase } from './application/use-cases/delete-user.use-case'
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
 import { UploadAvatarUseCase } from './application/use-cases/upload-avatar.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+import { ChangeUserStatusUseCase } from './application/use-cases/change-user-status.use-case';
 
 const useCases = [
   CreateUserUseCase,
@@ -28,6 +29,7 @@ const useCases = [
   UpdateUserProfileUseCase,
   UploadAvatarUseCase,
   ChangePasswordUseCase,
+  ChangeUserStatusUseCase,
 ];
 
 @Module({
