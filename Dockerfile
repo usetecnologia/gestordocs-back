@@ -9,8 +9,8 @@ WORKDIR /app
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias (npm ci respeta exactamente el package-lock.json)
+RUN npm ci
 
 # Copiar prisma schema
 COPY prisma ./prisma/
