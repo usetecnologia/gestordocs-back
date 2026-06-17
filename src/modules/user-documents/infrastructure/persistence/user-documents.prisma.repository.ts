@@ -136,11 +136,11 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     });
   }
 
-  async addHistory(userDocumentsId: string, status: string, url: string): Promise<void> {
+  async addHistory(userDocumentsId: string, status: string, url: string, createdById: string): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
     await this.prisma.$transaction([
       this.prisma.userDocumentHistory.create({
-        data: { userDocumentsId, status: castedStatus, url },
+        data: { userDocumentsId, status: castedStatus, url, createdById },
       }),
       this.prisma.userDocuments.update({
         where: { id: userDocumentsId },

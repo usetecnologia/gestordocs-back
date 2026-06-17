@@ -80,7 +80,7 @@ export interface IUserDocumentsRepository {
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;
   updateStatusDocument(id: string, statusDocument: boolean): Promise<void>;
-  addHistory(userDocumentsId: string, status: string, url: string): Promise<void>;
+  addHistory(userDocumentsId: string, status: string, url: string, createdById: string): Promise<void>;
   countRequiredDocs(userId: string): Promise<RequiredDocsCount>;
   aceptarDocument(data: AceptarDocumentData): Promise<void>;
   observarDocument(data: ObservarDocumentData): Promise<void>;

@@ -93,10 +93,11 @@ export class UserDocumentsController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['file', 'userDocumentId'],
+      required: ['file', 'userDocumentId', 'userCreatedId'],
       properties: {
         file: { type: 'string', format: 'binary', description: 'Archivo (máx. 10 MB)' },
         userDocumentId: { type: 'string', format: 'uuid', example: 'uuid-del-user-document' },
+        userCreatedId: { type: 'string', format: 'uuid', example: 'uuid-del-user-creador' },
       },
     },
   })

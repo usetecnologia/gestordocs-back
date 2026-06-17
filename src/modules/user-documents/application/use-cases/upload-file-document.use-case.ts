@@ -29,7 +29,7 @@ export class UploadFileDocumentUseCase {
 
     const { url } = await this.awsS3Service.uploadOne(file, 'user-documents');
 
-    await this.userDocumentsRepo.addHistory(userDoc.id, 'SUBIDO', url);
+    await this.userDocumentsRepo.addHistory(userDoc.id, 'SUBIDO', url, dto.userCreatedId);
 
     const { totalRequired, submittedRequired } = await this.userDocumentsRepo.countRequiredDocs(
       userDoc.userId,
