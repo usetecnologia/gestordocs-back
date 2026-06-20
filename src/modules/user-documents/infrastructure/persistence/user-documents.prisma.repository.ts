@@ -7,6 +7,7 @@ import {
   CreateUserDocumentWithHistoryData,
   UserDocumentWithHistory,
   UserDocumentDocumentInfo,
+  UserDocumentFilter,
   RequiredDocsCount,
   AceptarDocumentData,
   ObservarDocumentData,
@@ -45,7 +46,7 @@ function toDocInfo(d: {
   return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions };
 }
 
-function mapUserDocToHistory(ud: UserDocRow): UserDocumentWithHistory {
+function mapUserDocToHistory(ud: UserDocRow, personMap: Map<string, string>): UserDocumentWithHistory {
   const ds = ud.documentSponsors;
   return {
     id: ud.id,
@@ -62,6 +63,7 @@ function mapUserDocToHistory(ud: UserDocRow): UserDocumentWithHistory {
           documentId: ds.documentId,
           sponsorId: ds.sponsorId,
           required: ds.required,
+          order: ds.order,
           document: toDocInfo(ds.document),
           sponsor: ds.sponsor,
         }
@@ -75,10 +77,39 @@ function mapUserDocToHistory(ud: UserDocRow): UserDocumentWithHistory {
       observation: h.observation,
       etiquetas: h.userDocumentHistoryEtiquetas.map((e) => e.etiquetas),
       createdById: h.createdById,
+      createdBy: h.createdById && personMap.has(h.createdById)
+        ? { id: h.createdById, fullName: personMap.get(h.createdById)! }
+        : null,
       createdAt: h.createdAt,
       updatedAt: h.updatedAt,
     })),
   };
+}
+
+async function buildPersonMap(
+  prisma: PrismaService,
+  rows: UserDocRow[],
+): Promise<Map<string, string>> {
+  const ids = [
+    ...new Set(
+      rows
+        .flatMap((r) => r.userDocumentHistory.map((h) => h.createdById))
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+  const map = new Map<string, string>();
+  if (!ids.length) return map;
+  const persons = await prisma.person.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+  });
+  for (const p of persons) {
+    map.set(
+      p.id,
+      [p.firstname, p.middlename, p.lastfathername, p.lastmothername].filter(Boolean).join(' '),
+    );
+  }
+  return map;
 }
 
 @Injectable()
@@ -97,13 +128,22 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     }));
   }
 
-  async findByUserIdWithHistory(userId: string): Promise<UserDocumentWithHistory[]> {
+  async findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
+    const where: Record<string, unknown> = { userId, statusDocument: true };
+
+    if (filter === UserDocumentFilter.REQUIRED) {
+      where['documentSponsors'] = { required: true };
+    } else if (filter === UserDocumentFilter.OBSERVED) {
+      where['status'] = $Enums.DocumentSponsorStatus.OBSERVADO;
+    }
+
     const rows = await this.prisma.userDocuments.findMany({
-      where: { userId },
+      where,
       include: USER_DOCS_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map(mapUserDocToHistory);
+    const personMap = await buildPersonMap(this.prisma, rows);
+    return rows.map((ud) => mapUserDocToHistory(ud, personMap));
   }
 
   async findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null> {
@@ -111,7 +151,9 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       where: { id },
       include: USER_DOCS_INCLUDE,
     });
-    return ud ? mapUserDocToHistory(ud) : null;
+    if (!ud) return null;
+    const personMap = await buildPersonMap(this.prisma, [ud]);
+    return mapUserDocToHistory(ud, personMap);
   }
 
   async createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void> {

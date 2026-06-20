@@ -18,6 +18,7 @@ class DocumentSponsorItemDto {
   @ApiProperty() sponsorId!: string;
   @ApiProperty({ type: SponsorRefDto }) sponsor!: SponsorRefDto;
   @ApiProperty({ example: false }) required!: boolean;
+  @ApiProperty({ example: 1 }) order!: number;
   @ApiProperty() status!: boolean;
 }
 
@@ -29,6 +30,7 @@ export class DocumentResponseDto {
   @ApiPropertyOptional({ example: 'pdf,jpg,png' }) formats!: string | null;
   @ApiProperty({ enum: TypeHired }) showHired!: TypeHired;
   @ApiProperty({ example: 'El documento debe estar vigente.' }) instructions!: string;
+  @ApiProperty({ example: false }) required!: boolean;
   @ApiProperty({ example: true }) status!: boolean;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) createdById!: string | null;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) updatedById!: string | null;

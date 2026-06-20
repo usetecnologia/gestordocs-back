@@ -7,7 +7,7 @@ export const DOCUMENT_FULL_INCLUDE = {
   updatedBy: { select: { id: true, username: true, email: true } },
   documentSponsors: {
     include: { sponsor: { select: { id: true, name: true, code: true } } },
-    orderBy: { createdAt: 'asc' as const },
+    orderBy: { order: 'asc' as const },
   },
 } satisfies Prisma.DocumentsInclude;
 
@@ -22,6 +22,7 @@ export class DocumentMapper {
       sponsorId: ds.sponsorId,
       sponsor: ds.sponsor,
       required: ds.required,
+      order: ds.order,
       status: ds.status,
     }));
 
@@ -33,6 +34,7 @@ export class DocumentMapper {
       raw.formats,
       raw.showHired as unknown as TypeHired,
       raw.instructions,
+      raw.required,
       raw.status,
       raw.createdById,
       raw.updatedById,

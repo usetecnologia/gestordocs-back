@@ -3,10 +3,12 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -22,6 +24,11 @@ export class DocumentSponsorInputDto {
   @IsOptional()
   @IsBoolean()
   required?: boolean;
+
+  @ApiProperty({ example: 1, description: 'Posición del sponsor dentro del documento' })
+  @IsInt()
+  @Min(0)
+  order!: number;
 }
 
 export class CreateDocumentDto {
@@ -59,9 +66,14 @@ export class CreateDocumentDto {
   @MinLength(5)
   instructions!: string;
 
+  @ApiPropertyOptional({ example: false, default: false, description: 'Indica si el documento es obligatorio' })
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+
   @ApiPropertyOptional({
     type: [DocumentSponsorInputDto],
-    description: 'Sponsors a asociar al documento con su flag de requerido',
+    description: 'Sponsors a asociar al documento con su flag de requerido y orden',
   })
   @IsOptional()
   @IsArray()

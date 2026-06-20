@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
   UseGuards,
   Query,
   ParseUUIDPipe,
@@ -19,7 +17,6 @@ import {
   ApiOperation,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
@@ -123,10 +120,9 @@ export class DocumentController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar documento y sus asociaciones con sponsors' })
   @ApiParam({ name: 'id', description: 'UUID del documento' })
-  @ApiNoContentResponse({ description: 'Documento eliminado.' })
+  @ApiOkResponse({ description: 'Documento eliminado correctamente.' })
   @ApiNotFoundResponse({ description: 'Documento no encontrado.' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.deleteDocument.execute(id);

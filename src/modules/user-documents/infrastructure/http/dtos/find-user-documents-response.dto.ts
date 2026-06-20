@@ -19,6 +19,7 @@ export class UserDocumentSponsorDto {
   @ApiProperty() documentId!: string;
   @ApiProperty() sponsorId!: string;
   @ApiProperty() required!: boolean;
+  @ApiProperty({ example: 1 }) order!: number;
   @ApiProperty({ type: UserDocumentDocumentInfoDto }) document!: UserDocumentDocumentInfoDto;
   @ApiProperty({ type: UserDocumentSponsorInfoDto }) sponsor!: UserDocumentSponsorInfoDto;
 }
@@ -28,15 +29,20 @@ export class UserDocumentEtiquetaDto {
   @ApiProperty() name!: string;
 }
 
+export class UserDocumentHistoryCreatedByDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() fullName!: string;
+}
+
 export class UserDocumentHistoryItemDto {
   @ApiProperty() id!: string;
   @ApiProperty() userDocumentsId!: string;
   @ApiProperty() status!: string;
   @ApiPropertyOptional({ nullable: true }) url!: string | null;
   @ApiPropertyOptional({ nullable: true }) observation!: string | null;
-  @ApiProperty({ type: [UserDocumentEtiquetaDto] })
-  etiquetas!: UserDocumentEtiquetaDto[];
+  @ApiProperty({ type: [UserDocumentEtiquetaDto] }) etiquetas!: UserDocumentEtiquetaDto[];
   @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
+  @ApiPropertyOptional({ type: UserDocumentHistoryCreatedByDto, nullable: true }) createdBy!: UserDocumentHistoryCreatedByDto | null;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

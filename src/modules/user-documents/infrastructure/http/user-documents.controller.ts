@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -21,6 +22,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -35,6 +37,7 @@ import { ObservarDocumentUseCase } from '../../application/use-cases/observar-do
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
+import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 
 @ApiTags('user-documents')
@@ -51,14 +54,16 @@ export class UserDocumentsController {
   ) {}
 
   @Get('by-user/:userId')
-  @ApiOperation({ summary: 'Get all documents with history for a user' })
+  @ApiOperation({ summary: 'Listar documentos con historial de un usuario' })
   @ApiParam({ name: 'userId', description: 'UUID del usuario' })
+  @ApiQuery({ name: 'filter', required: false, enum: ['ALL', 'REQUIRED', 'OBSERVED'], description: 'ALL: todos | REQUIRED: obligatorios | OBSERVED: observados' })
   @ApiOkResponse({ type: [UserDocumentWithHistoryDto] })
   @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
   findByUser(
     @Param('userId', ParseUUIDPipe) userId: string,
+    @Query() query: FindUserDocumentsQueryDto,
   ): Promise<UserDocumentWithHistoryDto[]> {
-    return this.findUserDocumentsUseCase.execute(userId);
+    return this.findUserDocumentsUseCase.execute(userId, query.filter);
   }
 
   @Post('aceptar-document')

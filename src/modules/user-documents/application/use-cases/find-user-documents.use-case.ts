@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
   IUserDocumentsRepository,
+  UserDocumentFilter,
   UserDocumentWithHistory,
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
@@ -12,7 +13,7 @@ export class FindUserDocumentsUseCase {
     private readonly userDocumentsRepo: IUserDocumentsRepository,
   ) {}
 
-  execute(userId: string): Promise<UserDocumentWithHistory[]> {
-    return this.userDocumentsRepo.findByUserIdWithHistory(userId);
+  execute(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
+    return this.userDocumentsRepo.findByUserIdWithHistory(userId, filter);
   }
 }

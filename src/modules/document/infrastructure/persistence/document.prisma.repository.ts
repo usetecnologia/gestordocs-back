@@ -69,9 +69,10 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         ...(createdById && { createdById }),
         ...(sponsors?.length && {
           documentSponsors: {
-            create: sponsors.map(({ sponsorId, required }) => ({
+            create: sponsors.map(({ sponsorId, required, order }) => ({
               sponsorId,
               required: required ?? false,
+              order,
               ...(createdById && { createdById }),
             })),
           },
@@ -95,15 +96,61 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         },
       });
 
+      if (fields.status !== undefined) {
+        await tx.userDocuments.updateMany({
+          where: {
+            OR: [
+              { documentId: id },
+              { documentSponsors: { documentId: id } },
+            ],
+          },
+          data: { statusDocument: fields.status },
+        });
+      }
+
       if (sponsors !== undefined) {
+        const existingSponsors = await tx.documentSponsor.findMany({
+          where: { documentId: id },
+          select: { id: true },
+        });
+        const existingSponsorIds = existingSponsors.map((ds) => ds.id);
+
+        if (existingSponsorIds.length > 0) {
+          const userDocs = await tx.userDocuments.findMany({
+            where: { documentSponsorId: { in: existingSponsorIds } },
+            select: { id: true },
+          });
+          const userDocIds = userDocs.map((ud) => ud.id);
+
+          if (userDocIds.length > 0) {
+            const histories = await tx.userDocumentHistory.findMany({
+              where: { userDocumentsId: { in: userDocIds } },
+              select: { id: true },
+            });
+            const historyIds = histories.map((h) => h.id);
+
+            if (historyIds.length > 0) {
+              await tx.userDocumentHistoryEtiquetas.deleteMany({
+                where: { userDocumentHistoryId: { in: historyIds } },
+              });
+              await tx.userDocumentHistory.deleteMany({
+                where: { id: { in: historyIds } },
+              });
+            }
+
+            await tx.userDocuments.deleteMany({ where: { id: { in: userDocIds } } });
+          }
+        }
+
         await tx.documentSponsor.deleteMany({ where: { documentId: id } });
 
         if (sponsors.length > 0) {
           await tx.documentSponsor.createMany({
-            data: sponsors.map(({ sponsorId, required }) => ({
+            data: sponsors.map(({ sponsorId, required, order }) => ({
               documentId: id,
               sponsorId,
               required: required ?? false,
+              order,
               ...(updatedById && { createdById: updatedById }),
             })),
           });
@@ -115,9 +162,49 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.$transaction([
-      this.prisma.documentSponsor.deleteMany({ where: { documentId: id } }),
-      this.prisma.documents.delete({ where: { id } }),
-    ]);
+    await this.prisma.$transaction(async (tx) => {
+      const documentSponsors = await tx.documentSponsor.findMany({
+        where: { documentId: id },
+        select: { id: true },
+      });
+      const documentSponsorIds = documentSponsors.map((ds) => ds.id);
+
+      const userDocumentsWhere = {
+        OR: [
+          { documentId: id },
+          ...(documentSponsorIds.length > 0
+            ? [{ documentSponsorId: { in: documentSponsorIds } }]
+            : []),
+        ],
+      };
+
+      const userDocs = await tx.userDocuments.findMany({
+        where: userDocumentsWhere,
+        select: { id: true },
+      });
+      const userDocIds = userDocs.map((ud) => ud.id);
+
+      if (userDocIds.length > 0) {
+        const histories = await tx.userDocumentHistory.findMany({
+          where: { userDocumentsId: { in: userDocIds } },
+          select: { id: true },
+        });
+        const historyIds = histories.map((h) => h.id);
+
+        if (historyIds.length > 0) {
+          await tx.userDocumentHistoryEtiquetas.deleteMany({
+            where: { userDocumentHistoryId: { in: historyIds } },
+          });
+          await tx.userDocumentHistory.deleteMany({
+            where: { id: { in: historyIds } },
+          });
+        }
+
+        await tx.userDocuments.deleteMany({ where: { id: { in: userDocIds } } });
+      }
+
+      await tx.documentSponsor.deleteMany({ where: { documentId: id } });
+      await tx.documents.delete({ where: { id } });
+    });
   }
 }

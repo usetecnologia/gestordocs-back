@@ -5,6 +5,7 @@ export interface DocumentSponsorItem {
   sponsorId: string;
   sponsor: { id: string; name: string; code: string };
   required: boolean;
+  order: number;
   status: boolean;
 }
 
@@ -17,6 +18,7 @@ export class Document {
     public formats: string | null,
     public showHired: TypeHired,
     public instructions: string,
+    public required: boolean,
     public status: boolean,
     public readonly createdById: string | null,
     public updatedById: string | null,

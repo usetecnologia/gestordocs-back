@@ -228,6 +228,7 @@ model Documents {
   showHired    TypeHired    @map("show_hired")
   title        String?
   instructions String       @db.Text
+  required     Boolean      @default(false)
   status       Boolean      @default(true)
   createdById  String?      @map("created_by_id") @db.VarChar(36)
   updatedById  String?      @map("updated_by_id") @db.VarChar(36)
@@ -251,6 +252,7 @@ model DocumentSponsor {
   documentId  String   @map("document_id") @db.VarChar(36)
   sponsorId   String   @map("sponsor_id") @db.VarChar(36)
   required     Boolean      @default(false)
+  order        Int          @default(0)
   createdById String?  @map("created_by_id") @db.VarChar(36)
   updatedById String?  @map("updated_by_id") @db.VarChar(36)
   status      Boolean  @default(true)

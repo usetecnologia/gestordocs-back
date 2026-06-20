@@ -21,6 +21,7 @@ export interface UserDocumentHistoryItem {
   observation: string | null;
   etiquetas: { id: string; name: string }[];
   createdById: string | null;
+  createdBy: { id: string; fullName: string } | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +49,7 @@ export interface UserDocumentWithHistory {
     documentId: string;
     sponsorId: string;
     required: boolean;
+    order: number;
     document: UserDocumentDocumentInfo;
     sponsor: { id: string; name: string; code: string };
   } | null;
@@ -74,9 +76,15 @@ export interface ObservarDocumentData {
   url: string | null;
 }
 
+export enum UserDocumentFilter {
+  ALL = 'ALL',
+  REQUIRED = 'REQUIRED',
+  OBSERVED = 'OBSERVED',
+}
+
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
-  findByUserIdWithHistory(userId: string): Promise<UserDocumentWithHistory[]>;
+  findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]>;
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;
   updateStatusDocument(id: string, statusDocument: boolean): Promise<void>;

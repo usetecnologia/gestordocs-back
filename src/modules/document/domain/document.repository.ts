@@ -13,6 +13,7 @@ export interface DocumentFilters {
 export interface DocumentSponsorInputData {
   sponsorId: string;
   required?: boolean;
+  order: number;
 }
 
 export interface CreateDocumentData {
@@ -22,6 +23,7 @@ export interface CreateDocumentData {
   formats?: string;
   showHired: TypeHired;
   instructions: string;
+  required?: boolean;
   sponsors?: DocumentSponsorInputData[];
   createdById?: string;
 }
@@ -33,6 +35,7 @@ export interface UpdateDocumentData {
   formats?: string;
   showHired?: TypeHired;
   instructions?: string;
+  required?: boolean;
   status?: boolean;
   sponsors?: DocumentSponsorInputData[];
   updatedById?: string;

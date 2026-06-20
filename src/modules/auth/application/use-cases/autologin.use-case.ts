@@ -40,15 +40,19 @@ export class AutoLoginUseCase {
   async execute(dni: string): Promise<LoginResult> {
     const data = await this.fetchFromWorkuse(dni);
 
-    const country = await this.autoLoginRepo.findCountryByName(data.country);
+    const country = await this.autoLoginRepo.findCountryByName(data.country.trim().toUpperCase());
     if (!country) {
       throw new NotFoundException(`País "${data.country}" no encontrado en la base de datos.`);
     }
 
-    const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(data.program);
-    const { id: sponsorId } = await this.autoLoginRepo.findOrCreateSponsor(data.sponsor);
+    const program = data.program.trim().toUpperCase();
+    const sponsor = data.sponsor.trim().toUpperCase();
+    const optionPrograma = data.optionPrograma.trim().toUpperCase();
+
+    const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(program);
+    const { id: sponsorId } = await this.autoLoginRepo.findOrCreateSponsor(sponsor);
     const { id: optionProgramId } = await this.autoLoginRepo.findOrCreateOptionProgram(
-      data.optionPrograma,
+      optionPrograma,
       country.id,
       programId,
       sponsorId,

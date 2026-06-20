@@ -49,6 +49,11 @@ export class UpdateDocumentDto {
   @MinLength(5)
   instructions?: string;
 
+  @ApiPropertyOptional({ example: false, description: 'Indica si el documento es obligatorio' })
+  @IsOptional()
+  @IsBoolean()
+  required?: boolean;
+
   @ApiPropertyOptional({ example: true })
   @IsOptional()
   @IsBoolean()
