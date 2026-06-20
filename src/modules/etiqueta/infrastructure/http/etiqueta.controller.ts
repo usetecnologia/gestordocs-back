@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
   UseGuards,
   Query,
   ParseUUIDPipe,
@@ -18,7 +16,6 @@ import {
   ApiOperation,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
@@ -111,10 +108,9 @@ export class EtiquetaController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar etiqueta' })
   @ApiParam({ name: 'id', description: 'UUID de la etiqueta' })
-  @ApiNoContentResponse({ description: 'Etiqueta eliminada.' })
+  @ApiOkResponse({ description: 'Etiqueta eliminada correctamente.' })
   @ApiNotFoundResponse({ description: 'Etiqueta no encontrada.' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.deleteEtiqueta.execute(id);

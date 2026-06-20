@@ -71,6 +71,11 @@ export class CreateDocumentDto {
   @IsBoolean()
   required?: boolean;
 
+  @ApiPropertyOptional({ example: true, default: true, description: 'Estado activo/inactivo del documento al crearlo' })
+  @IsOptional()
+  @IsBoolean()
+  status?: boolean;
+
   @ApiPropertyOptional({
     type: [DocumentSponsorInputDto],
     description: 'Sponsors a asociar al documento con su flag de requerido y orden',

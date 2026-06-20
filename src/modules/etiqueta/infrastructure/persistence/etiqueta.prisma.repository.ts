@@ -68,6 +68,10 @@ export class EtiquetaPrismaRepository implements IEtiquetaRepository {
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.etiquetas.delete({ where: { id } });
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userDocumentHistoryEtiquetas.deleteMany({ where: { etiquetaId: id } });
+      await tx.userObservationEtiquetas.deleteMany({ where: { etiquetaId: id } });
+      await tx.etiquetas.delete({ where: { id } });
+    });
   }
 }

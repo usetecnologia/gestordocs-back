@@ -97,15 +97,28 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       });
 
       if (fields.status !== undefined) {
+        // Siempre sincronizar registros vinculados vía documentSponsorId (sponsor-específicos)
         await tx.userDocuments.updateMany({
-          where: {
-            OR: [
-              { documentId: id },
-              { documentSponsors: { documentId: id } },
-            ],
-          },
+          where: { documentSponsors: { documentId: id } },
           data: { statusDocument: fields.status },
         });
+
+        // Para registros vinculados solo por documentId (camino "visible a todos"):
+        // - Al deshabilitar: siempre desactivar
+        // - Al habilitar: solo si el documento no tendrá sponsors después de esta operación.
+        //   Si tiene sponsors, esos registros deben permanecer desactivados para que
+        //   usuarios sin el sponsor correcto no vean el documento.
+        const willHaveSponsors =
+          sponsors !== undefined
+            ? sponsors.length > 0
+            : (await tx.documentSponsor.count({ where: { documentId: id } })) > 0;
+
+        if (!willHaveSponsors || fields.status === false) {
+          await tx.userDocuments.updateMany({
+            where: { documentId: id, documentSponsorId: null },
+            data: { statusDocument: fields.status },
+          });
+        }
       }
 
       if (sponsors !== undefined) {
@@ -114,6 +127,16 @@ export class DocumentPrismaRepository implements IDocumentRepository {
           select: { id: true },
         });
         const existingSponsorIds = existingSponsors.map((ds) => ds.id);
+
+        // Cuando el documento pasa a ser sponsor-específico, desactivar los registros
+        // userDocuments creados en el camino "visible a todos" (documentId sin documentSponsorId).
+        // El sync en el próximo autologin re-activará solo los usuarios con el sponsor correcto.
+        if (sponsors.length > 0) {
+          await tx.userDocuments.updateMany({
+            where: { documentId: id, documentSponsorId: null },
+            data: { statusDocument: false },
+          });
+        }
 
         if (existingSponsorIds.length > 0) {
           const userDocs = await tx.userDocuments.findMany({

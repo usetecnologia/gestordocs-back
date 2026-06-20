@@ -24,6 +24,7 @@ export interface CreateDocumentData {
   showHired: TypeHired;
   instructions: string;
   required?: boolean;
+  status?: boolean;
   sponsors?: DocumentSponsorInputData[];
   createdById?: string;
 }
