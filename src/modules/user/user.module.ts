@@ -19,6 +19,7 @@ import { UpdateUserProfileUseCase } from './application/use-cases/update-user-pr
 import { UploadAvatarUseCase } from './application/use-cases/upload-avatar.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
 import { ChangeUserStatusUseCase } from './application/use-cases/change-user-status.use-case';
+import { CreateObservationUseCase } from './application/use-cases/create-observation.use-case';
 
 const useCases = [
   CreateUserUseCase,
@@ -30,6 +31,7 @@ const useCases = [
   UploadAvatarUseCase,
   ChangePasswordUseCase,
   ChangeUserStatusUseCase,
+  CreateObservationUseCase,
 ];
 
 @Module({

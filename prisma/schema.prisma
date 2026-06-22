@@ -168,6 +168,7 @@ model User {
   etiquetasUpdated  Etiquetas[]  @relation("EtiquetasUpdatedBy")
 
   userObservations  UserObservations[]
+  userObservationsCreated UserObservations[] @relation("UserObservationsCreatedBy")
   userHistories  UserHistoryStatus[]
 }
 
@@ -178,9 +179,11 @@ model UserObservations {
   status        Boolean    @default(true)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
-  endDate       DateTime
+  endDate       DateTime?
+  createdById   String?    @map("created_by_id") @db.VarChar(36)
 
   users         User      @relation(fields: [userId], references: [id])
+  createdBy     User?     @relation("UserObservationsCreatedBy", fields: [createdById], references: [id])
   userObservationEtiquetas UserObservationEtiquetas[]
 }
 

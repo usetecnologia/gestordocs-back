@@ -45,6 +45,7 @@ import { UpdateUserProfileUseCase } from '../../application/use-cases/update-use
 import { UploadAvatarUseCase } from '../../application/use-cases/upload-avatar.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user-status.use-case';
+import { CreateObservationUseCase } from '../../application/use-cases/create-observation.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
@@ -52,6 +53,8 @@ import { UploadAvatarDto } from './dtos/upload-avatar.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { ChangePasswordResponseDto } from './dtos/change-password-response.dto';
 import { ChangeUserStatusDto } from './dtos/change-user-status.dto';
+import { CreateObservationDto } from './dtos/create-observation.dto';
+import { ObservationResponseDto } from './dtos/observation-response.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
@@ -72,6 +75,7 @@ export class UserController {
     private readonly uploadAvatar: UploadAvatarUseCase,
     private readonly changePassword: ChangePasswordUseCase,
     private readonly changeUserStatus: ChangeUserStatusUseCase,
+    private readonly createObservation: CreateObservationUseCase,
   ) {}
 
   @Post()
@@ -155,6 +159,15 @@ export class UserController {
   ): Promise<ChangePasswordResponseDto> {
     await this.changePassword.execute(dto);
     return { message: 'Contraseña actualizada correctamente.' };
+  }
+
+  @Post('observations')
+  @ApiOperation({ summary: 'Crear observación para un participante — cambia su estado a OBSERVADO y crea historial' })
+  @ApiCreatedResponse({ type: ObservationResponseDto })
+  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
+  @ApiNotFoundResponse({ description: 'Participante no encontrado.' })
+  addObservation(@Body() dto: CreateObservationDto) {
+    return this.createObservation.execute(dto);
   }
 
   @Patch('change-status')

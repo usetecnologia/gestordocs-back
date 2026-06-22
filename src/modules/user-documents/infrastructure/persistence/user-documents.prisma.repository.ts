@@ -42,8 +42,9 @@ function toDocInfo(d: {
   type: string;
   formats: string | null;
   instructions: string;
+  required: boolean;
 }): UserDocumentDocumentInfo {
-  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions };
+  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions, required: d.required };
 }
 
 function mapUserDocToHistory(ud: UserDocRow, personMap: Map<string, string>): UserDocumentWithHistory {
@@ -128,8 +129,20 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     }));
   }
 
+  async findUserSponsorCode(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { sponsor: { select: { code: true } } },
+    });
+    return user?.sponsor?.code ?? null;
+  }
+
   async findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
-    const where: Record<string, unknown> = { userId, statusDocument: true };
+    const where: Record<string, unknown> = {
+      userId,
+      statusDocument: true,
+      OR: [{ documentSponsorId: { not: null } }, { documentId: { not: null } }],
+    };
 
     if (filter === UserDocumentFilter.REQUIRED) {
       where['documentSponsors'] = { required: true };

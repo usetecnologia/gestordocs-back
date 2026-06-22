@@ -10,8 +10,27 @@ export const USER_INCLUDE = {
   optionProgram: { select: { id: true, name: true, shortName: true } },
 } as const;
 
+export const USER_DETAIL_INCLUDE = {
+  ...USER_INCLUDE,
+  userObservations: {
+    include: {
+      userObservationEtiquetas: {
+        include: { etiquetas: { select: { id: true, name: true } } },
+      },
+    },
+    orderBy: { createdAt: 'desc' as const },
+  },
+  userHistories: {
+    orderBy: { createdAt: 'desc' as const },
+  },
+} as const;
+
 export type PrismaUserFull = UserGetPayload<{
   include: typeof USER_INCLUDE;
+}>;
+
+export type PrismaUserDetail = UserGetPayload<{
+  include: typeof USER_DETAIL_INCLUDE;
 }>;
 
 export class UserMapper {
@@ -41,6 +60,58 @@ export class UserMapper {
       user.sponsor ?? null,
       user.program ?? null,
       user.optionProgram ?? null,
+    );
+  }
+
+  static toDetailDomain(
+    user: PrismaUserDetail,
+    person: PersonModel | null,
+    creatorPersonMap: Map<string, string> = new Map(),
+  ): User {
+    return new User(
+      user.id,
+      person?.firstname ?? '',
+      person?.middlename ?? null,
+      person?.lastfathername ?? '',
+      person?.lastmothername ?? null,
+      person?.birthdate ?? null,
+      person?.phone ?? null,
+      person?.avatar ?? null,
+      user.username,
+      user.email,
+      user.password,
+      user.roleId,
+      user.countryId,
+      user.sponsorId,
+      user.programId,
+      user.optionProgramId,
+      user.status as unknown as UserStatus,
+      user.createdAt,
+      user.updatedAt,
+      user.role,
+      user.country ?? null,
+      user.sponsor ?? null,
+      user.program ?? null,
+      user.optionProgram ?? null,
+      user.userObservations.map((obs) => ({
+        id: obs.id,
+        observation: obs.observation,
+        status: obs.status,
+        endDate: obs.endDate,
+        createdAt: obs.createdAt,
+        updatedAt: obs.updatedAt,
+        createdById: obs.createdById,
+        createdBy: obs.createdById && creatorPersonMap.has(obs.createdById)
+          ? { id: obs.createdById, fullName: creatorPersonMap.get(obs.createdById)! }
+          : null,
+        etiquetas: obs.userObservationEtiquetas.map((e) => e.etiquetas),
+      })),
+      user.userHistories.map((h) => ({
+        id: h.id,
+        status: h.status as string,
+        createdAt: h.createdAt,
+        updatedAt: h.updatedAt,
+      })),
     );
   }
 }

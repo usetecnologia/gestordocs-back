@@ -6,9 +6,11 @@ import {
   UserFilters,
   CreateUserData,
   UpdateUserData,
+  CreateObservationData,
+  ObservationResult,
 } from '../../domain/user.repository';
 import { User } from '../../domain/user.entity';
-import { UserMapper, USER_INCLUDE, PrismaUserFull } from './user.mapper';
+import { UserMapper, USER_INCLUDE, USER_DETAIL_INCLUDE, PrismaUserFull, PrismaUserDetail } from './user.mapper';
 import type { PersonModel } from 'prisma/generated/prisma/models';
 
 const PERSON_FIELD_KEYS = [
@@ -89,11 +91,29 @@ export class UserPrismaRepository implements IUserRepository {
 
   async findById(id: string): Promise<User | null> {
     const [userRaw, person] = await this.prisma.$transaction([
-      this.prisma.user.findUnique({ where: { id }, include: USER_INCLUDE }),
+      this.prisma.user.findUnique({ where: { id }, include: USER_DETAIL_INCLUDE }),
       this.prisma.person.findUnique({ where: { id } }),
     ]);
     if (!userRaw) return null;
-    return UserMapper.toDomain(userRaw as PrismaUserFull, person as PersonModel | null);
+
+    const u = userRaw as PrismaUserDetail;
+    const creatorIds = [...new Set(
+      u.userObservations.map((obs) => obs.createdById).filter((cid): cid is string => cid !== null),
+    )];
+    const creatorPersons = creatorIds.length
+      ? await this.prisma.person.findMany({
+          where: { id: { in: creatorIds } },
+          select: { id: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+        })
+      : [];
+    const creatorPersonMap = new Map<string, string>(
+      creatorPersons.map((p) => [
+        p.id,
+        [p.firstname, p.middlename, p.lastfathername, p.lastmothername].filter(Boolean).join(' '),
+      ]),
+    );
+
+    return UserMapper.toDetailDomain(u, person as PersonModel | null, creatorPersonMap);
   }
 
   async create(data: CreateUserData): Promise<User> {
@@ -155,6 +175,66 @@ export class UserPrismaRepository implements IUserRepository {
   async addStatusHistory(userId: string, status: string): Promise<void> {
     await this.prisma.userHistoryStatus.create({
       data: { userId, status: status as never },
+    });
+  }
+
+  async createObservation({ participantId, observation, createdById, etiquetaIds }: CreateObservationData): Promise<ObservationResult> {
+    return this.prisma.$transaction(async (tx) => {
+      const obs = await tx.userObservations.create({
+        data: {
+          userId: participantId,
+          observation,
+          createdById,
+          ...(etiquetaIds?.length && {
+            userObservationEtiquetas: {
+              create: etiquetaIds.map((etiquetaId) => ({ etiquetaId })),
+            },
+          }),
+        },
+        include: {
+          userObservationEtiquetas: {
+            include: { etiquetas: { select: { id: true, name: true } } },
+          },
+        },
+      });
+
+      await tx.user.update({
+        where: { id: participantId },
+        data: { status: 'OBSERVADO' as never },
+      });
+
+      await tx.userHistoryStatus.create({
+        data: { userId: participantId, status: 'OBSERVADO' as never },
+      });
+
+      const creatorPerson = createdById
+        ? await tx.person.findUnique({
+            where: { id: createdById },
+            select: { id: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+          })
+        : null;
+
+      const createdBy = creatorPerson
+        ? {
+            id: creatorPerson.id,
+            fullName: [creatorPerson.firstname, creatorPerson.middlename, creatorPerson.lastfathername, creatorPerson.lastmothername]
+              .filter(Boolean)
+              .join(' '),
+          }
+        : null;
+
+      return {
+        id: obs.id,
+        userId: obs.userId,
+        observation: obs.observation,
+        status: obs.status,
+        endDate: obs.endDate,
+        createdAt: obs.createdAt,
+        updatedAt: obs.updatedAt,
+        createdById: obs.createdById,
+        createdBy,
+        etiquetas: obs.userObservationEtiquetas.map((e) => e.etiquetas),
+      };
     });
   }
 }

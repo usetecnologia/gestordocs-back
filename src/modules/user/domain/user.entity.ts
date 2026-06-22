@@ -1,5 +1,24 @@
 import { UserStatus } from './user.enums';
 
+export interface UserObservation {
+  id: string;
+  observation: string;
+  status: boolean;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  createdById: string | null;
+  createdBy: { id: string; fullName: string } | null;
+  etiquetas: { id: string; name: string }[];
+}
+
+export interface UserHistoryStatusItem {
+  id: string;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export class User {
   constructor(
     public readonly id: string,
@@ -26,5 +45,7 @@ export class User {
     public readonly sponsor?: { id: string; name: string; code: string } | null,
     public readonly program?: { id: string; name: string; code: string } | null,
     public readonly optionProgram?: { id: string; name: string; shortName: string } | null,
+    public readonly observations?: UserObservation[] | null,
+    public readonly historyStatus?: UserHistoryStatusItem[] | null,
   ) {}
 }

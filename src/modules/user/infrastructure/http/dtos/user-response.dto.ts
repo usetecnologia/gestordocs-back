@@ -19,6 +19,35 @@ class OptionProgramRefDto {
   @ApiProperty() shortName!: string;
 }
 
+class EtiquetaRefDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+}
+
+class ObservationCreatedByDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() fullName!: string;
+}
+
+class UserObservationDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() observation!: string;
+  @ApiProperty() status!: boolean;
+  @ApiPropertyOptional({ nullable: true }) endDate!: Date | null;
+  @ApiProperty() createdAt!: Date;
+  @ApiProperty() updatedAt!: Date;
+  @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
+  @ApiPropertyOptional({ type: ObservationCreatedByDto, nullable: true }) createdBy!: ObservationCreatedByDto | null;
+  @ApiProperty({ type: [EtiquetaRefDto] }) etiquetas!: EtiquetaRefDto[];
+}
+
+class UserHistoryStatusItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ enum: UserStatus }) status!: string;
+  @ApiProperty() createdAt!: Date;
+  @ApiProperty() updatedAt!: Date;
+}
+
 export class UserResponseDto {
   @ApiProperty({ example: 'uuid-del-usuario' }) id!: string;
   @ApiProperty({ example: 'John' }) firstname!: string;
@@ -43,4 +72,6 @@ export class UserResponseDto {
   @ApiPropertyOptional({ type: SimpleRefDto }) sponsor?: SimpleRefDto | null;
   @ApiPropertyOptional({ type: SimpleRefDto }) program?: SimpleRefDto | null;
   @ApiPropertyOptional({ type: OptionProgramRefDto }) optionProgram?: OptionProgramRefDto | null;
+  @ApiPropertyOptional({ type: [UserObservationDto] }) observations?: UserObservationDto[] | null;
+  @ApiPropertyOptional({ type: [UserHistoryStatusItemDto] }) historyStatus?: UserHistoryStatusItemDto[] | null;
 }

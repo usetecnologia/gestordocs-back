@@ -33,6 +33,7 @@ export interface UserDocumentDocumentInfo {
   type: string;
   formats: string | null;
   instructions: string;
+  required: boolean;
 }
 
 export interface UserDocumentWithHistory {
@@ -84,6 +85,7 @@ export enum UserDocumentFilter {
 
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
+  findUserSponsorCode(userId: string): Promise<string | null>;
   findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]>;
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;

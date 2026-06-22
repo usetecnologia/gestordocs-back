@@ -1,6 +1,26 @@
 import type { User } from './user.entity';
 import type { UserStatus } from './user.enums';
 
+export interface CreateObservationData {
+  participantId: string;
+  observation: string;
+  createdById: string;
+  etiquetaIds?: string[];
+}
+
+export interface ObservationResult {
+  id: string;
+  userId: string;
+  observation: string;
+  status: boolean;
+  endDate: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  createdById: string | null;
+  createdBy: { id: string; fullName: string } | null;
+  etiquetas: { id: string; name: string }[];
+}
+
 export interface UserFilters {
   page: number;
   limit: number;
@@ -57,6 +77,7 @@ export interface IUserRepository {
   update(id: string, data: UpdateUserData): Promise<User>;
   delete(id: string): Promise<void>;
   addStatusHistory(userId: string, status: UserStatus): Promise<void>;
+  createObservation(data: CreateObservationData): Promise<ObservationResult>;
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
