@@ -17,6 +17,8 @@ export class Document {
     public type: TypeDocument,
     public formats: string | null,
     public showHired: TypeHired,
+    public siglasCode: string | null,
+    public order: number | null,
     public instructions: string,
     public required: boolean,
     public status: boolean,

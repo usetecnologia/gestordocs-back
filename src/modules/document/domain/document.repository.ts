@@ -22,6 +22,8 @@ export interface CreateDocumentData {
   type: TypeDocument;
   formats?: string;
   showHired: TypeHired;
+  siglasCode?: string;
+  order?: number;
   instructions: string;
   required?: boolean;
   status?: boolean;
@@ -35,6 +37,8 @@ export interface UpdateDocumentData {
   type?: TypeDocument;
   formats?: string;
   showHired?: TypeHired;
+  siglasCode?: string;
+  order?: number;
   instructions?: string;
   required?: boolean;
   status?: boolean;
@@ -48,6 +52,7 @@ export interface IDocumentRepository {
   findById(id: string): Promise<Document | null>;
   create(data: CreateDocumentData): Promise<Document>;
   update(id: string, data: UpdateDocumentData): Promise<Document>;
+  updateOrder(id: string, order: number | null): Promise<Document | null>;
   delete(id: string): Promise<void>;
 }
 

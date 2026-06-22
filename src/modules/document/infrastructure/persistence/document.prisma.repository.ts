@@ -30,7 +30,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         include: DOCUMENT_FULL_INCLUDE,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
       }),
       this.prisma.documents.count({ where }),
     ]);
@@ -182,6 +182,14 @@ export class DocumentPrismaRepository implements IDocumentRepository {
     });
 
     return (await this.findById(id))!;
+  }
+
+  async updateOrder(id: string, order: number | null): Promise<Document | null> {
+    const affected: number = await this.prisma.$executeRaw`
+      UPDATE \`documents\` SET \`order\` = ${order}, \`updated_at\` = NOW() WHERE \`id\` = ${id}
+    `;
+    if (affected === 0) return null;
+    return this.findById(id);
   }
 
   async delete(id: string): Promise<void> {

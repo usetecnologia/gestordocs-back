@@ -32,9 +32,11 @@ import { FindAllDocumentUseCase } from '../../application/use-cases/find-all-doc
 import { FindOneDocumentUseCase } from '../../application/use-cases/find-one-document.use-case';
 import { FindPendingDocumentsUseCase } from '../../application/use-cases/find-pending-documents.use-case';
 import { UpdateDocumentUseCase } from '../../application/use-cases/update-document.use-case';
+import { UpdateDocumentOrderUseCase } from '../../application/use-cases/update-document-order.use-case';
 import { DeleteDocumentUseCase } from '../../application/use-cases/delete-document.use-case';
 import { CreateDocumentDto } from './dtos/create-document.dto';
 import { UpdateDocumentDto } from './dtos/update-document.dto';
+import { UpdateDocumentOrderDto } from './dtos/update-document-order.dto';
 import { DocumentResponseDto } from './dtos/document-response.dto';
 import { FindDocumentsQueryDto } from './dtos/find-documents-query.dto';
 
@@ -50,6 +52,7 @@ export class DocumentController {
     private readonly findOneDocument: FindOneDocumentUseCase,
     private readonly findPendingDocuments: FindPendingDocumentsUseCase,
     private readonly updateDocument: UpdateDocumentUseCase,
+    private readonly updateDocumentOrder: UpdateDocumentOrderUseCase,
     private readonly deleteDocument: DeleteDocumentUseCase,
   ) {}
 
@@ -117,6 +120,19 @@ export class DocumentController {
     @CurrentUser() user: JwtPayload,
   ) {
     return this.updateDocument.execute(id, dto, user);
+  }
+
+  @Patch(':id/order')
+  @ApiOperation({ summary: 'Actualizar orden del documento' })
+  @ApiParam({ name: 'id', description: 'UUID del documento' })
+  @ApiOkResponse({ type: DocumentResponseDto })
+  @ApiNotFoundResponse({ description: 'Documento no encontrado.' })
+  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
+  updateOrder(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateDocumentOrderDto,
+  ) {
+    return this.updateDocumentOrder.execute(id, dto.order ?? null);
   }
 
   @Delete(':id')

@@ -3,9 +3,11 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsInt,
   IsOptional,
   IsString,
   MaxLength,
+  Min,
   MinLength,
   ValidateNested,
 } from 'class-validator';
@@ -43,6 +45,12 @@ export class UpdateDocumentDto {
   @IsEnum(TypeHired)
   showHired?: TypeHired;
 
+  @ApiPropertyOptional({ example: 'PAS', description: 'Código de siglas del documento' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  siglasCode?: string;
+
   @ApiPropertyOptional({ example: 'El documento debe estar vigente y en buen estado.' })
   @IsOptional()
   @IsString()
@@ -58,6 +66,12 @@ export class UpdateDocumentDto {
   @IsOptional()
   @IsBoolean()
   status?: boolean;
+
+  @ApiPropertyOptional({ example: 1, description: 'Orden de presentación del documento' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
 
   @ApiPropertyOptional({
     type: [DocumentSponsorInputDto],

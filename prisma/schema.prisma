@@ -230,6 +230,8 @@ model Documents {
   formats      String?      @db.VarChar(500)
   showHired    TypeHired    @map("show_hired")
   title        String?
+  order        Int?
+  siglasCode   String?
   instructions String       @db.Text
   required     Boolean      @default(false)
   status       Boolean      @default(true)

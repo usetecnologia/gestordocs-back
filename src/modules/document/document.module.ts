@@ -10,6 +10,7 @@ import { FindAllDocumentUseCase } from './application/use-cases/find-all-documen
 import { FindOneDocumentUseCase } from './application/use-cases/find-one-document.use-case';
 import { FindPendingDocumentsUseCase } from './application/use-cases/find-pending-documents.use-case';
 import { UpdateDocumentUseCase } from './application/use-cases/update-document.use-case';
+import { UpdateDocumentOrderUseCase } from './application/use-cases/update-document-order.use-case';
 import { DeleteDocumentUseCase } from './application/use-cases/delete-document.use-case';
 
 const useCases = [
@@ -18,6 +19,7 @@ const useCases = [
   FindOneDocumentUseCase,
   FindPendingDocumentsUseCase,
   UpdateDocumentUseCase,
+  UpdateDocumentOrderUseCase,
   DeleteDocumentUseCase,
 ];
 

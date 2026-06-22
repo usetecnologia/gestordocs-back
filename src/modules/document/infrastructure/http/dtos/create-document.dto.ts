@@ -61,6 +61,12 @@ export class CreateDocumentDto {
   @IsEnum(TypeHired)
   showHired!: TypeHired;
 
+  @ApiPropertyOptional({ example: 'PAS', description: 'Código de siglas del documento' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  siglasCode?: string;
+
   @ApiProperty({ example: 'El documento debe estar vigente y en buen estado.' })
   @IsString()
   @MinLength(5)
@@ -75,6 +81,12 @@ export class CreateDocumentDto {
   @IsOptional()
   @IsBoolean()
   status?: boolean;
+
+  @ApiPropertyOptional({ example: 1, description: 'Orden de presentación del documento' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
 
   @ApiPropertyOptional({
     type: [DocumentSponsorInputDto],

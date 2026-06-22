@@ -29,7 +29,9 @@ export class DocumentResponseDto {
   @ApiProperty({ enum: TypeDocument }) type!: TypeDocument;
   @ApiPropertyOptional({ example: 'pdf,jpg,png' }) formats!: string | null;
   @ApiProperty({ enum: TypeHired }) showHired!: TypeHired;
+  @ApiPropertyOptional({ example: 'PAS' }) siglasCode!: string | null;
   @ApiProperty({ example: 'El documento debe estar vigente.' }) instructions!: string;
+  @ApiPropertyOptional({ example: 1 }) order!: number | null;
   @ApiProperty({ example: false }) required!: boolean;
   @ApiProperty({ example: true }) status!: boolean;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) createdById!: string | null;

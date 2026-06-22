@@ -33,6 +33,8 @@ export class DocumentMapper {
       raw.type as unknown as TypeDocument,
       raw.formats,
       raw.showHired as unknown as TypeHired,
+      raw.siglasCode,
+      raw.order,
       raw.instructions,
       raw.required,
       raw.status,
