@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
   UseGuards,
   Query,
   ParseUUIDPipe,
@@ -18,7 +16,6 @@ import {
   ApiOperation,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
@@ -94,11 +91,11 @@ export class CountryController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar país' })
-  @ApiNoContentResponse({ description: 'País eliminado.' })
+  @ApiOkResponse({ schema: { example: { message: 'País eliminado correctamente.' } } })
   @ApiNotFoundResponse({ description: 'País no encontrado.' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.deleteCountry.execute(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.deleteCountry.execute(id);
+    return { message: 'País eliminado correctamente.' };
   }
 }

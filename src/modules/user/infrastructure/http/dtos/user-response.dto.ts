@@ -41,9 +41,16 @@ class UserObservationDto {
   @ApiProperty({ type: [EtiquetaRefDto] }) etiquetas!: EtiquetaRefDto[];
 }
 
+class HistoryCreatedByDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() fullName!: string;
+}
+
 class UserHistoryStatusItemDto {
   @ApiProperty() id!: string;
   @ApiProperty({ enum: UserStatus }) status!: string;
+  @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
+  @ApiPropertyOptional({ type: HistoryCreatedByDto, nullable: true }) createdBy!: HistoryCreatedByDto | null;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

@@ -30,7 +30,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         include: DOCUMENT_FULL_INCLUDE,
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+        orderBy: [{ order: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
       }),
       this.prisma.documents.count({ where }),
     ]);

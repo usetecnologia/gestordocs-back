@@ -21,7 +21,7 @@ export class OptionProgramMapper {
       raw.shortDatabase,
       raw.countryId,
       raw.programId,
-      raw.sponsorId,
+      raw.sponsorId ?? null,
       raw.status,
       raw.hideJobFair,
       raw.createAt,

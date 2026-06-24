@@ -242,14 +242,18 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   async countRequiredDocs(userId: string): Promise<RequiredDocsCount> {
     const [totalRequired, submittedRequired] = await this.prisma.$transaction([
       this.prisma.userDocuments.count({
-        where: { userId, statusDocument: true, documentSponsors: { required: true } },
+        where: {
+          userId,
+          statusDocument: true,
+          documentSponsors: { required: true, document: { type: 'DOCUMENT' } },
+        },
       }),
       this.prisma.userDocuments.count({
         where: {
           userId,
           statusDocument: true,
           status: $Enums.DocumentSponsorStatus.SUBIDO,
-          documentSponsors: { required: true },
+          documentSponsors: { required: true, document: { type: 'DOCUMENT' } },
         },
       }),
     ]);

@@ -1,10 +1,10 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete,
-  HttpCode, HttpStatus, UseGuards, Query, ParseUUIDPipe,
+  UseGuards, Query, ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags, ApiBearerAuth, ApiOperation,
-  ApiCreatedResponse, ApiOkResponse, ApiNoContentResponse,
+  ApiCreatedResponse, ApiOkResponse,
   ApiNotFoundResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiConflictResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -77,11 +77,11 @@ export class RoleController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar rol' })
-  @ApiNoContentResponse({ description: 'Rol eliminado.' })
+  @ApiOkResponse({ schema: { example: { message: 'Rol eliminado correctamente.' } } })
   @ApiNotFoundResponse({ description: 'Rol no encontrado.' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.deleteRole.execute(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.deleteRole.execute(id);
+    return { message: 'Rol eliminado correctamente.' };
   }
 }

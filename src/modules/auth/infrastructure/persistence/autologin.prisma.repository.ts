@@ -100,7 +100,7 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
     name: string,
     countryId: string,
     programId: string,
-    sponsorId: string,
+    sponsorId: string | null,
   ): Promise<{ id: string }> {
     const existing = await this.prisma.optionProgram.findFirst({
       where: { name },
@@ -116,7 +116,7 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
         shortDatabase: shortName,
         countryId,
         programId,
-        sponsorId,
+        sponsorId: sponsorId ?? undefined,
         status: true,
         hideJobFair: false,
       },

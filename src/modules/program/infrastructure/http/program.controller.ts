@@ -1,10 +1,10 @@
 import {
   Controller, Get, Post, Body, Patch, Param, Delete,
-  HttpCode, HttpStatus, UseGuards, Query, ParseUUIDPipe,
+  UseGuards, Query, ParseUUIDPipe,
 } from '@nestjs/common';
 import {
   ApiTags, ApiBearerAuth, ApiOperation,
-  ApiCreatedResponse, ApiOkResponse, ApiNoContentResponse,
+  ApiCreatedResponse, ApiOkResponse,
   ApiNotFoundResponse, ApiBadRequestResponse, ApiUnauthorizedResponse, ApiConflictResponse,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -77,11 +77,11 @@ export class ProgramController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar programa' })
-  @ApiNoContentResponse({ description: 'Programa eliminado.' })
+  @ApiOkResponse({ schema: { example: { message: 'Programa eliminado correctamente.' } } })
   @ApiNotFoundResponse({ description: 'Programa no encontrado.' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.deleteProgram.execute(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.deleteProgram.execute(id);
+    return { message: 'Programa eliminado correctamente.' };
   }
 }

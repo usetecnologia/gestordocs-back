@@ -31,7 +31,9 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { ParseImagePipe } from '@common/pipes/parse-image.pipe';
+import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import {
   PaginationResultDto,
   toPaginationResult,
@@ -46,6 +48,7 @@ import { UploadAvatarUseCase } from '../../application/use-cases/upload-avatar.u
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
 import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user-status.use-case';
 import { CreateObservationUseCase } from '../../application/use-cases/create-observation.use-case';
+import { CloseObservationUseCase } from '../../application/use-cases/close-observation.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
@@ -76,6 +79,7 @@ export class UserController {
     private readonly changePassword: ChangePasswordUseCase,
     private readonly changeUserStatus: ChangeUserStatusUseCase,
     private readonly createObservation: CreateObservationUseCase,
+    private readonly closeObservation: CloseObservationUseCase,
   ) {}
 
   @Post()
@@ -170,6 +174,16 @@ export class UserController {
     return this.createObservation.execute(dto);
   }
 
+  @Patch('observations/:id/close')
+  @ApiOperation({ summary: 'Cerrar observación — pasa al usuario a PENDIENTE_REVISAR y registra historial' })
+  @ApiParam({ name: 'id', description: 'UUID de la observación' })
+  @ApiOkResponse({ type: ChangePasswordResponseDto })
+  @ApiNotFoundResponse({ description: 'Observación no encontrada.' })
+  async closeObservationHandler(@CurrentUser() user: JwtPayload, @Param('id', ParseUUIDPipe) id: string) {
+    await this.closeObservation.execute(id, user.sub);
+    return { message: 'Observación cerrada correctamente.' };
+  }
+
   @Patch('change-status')
   @ApiOperation({
     summary: 'Cambiar el estado del usuario validando el estado actual',
@@ -181,8 +195,8 @@ export class UserController {
     description:
       'El estado actual enviado no coincide con el estado registrado.',
   })
-  changeStatus(@Body() dto: ChangeUserStatusDto) {
-    return this.changeUserStatus.execute(dto);
+  changeStatus(@CurrentUser() user: JwtPayload, @Body() dto: ChangeUserStatusDto) {
+    return this.changeUserStatus.execute(dto, user.sub);
   }
 
   @Get(':id')
@@ -204,12 +218,12 @@ export class UserController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar usuario' })
   @ApiParam({ name: 'id', description: 'UUID del usuario' })
-  @ApiNoContentResponse({ description: 'Usuario eliminado.' })
+  @ApiOkResponse({ type: ChangePasswordResponseDto })
   @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.deleteUser.execute(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.deleteUser.execute(id);
+    return { message: 'Usuario eliminado correctamente.' };
   }
 }

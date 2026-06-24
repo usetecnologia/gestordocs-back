@@ -14,6 +14,13 @@ import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/us
 const WORKUSE_USER_URL = 'https://secure.workuse.com/api/user/user.php';
 const DEFAULT_PASSWORD = 'password26';
 
+const EMPTY_SPONSOR_VALUES = new Set(['', '&NBSP;', '_NBSP_']);
+
+function normalizeSponsor(value: string): string | null {
+  const trimmed = value.trim().toUpperCase();
+  return EMPTY_SPONSOR_VALUES.has(trimmed) ? null : trimmed;
+}
+
 interface WorkuseResponse {
   valid: boolean;
   firstname: string;
@@ -46,11 +53,13 @@ export class AutoLoginUseCase {
     }
 
     const program = data.program.trim().toUpperCase();
-    const sponsor = data.sponsor.trim().toUpperCase();
+    const sponsor = normalizeSponsor(data.sponsor);
     const optionPrograma = data.optionPrograma.trim().toUpperCase();
 
     const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(program);
-    const { id: sponsorId } = await this.autoLoginRepo.findOrCreateSponsor(sponsor);
+    const sponsorId = sponsor
+      ? (await this.autoLoginRepo.findOrCreateSponsor(sponsor)).id
+      : null;
     const { id: optionProgramId } = await this.autoLoginRepo.findOrCreateOptionProgram(
       optionPrograma,
       country.id,

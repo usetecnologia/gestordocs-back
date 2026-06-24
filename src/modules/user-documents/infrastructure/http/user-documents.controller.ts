@@ -71,11 +71,12 @@ export class UserDocumentsController {
   @ApiOperation({ summary: 'Aceptar un documento — cambia estado a REVISADO' })
   @ApiOkResponse({ description: 'Documento aceptado correctamente.' })
   @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
-  aceptarDocument(
+  async aceptarDocument(
     @Body() dto: AceptarDocumentDto,
     @CurrentUser() user: JwtPayload,
-  ): Promise<void> {
-    return this.aceptarDocumentUseCase.execute(dto.userDocumentId, user.sub);
+  ) {
+    await this.aceptarDocumentUseCase.execute(dto.userDocumentId, user.sub);
+    return { message: 'Documento aceptado correctamente.' };
   }
 
   @Post('observar-document')
@@ -83,11 +84,12 @@ export class UserDocumentsController {
   @ApiOperation({ summary: 'Observar un documento — cambia estado a OBSERVADO y registra observación con etiquetas' })
   @ApiOkResponse({ description: 'Documento observado correctamente.' })
   @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
-  observarDocument(
+  async observarDocument(
     @Body() dto: ObservarDocumentDto,
     @CurrentUser() user: JwtPayload,
-  ): Promise<void> {
-    return this.observarDocumentUseCase.execute(dto, user.sub);
+  ) {
+    await this.observarDocumentUseCase.execute(dto, user.sub);
+    return { message: 'Documento observado correctamente.' };
   }
 
   @Post('upload-file-document')
@@ -109,10 +111,11 @@ export class UserDocumentsController {
   @ApiOkResponse({ description: 'File uploaded and history created successfully' })
   @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
   @ApiConflictResponse({ description: 'Los documentos del usuario están en revisión.' })
-  uploadFileDocument(
+  async uploadFileDocument(
     @UploadedFile(new MaxFileSizePipe()) file: MulterFile,
     @Body() dto: UploadFileDocumentDto,
-  ): Promise<void> {
-    return this.uploadFileDocumentUseCase.execute(file, dto);
+  ) {
+    await this.uploadFileDocumentUseCase.execute(file, dto);
+    return { message: 'Archivo subido correctamente.' };
   }
 }

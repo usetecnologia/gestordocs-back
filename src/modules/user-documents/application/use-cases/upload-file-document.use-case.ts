@@ -40,6 +40,6 @@ export class UploadFileDocumentUseCase {
         ? 'PENDIENTE_REVISAR'
         : 'DOCUMENTOS_INCOMPLETOS';
 
-    await this.userStatusPort.updateStatus(userDoc.userId, newUserStatus);
+    await this.userStatusPort.updateStatus(userDoc.userId, newUserStatus, dto.userCreatedId ?? undefined);
   }
 }

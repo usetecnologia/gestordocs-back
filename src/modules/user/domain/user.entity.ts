@@ -15,6 +15,8 @@ export interface UserObservation {
 export interface UserHistoryStatusItem {
   id: string;
   status: string;
+  createdById: string | null;
+  createdBy: { id: string; fullName: string } | null;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -96,7 +96,7 @@ model OptionProgram {
   shortDatabase String
   countryId   String
   programId String
-  sponsorId String
+  sponsorId String?
   status      Boolean  @default(true)
   hideJobFair Boolean
   createAt DateTime @default(now())
@@ -200,6 +200,7 @@ model UserHistoryStatus {
   id            String    @id @default(uuid()) @db.VarChar(36)
   userId        String
   status        UserStatus
+  createdById   String?   @map("created_by_id") @db.VarChar(36)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")
 

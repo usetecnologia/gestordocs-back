@@ -20,6 +20,7 @@ import { UploadAvatarUseCase } from './application/use-cases/upload-avatar.use-c
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
 import { ChangeUserStatusUseCase } from './application/use-cases/change-user-status.use-case';
 import { CreateObservationUseCase } from './application/use-cases/create-observation.use-case';
+import { CloseObservationUseCase } from './application/use-cases/close-observation.use-case';
 
 const useCases = [
   CreateUserUseCase,
@@ -32,6 +33,7 @@ const useCases = [
   ChangePasswordUseCase,
   ChangeUserStatusUseCase,
   CreateObservationUseCase,
+  CloseObservationUseCase,
 ];
 
 @Module({

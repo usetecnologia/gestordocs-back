@@ -6,8 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
   UseGuards,
   Query,
   ParseUUIDPipe,
@@ -20,7 +18,6 @@ import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiOkResponse,
-  ApiNoContentResponse,
   ApiUnauthorizedResponse,
   ApiParam,
 } from '@nestjs/swagger';
@@ -90,12 +87,12 @@ export class OptionProgramController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar opción de programa' })
   @ApiParam({ name: 'id', description: 'UUID de la opción de programa' })
-  @ApiNoContentResponse({ description: 'Opción de programa eliminada.' })
+  @ApiOkResponse({ schema: { example: { message: 'Opción de programa eliminada correctamente.' } } })
   @ApiNotFoundResponse({ description: 'Opción de programa no encontrada.' })
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.deleteOptionProgram.execute(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    await this.deleteOptionProgram.execute(id);
+    return { message: 'Opción de programa eliminada correctamente.' };
   }
 }

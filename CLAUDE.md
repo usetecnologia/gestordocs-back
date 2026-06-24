@@ -1450,3 +1450,15 @@ npm install -D @nestjs/cli typescript ts-node @types/node @types/express
 28. **`dotenv/config`** se importa en `src/config/envs.ts` para cargar el `.env` antes de Zod.
 29. **Interfaces de datos en el repositorio de dominio** (`CreateFeatureData`, `UpdateFeatureData`, `FeatureFilters`) — no en los use cases ni en la infraestructura.
 30. **Puertos secundarios en el dominio** (`IPasswordHasher`, `IPasswordVerifier`, `IAuthTokenStore`) cuando el feature necesita servicios externos distintos al repositorio.
+31. **Todo endpoint POST, PATCH y DELETE siempre devuelve `{ message: string }`** — nunca `void` ni `204 No Content`. Usar `async/await` en el método y retornar el mensaje tras ejecutar el use case. Documentar con `@ApiOkResponse`. No usar `@HttpCode(HttpStatus.NO_CONTENT)` en ningún caso. Los GET no aplican esta regla porque ya retornan datos. Ejemplo:
+    ```typescript
+    @Delete(':id')
+    @ApiOperation({ summary: 'Eliminar recurso' })
+    @ApiOkResponse({ schema: { example: { message: 'Recurso eliminado correctamente.' } } })
+    @ApiNotFoundResponse({ description: 'Recurso no encontrado.' })
+    async remove(@Param('id', ParseUUIDPipe) id: string) {
+      await this.deleteUseCase.execute(id);
+      return { message: 'Recurso eliminado correctamente.' };
+    }
+    ```
+    El `ResponseInterceptor` envuelve la respuesta en `{ success: true, data: { message }, timestamp }` automáticamente.

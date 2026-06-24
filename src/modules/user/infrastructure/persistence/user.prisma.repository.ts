@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import {
@@ -50,6 +50,24 @@ export class UserPrismaRepository implements IUserRepository {
     optionProgramId,
     search,
   }: UserFilters) {
+    let searchIds: string[] | undefined;
+    if (search) {
+      const term = `%${search.toLowerCase()}%`;
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>`
+        SELECT DISTINCT u.id
+        FROM \`User\` u
+        LEFT JOIN \`Person\` p ON p.id = u.id
+        WHERE LOWER(u.email) LIKE ${term}
+           OR LOWER(u.username) LIKE ${term}
+           OR LOWER(p.dni) LIKE ${term}
+           OR LOWER(p.firstname) LIKE ${term}
+           OR LOWER(p.middlename) LIKE ${term}
+           OR LOWER(p.lastfathername) LIKE ${term}
+           OR LOWER(p.lastmothername) LIKE ${term}
+      `;
+      searchIds = rows.map((r) => r.id);
+    }
+
     const where = {
       ...(status && { status }),
       ...(roleId && { roleId }),
@@ -57,12 +75,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...(sponsorId && { sponsorId }),
       ...(programId && { programId }),
       ...(optionProgramId && { optionProgramId }),
-      ...(search && {
-        OR: [
-          { email: { contains: search } },
-          { username: { contains: search } },
-        ],
-      }),
+      ...(searchIds !== undefined && { id: { in: searchIds } }),
     };
 
     const [usersRaw, total] = await this.prisma.$transaction([
@@ -97,9 +110,10 @@ export class UserPrismaRepository implements IUserRepository {
     if (!userRaw) return null;
 
     const u = userRaw as PrismaUserDetail;
-    const creatorIds = [...new Set(
-      u.userObservations.map((obs) => obs.createdById).filter((cid): cid is string => cid !== null),
-    )];
+    const creatorIds = [...new Set([
+      ...u.userObservations.map((obs) => obs.createdById),
+      ...u.userHistories.map((h) => h.createdById),
+    ].filter((cid): cid is string => cid !== null))];
     const creatorPersons = creatorIds.length
       ? await this.prisma.person.findMany({
           where: { id: { in: creatorIds } },
@@ -172,9 +186,9 @@ export class UserPrismaRepository implements IUserRepository {
     ]);
   }
 
-  async addStatusHistory(userId: string, status: string): Promise<void> {
+  async addStatusHistory(userId: string, status: string, createdById?: string): Promise<void> {
     await this.prisma.userHistoryStatus.create({
-      data: { userId, status: status as never },
+      data: { userId, status: status as never, createdById },
     });
   }
 
@@ -204,7 +218,7 @@ export class UserPrismaRepository implements IUserRepository {
       });
 
       await tx.userHistoryStatus.create({
-        data: { userId: participantId, status: 'OBSERVADO' as never },
+        data: { userId: participantId, status: 'OBSERVADO' as never, createdById },
       });
 
       const creatorPerson = createdById
@@ -236,5 +250,27 @@ export class UserPrismaRepository implements IUserRepository {
         etiquetas: obs.userObservationEtiquetas.map((e) => e.etiquetas),
       };
     });
+  }
+
+  async closeObservation(observationId: string, createdById?: string): Promise<void> {
+    const obs = await this.prisma.userObservations.findUnique({
+      where: { id: observationId },
+      select: { userId: true },
+    });
+    if (!obs) throw new NotFoundException(`Observación #${observationId} no encontrada.`);
+
+    await this.prisma.$transaction([
+      this.prisma.userObservations.update({
+        where: { id: observationId },
+        data: { endDate: new Date(), status: false },
+      }),
+      this.prisma.user.update({
+        where: { id: obs.userId },
+        data: { status: 'PENDIENTE_REVISAR' as never },
+      }),
+      this.prisma.userHistoryStatus.create({
+        data: { userId: obs.userId, status: 'PENDIENTE_REVISAR' as never, createdById },
+      }),
+    ]);
   }
 }

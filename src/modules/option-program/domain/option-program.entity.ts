@@ -7,7 +7,7 @@ export class OptionProgram {
     public shortDatabase: string,
     public countryId: string,
     public programId: string,
-    public sponsorId: string,
+    public sponsorId: string | null,
     public status: boolean,
     public hideJobFair: boolean,
     public readonly createdAt: Date,

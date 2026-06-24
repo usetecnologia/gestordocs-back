@@ -14,11 +14,9 @@ export class ChangeUserStatusUseCase {
     @Inject(USER_REPOSITORY) private readonly repo: IUserRepository,
   ) {}
 
-  async execute({
-    userId,
-    currentStatus,
-    newStatus,
-  }: ChangeUserStatusDto): Promise<User> {
+  async execute(dto: ChangeUserStatusDto, createdById?: string): Promise<User> {
+    const { userId, currentStatus, newStatus } = dto;
+
     const user = await this.repo.findById(userId);
     if (!user) throw new NotFoundException(`Usuario #${userId} no encontrado.`);
 
@@ -29,7 +27,7 @@ export class ChangeUserStatusUseCase {
     }
 
     const updated = await this.repo.update(userId, { status: newStatus });
-    await this.repo.addStatusHistory(userId, newStatus);
+    await this.repo.addStatusHistory(userId, newStatus, createdById);
     return updated;
   }
 }

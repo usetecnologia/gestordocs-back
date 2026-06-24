@@ -23,7 +23,7 @@ export interface IAutoLoginRepository {
     name: string,
     countryId: string,
     programId: string,
-    sponsorId: string,
+    sponsorId: string | null,
   ): Promise<{ id: string }>;
   upsertByDni(data: UpsertByDniData): Promise<AuthCredentials>;
   findDefaultRole(): Promise<{ id: string; name: string; code: string | null }>;

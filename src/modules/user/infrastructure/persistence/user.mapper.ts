@@ -109,6 +109,10 @@ export class UserMapper {
       user.userHistories.map((h) => ({
         id: h.id,
         status: h.status as string,
+        createdById: h.createdById ?? null,
+        createdBy: h.createdById && creatorPersonMap.has(h.createdById)
+          ? { id: h.createdById, fullName: creatorPersonMap.get(h.createdById)! }
+          : null,
         createdAt: h.createdAt,
         updatedAt: h.updatedAt,
       })),
