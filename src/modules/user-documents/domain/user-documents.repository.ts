@@ -34,6 +34,7 @@ export interface UserDocumentDocumentInfo {
   formats: string | null;
   instructions: string;
   required: boolean;
+  order: number | null;
 }
 
 export interface UserDocumentWithHistory {

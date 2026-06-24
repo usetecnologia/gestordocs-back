@@ -7,6 +7,7 @@ export class UserDocumentDocumentInfoDto {
   @ApiProperty() type!: string;
   @ApiProperty() instructions!: string;
   @ApiProperty() required!: boolean;
+  @ApiPropertyOptional({ nullable: true, example: 1 }) order!: number | null;
 }
 
 export class UserDocumentSponsorInfoDto {

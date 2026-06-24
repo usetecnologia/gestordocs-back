@@ -43,8 +43,9 @@ function toDocInfo(d: {
   formats: string | null;
   instructions: string;
   required: boolean;
+  order: number | null;
 }): UserDocumentDocumentInfo {
-  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions, required: d.required };
+  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions, required: d.required, order: d.order };
 }
 
 function mapUserDocToHistory(ud: UserDocRow, personMap: Map<string, string>): UserDocumentWithHistory {
@@ -145,7 +146,14 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     };
 
     if (filter === UserDocumentFilter.REQUIRED) {
-      where['documentSponsors'] = { required: true };
+      where['AND'] = [
+        {
+          OR: [
+            { documentSponsors: { required: true } },
+            { documentSponsorId: null, documents: { required: true } },
+          ],
+        },
+      ];
     } else if (filter === UserDocumentFilter.OBSERVED) {
       where['status'] = $Enums.DocumentSponsorStatus.OBSERVADO;
     }

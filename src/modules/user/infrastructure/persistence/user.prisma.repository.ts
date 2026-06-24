@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import { Prisma } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import {
   IUserRepository,
@@ -52,19 +53,27 @@ export class UserPrismaRepository implements IUserRepository {
   }: UserFilters) {
     let searchIds: string[] | undefined;
     if (search) {
-      const term = `%${search.toLowerCase()}%`;
-      const rows = await this.prisma.$queryRaw<{ id: string }[]>`
-        SELECT DISTINCT u.id
-        FROM \`User\` u
-        LEFT JOIN \`Person\` p ON p.id = u.id
-        WHERE LOWER(u.email) LIKE ${term}
-           OR LOWER(u.username) LIKE ${term}
-           OR LOWER(p.dni) LIKE ${term}
-           OR LOWER(p.firstname) LIKE ${term}
-           OR LOWER(p.middlename) LIKE ${term}
-           OR LOWER(p.lastfathername) LIKE ${term}
-           OR LOWER(p.lastmothername) LIKE ${term}
-      `;
+      const terms = search.split(/[\s+]+/).map((t) => t.trim()).filter(Boolean);
+      const conditions = terms.flatMap((t) => {
+        const like = `%${t.toLowerCase()}%`;
+        return [
+          Prisma.sql`LOWER(u.email) LIKE ${like}`,
+          Prisma.sql`LOWER(u.username) LIKE ${like}`,
+          Prisma.sql`LOWER(p.dni) LIKE ${like}`,
+          Prisma.sql`LOWER(p.firstname) LIKE ${like}`,
+          Prisma.sql`LOWER(p.middlename) LIKE ${like}`,
+          Prisma.sql`LOWER(p.lastfathername) LIKE ${like}`,
+          Prisma.sql`LOWER(p.lastmothername) LIKE ${like}`,
+        ];
+      });
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+        Prisma.sql`
+          SELECT DISTINCT u.id
+          FROM \`User\` u
+          LEFT JOIN \`Person\` p ON p.id = u.id
+          WHERE ${Prisma.join(conditions, ' OR ')}
+        `,
+      );
       searchIds = rows.map((r) => r.id);
     }
 
