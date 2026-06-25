@@ -40,6 +40,7 @@ import {
 } from '@common/dtos/pagination-result.dto';
 import { CreateUserUseCase } from '../../application/use-cases/create-user.use-case';
 import { FindAllUserUseCase } from '../../application/use-cases/find-all-user.use-case';
+import { FindAllStaffUseCase } from '../../application/use-cases/find-all-staff.use-case';
 import { FindOneUserUseCase } from '../../application/use-cases/find-one-user.use-case';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case';
 import { DeleteUserUseCase } from '../../application/use-cases/delete-user.use-case';
@@ -71,6 +72,7 @@ export class UserController {
   constructor(
     private readonly createUser: CreateUserUseCase,
     private readonly findAllUser: FindAllUserUseCase,
+    private readonly findAllStaff: FindAllStaffUseCase,
     private readonly findOneUser: FindOneUserUseCase,
     private readonly updateUser: UpdateUserUseCase,
     private readonly deleteUser: DeleteUserUseCase,
@@ -97,6 +99,21 @@ export class UserController {
     @Query() query: FindUsersQueryDto,
   ): Promise<PaginationResultDto<UserResponseDto>> {
     const result = await this.findAllUser.execute(query);
+    return toPaginationResult(
+      result.data as UserResponseDto[],
+      result.total,
+      query.page ?? 1,
+      query.limit ?? 20,
+    );
+  }
+
+  @Get('staff')
+  @ApiOperation({ summary: 'Listar staff (paginado) — excluye rol Participante' })
+  @ApiOkResponse({ type: PaginationResultDto })
+  async findAllStaffHandler(
+    @Query() query: FindUsersQueryDto,
+  ): Promise<PaginationResultDto<UserResponseDto>> {
+    const result = await this.findAllStaff.execute(query);
     return toPaginationResult(
       result.data as UserResponseDto[],
       result.total,

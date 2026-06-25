@@ -13,4 +13,5 @@ export enum UserStatus {
   DS2019_EMITIDO = 'DS2019_EMITIDO',
   RETIRADO = 'RETIRADO',
   ACTIVO = 'ACTIVO',
+  INACTIVO = 'INACTIVO',
 }

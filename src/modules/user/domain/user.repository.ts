@@ -72,6 +72,7 @@ export interface UpdateUserData {
 
 export interface IUserRepository {
   findAll(filters: UserFilters): Promise<{ data: User[]; total: number }>;
+  findAllStaff(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   findById(id: string): Promise<User | null>;
   create(data: CreateUserData): Promise<User>;
   update(id: string, data: UpdateUserData): Promise<User>;

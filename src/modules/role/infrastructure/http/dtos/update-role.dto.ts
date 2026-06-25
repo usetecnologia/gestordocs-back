@@ -24,4 +24,9 @@ export class UpdateRoleDto {
   @IsOptional()
   @IsBoolean()
   status?: boolean;
+
+  @ApiPropertyOptional({ type: Boolean, example: false, description: 'Indica si el rol es del sistema y no puede eliminarse' })
+  @IsOptional()
+  @IsBoolean()
+  isSystem?: boolean;
 }

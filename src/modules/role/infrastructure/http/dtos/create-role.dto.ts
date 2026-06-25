@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateRoleDto {
   @ApiProperty({ example: 'Administrador' })
@@ -18,4 +18,9 @@ export class CreateRoleDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiPropertyOptional({ type: Boolean, example: false, description: 'Indica si el rol es del sistema y no puede eliminarse' })
+  @IsOptional()
+  @IsBoolean()
+  isSystem?: boolean;
 }

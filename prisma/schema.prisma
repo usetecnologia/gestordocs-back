@@ -23,7 +23,7 @@ enum UserStatus {
   DS2019_EMITIDO
   RETIRADO
   ACTIVO
-
+  INACTIVO
   @@map("user_status")
 }
 

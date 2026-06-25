@@ -111,6 +111,78 @@ export class UserPrismaRepository implements IUserRepository {
     };
   }
 
+  async findAllStaff({
+    page,
+    limit,
+    status,
+    roleId,
+    countryId,
+    sponsorId,
+    programId,
+    optionProgramId,
+    search,
+  }: UserFilters) {
+    let searchIds: string[] | undefined;
+    if (search) {
+      const terms = search.split(/[\s+]+/).map((t) => t.trim()).filter(Boolean);
+      const conditions = terms.flatMap((t) => {
+        const like = `%${t.toLowerCase()}%`;
+        return [
+          Prisma.sql`LOWER(u.email) LIKE ${like}`,
+          Prisma.sql`LOWER(u.username) LIKE ${like}`,
+          Prisma.sql`LOWER(p.dni) LIKE ${like}`,
+          Prisma.sql`LOWER(p.firstname) LIKE ${like}`,
+          Prisma.sql`LOWER(p.middlename) LIKE ${like}`,
+          Prisma.sql`LOWER(p.lastfathername) LIKE ${like}`,
+          Prisma.sql`LOWER(p.lastmothername) LIKE ${like}`,
+        ];
+      });
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+        Prisma.sql`
+          SELECT DISTINCT u.id
+          FROM \`User\` u
+          LEFT JOIN \`Person\` p ON p.id = u.id
+          WHERE ${Prisma.join(conditions, ' OR ')}
+        `,
+      );
+      searchIds = rows.map((r) => r.id);
+    }
+
+    const where = {
+      role: { name: { not: 'Participante' } },
+      ...(status && { status }),
+      ...(roleId && { roleId }),
+      ...(countryId && { countryId }),
+      ...(sponsorId && { sponsorId }),
+      ...(programId && { programId }),
+      ...(optionProgramId && { optionProgramId }),
+      ...(searchIds !== undefined && { id: { in: searchIds } }),
+    };
+
+    const [usersRaw, total] = await this.prisma.$transaction([
+      this.prisma.user.findMany({
+        where,
+        include: USER_INCLUDE,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const users = usersRaw as PrismaUserFull[];
+    const userIds = users.map((u) => u.id);
+    const persons: PersonModel[] = userIds.length
+      ? await this.prisma.person.findMany({ where: { id: { in: userIds } } })
+      : [];
+    const personMap = new Map<string, PersonModel>(persons.map((p) => [p.id, p]));
+
+    return {
+      data: users.map((u) => UserMapper.toDomain(u, personMap.get(u.id) ?? null)),
+      total,
+    };
+  }
+
   async findById(id: string): Promise<User | null> {
     const [userRaw, person] = await this.prisma.$transaction([
       this.prisma.user.findUnique({ where: { id }, include: USER_DETAIL_INCLUDE }),

@@ -11,6 +11,7 @@ export interface CreateRoleData {
   name: string;
   code?: string;
   description?: string;
+  isSystem?: boolean;
 }
 
 export interface UpdateRoleData {
@@ -18,6 +19,7 @@ export interface UpdateRoleData {
   code?: string;
   description?: string;
   status?: boolean;
+  isSystem?: boolean;
 }
 
 export interface IRoleRepository {
