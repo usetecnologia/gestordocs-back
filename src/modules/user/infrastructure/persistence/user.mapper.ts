@@ -17,6 +17,9 @@ export const USER_DETAIL_INCLUDE = {
       userObservationEtiquetas: {
         include: { etiquetas: { select: { id: true, name: true } } },
       },
+      userObservationFiles: {
+        select: { id: true, file: true },
+      },
     },
     orderBy: { createdAt: 'desc' as const },
   },
@@ -105,6 +108,7 @@ export class UserMapper {
           ? { id: obs.createdById, fullName: creatorPersonMap.get(obs.createdById)! }
           : null,
         etiquetas: obs.userObservationEtiquetas.map((e) => e.etiquetas),
+        files: obs.userObservationFiles.map((f) => ({ id: f.id, file: f.file })),
       })),
       user.userHistories.map((h) => ({
         id: h.id,

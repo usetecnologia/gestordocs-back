@@ -36,6 +36,11 @@ export class UserDocumentHistoryCreatedByDto {
   @ApiProperty() fullName!: string;
 }
 
+export class UserDocumentObservationFileDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() file!: string;
+}
+
 export class UserDocumentHistoryItemDto {
   @ApiProperty() id!: string;
   @ApiProperty() userDocumentsId!: string;
@@ -43,6 +48,7 @@ export class UserDocumentHistoryItemDto {
   @ApiPropertyOptional({ nullable: true }) url!: string | null;
   @ApiPropertyOptional({ nullable: true }) observation!: string | null;
   @ApiProperty({ type: [UserDocumentEtiquetaDto] }) etiquetas!: UserDocumentEtiquetaDto[];
+  @ApiProperty({ type: [UserDocumentObservationFileDto] }) files!: UserDocumentObservationFileDto[];
   @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
   @ApiPropertyOptional({ type: UserDocumentHistoryCreatedByDto, nullable: true }) createdBy!: UserDocumentHistoryCreatedByDto | null;
   @ApiProperty() createdAt!: Date;

@@ -11,10 +11,11 @@ import {
   UseGuards,
   UseInterceptors,
   UploadedFile,
+  UploadedFiles,
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -62,6 +63,7 @@ import { ObservationResponseDto } from './dtos/observation-response.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
+
 
 @ApiTags('users')
 @ApiBearerAuth('access-token')
@@ -183,12 +185,30 @@ export class UserController {
   }
 
   @Post('observations')
+  @UseInterceptors(FilesInterceptor('files', 10))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Crear observación para un participante — cambia su estado a OBSERVADO y crea historial' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['participantId', 'createdById', 'observation'],
+      properties: {
+        participantId: { type: 'string', format: 'uuid', example: 'uuid-del-participante' },
+        createdById: { type: 'string', format: 'uuid', example: 'uuid-del-usuario-que-observa' },
+        observation: { type: 'string', example: 'El participante no ha completado los documentos.' },
+        etiquetaIds: { type: 'string', example: '["uuid-etiqueta-1","uuid-etiqueta-2"]', description: 'JSON string de UUIDs de etiquetas (opcional)' },
+        files: { type: 'array', items: { type: 'string', format: 'binary' }, description: 'Archivos adjuntos (opcional, máx. 10)' },
+      },
+    },
+  })
   @ApiCreatedResponse({ type: ObservationResponseDto })
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
   @ApiNotFoundResponse({ description: 'Participante no encontrado.' })
-  addObservation(@Body() dto: CreateObservationDto) {
-    return this.createObservation.execute(dto);
+  addObservation(
+    @Body() dto: CreateObservationDto,
+    @UploadedFiles() files?: MulterFile[],
+  ) {
+    return this.createObservation.execute(dto, files);
   }
 
   @Patch('observations/:id/close')

@@ -10,6 +10,11 @@ class ObservationCreatedByDto {
   @ApiProperty() fullName!: string;
 }
 
+class ObservationFileDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() file!: string;
+}
+
 export class ObservationResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty() userId!: string;
@@ -21,4 +26,5 @@ export class ObservationResponseDto {
   @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
   @ApiPropertyOptional({ type: ObservationCreatedByDto, nullable: true }) createdBy!: ObservationCreatedByDto | null;
   @ApiProperty({ type: [ObservationEtiquetaDto] }) etiquetas!: ObservationEtiquetaDto[];
+  @ApiProperty({ type: [ObservationFileDto] }) files!: ObservationFileDto[];
 }

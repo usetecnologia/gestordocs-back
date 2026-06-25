@@ -10,6 +10,7 @@ export interface UserObservation {
   createdById: string | null;
   createdBy: { id: string; fullName: string } | null;
   etiquetas: { id: string; name: string }[];
+  files: { id: string; file: string }[];
 }
 
 export interface UserHistoryStatusItem {

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsArray, IsString, IsUUID, MinLength } from 'class-validator';
 
 export class AceptarDocumentDto {
@@ -17,7 +18,18 @@ export class ObservarDocumentDto {
   @MinLength(1)
   observation!: string;
 
-  @ApiProperty({ example: ['uuid-etiqueta-1', 'uuid-etiqueta-2'], type: [String] })
+  @ApiProperty({
+    type: String,
+    example: '["uuid-etiqueta-1","uuid-etiqueta-2"]',
+    description: 'JSON string con array de UUIDs de etiquetas',
+  })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return value ? [value] : []; }
+    }
+    return [];
+  })
   @IsArray()
   @IsUUID('4', { each: true })
   etiquetaIds!: string[];

@@ -6,6 +6,7 @@ export interface CreateObservationData {
   observation: string;
   createdById: string;
   etiquetaIds?: string[];
+  files?: string[];
 }
 
 export interface ObservationResult {
@@ -19,6 +20,7 @@ export interface ObservationResult {
   createdById: string | null;
   createdBy: { id: string; fullName: string } | null;
   etiquetas: { id: string; name: string }[];
+  files: { id: string; file: string }[];
 }
 
 export interface UserFilters {

@@ -9,10 +9,11 @@ import {
   Post,
   Query,
   UploadedFile,
+  UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -26,10 +27,10 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { MulterFile } from '../../domain/multer-file.interface';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
-import { MulterFile } from '../../domain/multer-file.interface';
 import { UploadFileDocumentUseCase } from '../../application/use-cases/upload-file-document.use-case';
 import { FindUserDocumentsUseCase } from '../../application/use-cases/find-user-documents.use-case';
 import { AceptarDocumentUseCase } from '../../application/use-cases/aceptar-document.use-case';
@@ -81,14 +82,29 @@ export class UserDocumentsController {
 
   @Post('observar-document')
   @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FilesInterceptor('files', 10))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Observar un documento — cambia estado a OBSERVADO y registra observación con etiquetas' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['userDocumentId', 'observation', 'etiquetaIds'],
+      properties: {
+        userDocumentId: { type: 'string', format: 'uuid', example: 'uuid-del-user-document' },
+        observation: { type: 'string', example: 'El documento está incompleto, falta la firma.' },
+        etiquetaIds: { type: 'string', example: '["uuid-etiqueta-1","uuid-etiqueta-2"]', description: 'JSON string de UUIDs de etiquetas' },
+        files: { type: 'array', items: { type: 'string', format: 'binary' }, description: 'Archivos adjuntos (opcional, máx. 10)' },
+      },
+    },
+  })
   @ApiOkResponse({ description: 'Documento observado correctamente.' })
   @ApiNotFoundResponse({ description: 'UserDocument no encontrado.' })
   async observarDocument(
     @Body() dto: ObservarDocumentDto,
     @CurrentUser() user: JwtPayload,
+    @UploadedFiles() files?: MulterFile[],
   ) {
-    await this.observarDocumentUseCase.execute(dto, user.sub);
+    await this.observarDocumentUseCase.execute(dto, user.sub, files);
     return { message: 'Documento observado correctamente.' };
   }
 

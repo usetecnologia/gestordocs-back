@@ -273,7 +273,7 @@ export class UserPrismaRepository implements IUserRepository {
     });
   }
 
-  async createObservation({ participantId, observation, createdById, etiquetaIds }: CreateObservationData): Promise<ObservationResult> {
+  async createObservation({ participantId, observation, createdById, etiquetaIds, files }: CreateObservationData): Promise<ObservationResult> {
     return this.prisma.$transaction(async (tx) => {
       const obs = await tx.userObservations.create({
         data: {
@@ -285,10 +285,18 @@ export class UserPrismaRepository implements IUserRepository {
               create: etiquetaIds.map((etiquetaId) => ({ etiquetaId })),
             },
           }),
+          ...(files?.length && {
+            userObservationFiles: {
+              create: files.map((file) => ({ file })),
+            },
+          }),
         },
         include: {
           userObservationEtiquetas: {
             include: { etiquetas: { select: { id: true, name: true } } },
+          },
+          userObservationFiles: {
+            select: { id: true, file: true },
           },
         },
       });
@@ -329,6 +337,7 @@ export class UserPrismaRepository implements IUserRepository {
         createdById: obs.createdById,
         createdBy,
         etiquetas: obs.userObservationEtiquetas.map((e) => e.etiquetas),
+        files: obs.userObservationFiles.map((f) => ({ id: f.id, file: f.file })),
       };
     });
   }

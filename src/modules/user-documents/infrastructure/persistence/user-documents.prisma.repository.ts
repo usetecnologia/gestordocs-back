@@ -26,6 +26,9 @@ const USER_DOCS_INCLUDE = {
       userDocumentHistoryEtiquetas: {
         include: { etiquetas: { select: { id: true, name: true } } },
       },
+      userDocumentObservationFiles: {
+        select: { id: true, file: true },
+      },
     },
     orderBy: { createdAt: 'asc' as const },
   },
@@ -78,6 +81,7 @@ function mapUserDocToHistory(ud: UserDocRow, personMap: Map<string, string>): Us
       url: h.url,
       observation: h.observation,
       etiquetas: h.userDocumentHistoryEtiquetas.map((e) => e.etiquetas),
+      files: h.userDocumentObservationFiles.map((f) => ({ id: f.id, file: f.file })),
       createdById: h.createdById,
       createdBy: h.createdById && personMap.has(h.createdById)
         ? { id: h.createdById, fullName: personMap.get(h.createdById)! }
@@ -225,7 +229,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     ]);
   }
 
-  async observarDocument({ userDocumentId, observation, etiquetaIds, reviewedById, url }: ObservarDocumentData): Promise<void> {
+  async observarDocument({ userDocumentId, observation, etiquetaIds, reviewedById, url, files }: ObservarDocumentData): Promise<void> {
     const status = $Enums.DocumentSponsorStatus.OBSERVADO;
     await this.prisma.$transaction(async (tx) => {
       await tx.userDocuments.update({
@@ -242,6 +246,11 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
           userDocumentHistoryEtiquetas: {
             create: etiquetaIds.map((etiquetaId) => ({ etiquetaId })),
           },
+          ...(files?.length && {
+            userDocumentObservationFiles: {
+              create: files.map((file) => ({ file })),
+            },
+          }),
         },
       });
     });

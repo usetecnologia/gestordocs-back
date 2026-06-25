@@ -185,6 +185,16 @@ model UserObservations {
   users         User      @relation(fields: [userId], references: [id])
   createdBy     User?     @relation("UserObservationsCreatedBy", fields: [createdById], references: [id])
   userObservationEtiquetas UserObservationEtiquetas[]
+  userObservationFiles  UserObservationFiles[]
+}
+
+model UserObservationFiles {
+  id            String     @id @default(uuid()) @db.VarChar(36)
+  userObservationId String
+  file        String @db.Text
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  userObservations    UserObservations @relation(fields: [userObservationId], references: [id])
 }
 
 model UserObservationEtiquetas {
@@ -310,6 +320,16 @@ model UserDocumentHistory {
   userDocuments UserDocuments @relation(fields: [userDocumentsId], references: [id])
 
   userDocumentHistoryEtiquetas UserDocumentHistoryEtiquetas[]
+  userDocumentObservationFiles  UserDocumentObservationFiles[]
+}
+
+model UserDocumentObservationFiles {
+  id            String     @id @default(uuid()) @db.VarChar(36)
+  userDocumentHistoryId String
+  file        String @db.Text
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  userDocumentHistory    UserDocumentHistory @relation(fields: [userDocumentHistoryId], references: [id])
 }
 
 model UserDocumentHistoryEtiquetas {

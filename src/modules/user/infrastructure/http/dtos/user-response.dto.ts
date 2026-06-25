@@ -24,6 +24,11 @@ class EtiquetaRefDto {
   @ApiProperty() name!: string;
 }
 
+class ObservationFileDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() file!: string;
+}
+
 class ObservationCreatedByDto {
   @ApiProperty() id!: string;
   @ApiProperty() fullName!: string;
@@ -39,6 +44,7 @@ class UserObservationDto {
   @ApiPropertyOptional({ nullable: true }) createdById!: string | null;
   @ApiPropertyOptional({ type: ObservationCreatedByDto, nullable: true }) createdBy!: ObservationCreatedByDto | null;
   @ApiProperty({ type: [EtiquetaRefDto] }) etiquetas!: EtiquetaRefDto[];
+  @ApiProperty({ type: [ObservationFileDto] }) files!: ObservationFileDto[];
 }
 
 class HistoryCreatedByDto {

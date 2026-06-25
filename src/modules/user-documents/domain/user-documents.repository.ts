@@ -20,6 +20,7 @@ export interface UserDocumentHistoryItem {
   url: string | null;
   observation: string | null;
   etiquetas: { id: string; name: string }[];
+  files: { id: string; file: string }[];
   createdById: string | null;
   createdBy: { id: string; fullName: string } | null;
   createdAt: Date;
@@ -76,6 +77,7 @@ export interface ObservarDocumentData {
   etiquetaIds: string[];
   reviewedById: string;
   url: string | null;
+  files?: string[];
 }
 
 export enum UserDocumentFilter {

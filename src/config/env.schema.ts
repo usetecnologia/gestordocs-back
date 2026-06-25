@@ -24,11 +24,9 @@ export const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default('30d'),
   JWT_REFRESH_TTL_MS: z.coerce.number().default(2592000000),
-  // Mail
-  MAIL_HOST: z.string().default('smtp.gmail.com'),
-  MAIL_PORT: z.coerce.number().default(465),
-  MAIL_USER: z.string().email(),
-  MAIL_PASS: z.string().min(1),
+  // Resend
+  RESEND_API_KEY: z.string().min(1),
+  MAIL_FROM: z.string().min(1),
   ADMIN_EMAIL: z.string().email(),
   // AWS S3
   AWS_ACCESS_KEY_ID: z.string().min(1),
