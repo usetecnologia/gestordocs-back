@@ -21,6 +21,12 @@ function normalizeSponsor(value: string): string | null {
   return EMPTY_SPONSOR_VALUES.has(trimmed) ? null : trimmed;
 }
 
+function resolveUserStatus(data: WorkuseResponse): string | null {
+  if (data.status?.trim().toLowerCase() === 'retired') return 'RETIRADO';
+  if (data.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
+  return null;
+}
+
 interface WorkuseResponse {
   valid: boolean;
   firstname: string;
@@ -33,6 +39,15 @@ interface WorkuseResponse {
   program: string;
   sponsor: string;
   optionPrograma: string;
+  employer?: string;
+  status_hired?: number;
+  hired_date?: string;
+  jo_use_date?: string;
+  programAgreementOK?: boolean;
+  fechadeenvioalsponsor?: string;
+  fechaDSinUSE?: string;
+  statusSolRetiro?: string;
+  status?: string;
 }
 
 @Injectable()
@@ -72,6 +87,8 @@ export class AutoLoginUseCase {
       ? existing.passwordHash
       : await this.passwordHasher.hash(DEFAULT_PASSWORD);
 
+    const userStatus = resolveUserStatus(data);
+
     const credentials = await this.autoLoginRepo.upsertByDni({
       dni,
       firstname: data.firstname,
@@ -84,6 +101,16 @@ export class AutoLoginUseCase {
       sponsorId,
       optionProgramId,
       passwordHash,
+      employer: data.employer || null,
+      status_hired: data.status_hired ?? null,
+      hired_date: data.hired_date || null,
+      jo_use_date: data.jo_use_date || null,
+      programAgreementOK: data.programAgreementOK ?? null,
+      fechadeenvioalsponsor: data.fechadeenvioalsponsor || null,
+      fechaDSinUSE: data.fechaDSinUSE || null,
+      statusSolRetiro: data.statusSolRetiro || null,
+      statusExternal: data.status || null,
+      userStatus,
     });
 
     await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);

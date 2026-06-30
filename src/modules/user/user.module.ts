@@ -22,6 +22,7 @@ import { ChangePasswordUseCase } from './application/use-cases/change-password.u
 import { ChangeUserStatusUseCase } from './application/use-cases/change-user-status.use-case';
 import { CreateObservationUseCase } from './application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from './application/use-cases/close-observation.use-case';
+import { BulkLoadUsersUseCase } from './application/use-cases/bulk-load-users.use-case';
 
 const useCases = [
   CreateUserUseCase,
@@ -36,6 +37,7 @@ const useCases = [
   ChangeUserStatusUseCase,
   CreateObservationUseCase,
   CloseObservationUseCase,
+  BulkLoadUsersUseCase,
 ];
 
 @Module({

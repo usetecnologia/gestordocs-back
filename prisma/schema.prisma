@@ -147,6 +147,15 @@ model User {
   sponsorId String?
   programId String?
   optionProgramId  String?
+  employer  String?
+  status_hired Int?
+  hired_date String?
+  jo_use_date String?
+  programAgreementOK Boolean?
+  fechadeenvioalsponsor String?
+  fechaDSinUSE String?
+  statusSolRetiro String?
+  statusExternal String?
   status    UserStatus @default(ACTIVO)
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt     DateTime   @updatedAt @map("updated_at")

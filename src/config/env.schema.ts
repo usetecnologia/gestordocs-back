@@ -17,6 +17,7 @@ export const envSchema = z.object({
   // App
   ALLOWED_ORIGINS: z.string().optional(),
   FRONTEND_URL: z.string().url().default('http://localhost:5174'),
+  APP_URL: z.string().url().optional(),
   APP_NAME: z.string().default('API'),
   // JWT — access token (15m) + refresh token (30d)
   JWT_SECRET: z.string().min(32),

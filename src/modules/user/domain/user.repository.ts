@@ -72,6 +72,31 @@ export interface UpdateUserData {
   status?: UserStatus;
 }
 
+export interface CreateExternalUserData {
+  dni: string;
+  firstname: string;
+  middlename?: string | null;
+  lastfathername: string;
+  lastmothername?: string | null;
+  birthdate?: string | null;
+  roleId: string;
+  countryId?: string | null;
+  programId?: string | null;
+  sponsorId?: string | null;
+  optionProgramId?: string | null;
+  passwordHash: string;
+  status: string;
+  employer?: string | null;
+  status_hired?: number | null;
+  hired_date?: string | null;
+  jo_use_date?: string | null;
+  programAgreementOK?: boolean | null;
+  fechadeenvioalsponsor?: string | null;
+  fechaDSinUSE?: string | null;
+  statusSolRetiro?: string | null;
+  statusExternal?: string | null;
+}
+
 export interface IUserRepository {
   findAll(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   findAllStaff(filters: UserFilters): Promise<{ data: User[]; total: number }>;
@@ -82,6 +107,13 @@ export interface IUserRepository {
   addStatusHistory(userId: string, status: UserStatus, createdById?: string): Promise<void>;
   createObservation(data: CreateObservationData): Promise<ObservationResult>;
   closeObservation(observationId: string, createdById?: string): Promise<void>;
+  existsByDni(dni: string): Promise<boolean>;
+  findCountryByName(name: string): Promise<{ id: string } | null>;
+  findOrCreateProgram(name: string): Promise<{ id: string }>;
+  findOrCreateSponsor(name: string): Promise<{ id: string }>;
+  findOrCreateOptionProgram(name: string, countryId: string, programId: string, sponsorId: string | null): Promise<{ id: string }>;
+  findDefaultRole(): Promise<{ id: string }>;
+  createWithHistory(data: CreateExternalUserData): Promise<void>;
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');

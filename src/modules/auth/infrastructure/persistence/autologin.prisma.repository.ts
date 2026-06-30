@@ -128,7 +128,8 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
     const existingPerson = await this.prisma.person.findFirst({ where: { dni: data.dni } });
 
     if (existingPerson) {
-      await this.prisma.$transaction([
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const ops: any[] = [
         this.prisma.person.update({
           where: { id: existingPerson.id },
           data: {
@@ -146,9 +147,29 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
             programId: data.programId,
             sponsorId: data.sponsorId,
             optionProgramId: data.optionProgramId,
+            ...(data.employer !== undefined && { employer: data.employer }),
+            ...(data.status_hired !== undefined && { status_hired: data.status_hired }),
+            ...(data.hired_date !== undefined && { hired_date: data.hired_date }),
+            ...(data.jo_use_date !== undefined && { jo_use_date: data.jo_use_date }),
+            ...(data.programAgreementOK !== undefined && { programAgreementOK: data.programAgreementOK }),
+            ...(data.fechadeenvioalsponsor !== undefined && { fechadeenvioalsponsor: data.fechadeenvioalsponsor }),
+            ...(data.fechaDSinUSE !== undefined && { fechaDSinUSE: data.fechaDSinUSE }),
+            ...(data.statusSolRetiro !== undefined && { statusSolRetiro: data.statusSolRetiro }),
+            ...(data.statusExternal !== undefined && { statusExternal: data.statusExternal }),
+            ...(data.userStatus && { status: data.userStatus as never }),
           },
         }),
-      ]);
+      ];
+
+      if (data.userStatus) {
+        ops.push(
+          this.prisma.userHistoryStatus.create({
+            data: { userId: existingPerson.id, status: data.userStatus as never },
+          }),
+        );
+      }
+
+      await this.prisma.$transaction(ops);
     } else {
       const role = await this.findDefaultRole();
       const id = randomUUID();
@@ -174,13 +195,22 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
             programId: data.programId,
             sponsorId: data.sponsorId,
             optionProgramId: data.optionProgramId,
-            status: 'SIN_DOCUMENTOS',
+            status: (data.userStatus ?? 'SIN_DOCUMENTOS') as never,
+            employer: data.employer ?? null,
+            status_hired: data.status_hired ?? null,
+            hired_date: data.hired_date ?? null,
+            jo_use_date: data.jo_use_date ?? null,
+            programAgreementOK: data.programAgreementOK ?? null,
+            fechadeenvioalsponsor: data.fechadeenvioalsponsor ?? null,
+            fechaDSinUSE: data.fechaDSinUSE ?? null,
+            statusSolRetiro: data.statusSolRetiro ?? null,
+            statusExternal: data.statusExternal ?? null,
           },
         }),
         this.prisma.userHistoryStatus.create({
           data: {
             userId: id,
-            status: 'SIN_DOCUMENTOS',
+            status: (data.userStatus ?? 'SIN_DOCUMENTOS') as never,
           },
         }),
       ]);

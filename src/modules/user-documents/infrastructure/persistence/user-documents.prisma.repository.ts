@@ -11,6 +11,7 @@ import {
   RequiredDocsCount,
   AceptarDocumentData,
   ObservarDocumentData,
+  BulkUploadFileData,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -275,5 +276,53 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       }),
     ]);
     return { totalRequired, submittedRequired };
+  }
+
+  async findUserIdByDni(dni: string): Promise<string | null> {
+    const person = await this.prisma.person.findFirst({ where: { dni }, select: { id: true } });
+    if (!person) return null;
+    const user = await this.prisma.user.findUnique({ where: { id: person.id }, select: { id: true } });
+    return user?.id ?? null;
+  }
+
+  async findDocumentIdBySiglasCode(siglasCode: string): Promise<string | null> {
+    const doc = await this.prisma.documents.findFirst({
+      where: { siglasCode, status: true },
+      select: { id: true },
+    });
+    return doc?.id ?? null;
+  }
+
+  async upsertUserDocumentWithStatus({ userId, documentId, status, url, createdById }: BulkUploadFileData): Promise<void> {
+    const castedStatus = status as $Enums.DocumentSponsorStatus;
+
+    const existing = await this.prisma.userDocuments.findFirst({
+      where: { userId, documentId },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await this.prisma.$transaction([
+        this.prisma.userDocuments.update({
+          where: { id: existing.id },
+          data: { status: castedStatus },
+        }),
+        this.prisma.userDocumentHistory.create({
+          data: { userDocumentsId: existing.id, status: castedStatus, url, createdById },
+        }),
+      ]);
+    } else {
+      await this.prisma.userDocuments.create({
+        data: {
+          userId,
+          documentId,
+          status: castedStatus,
+          statusDocument: true,
+          userDocumentHistory: {
+            create: { status: castedStatus, url, createdById },
+          },
+        },
+      });
+    }
   }
 }

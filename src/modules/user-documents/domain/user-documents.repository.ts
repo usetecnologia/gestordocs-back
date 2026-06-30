@@ -86,6 +86,14 @@ export enum UserDocumentFilter {
   OBSERVED = 'OBSERVED',
 }
 
+export interface BulkUploadFileData {
+  userId: string;
+  documentId: string;
+  status: string;
+  url: string;
+  createdById: string;
+}
+
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
   findUserSponsorCode(userId: string): Promise<string | null>;
@@ -97,6 +105,9 @@ export interface IUserDocumentsRepository {
   countRequiredDocs(userId: string): Promise<RequiredDocsCount>;
   aceptarDocument(data: AceptarDocumentData): Promise<void>;
   observarDocument(data: ObservarDocumentData): Promise<void>;
+  findUserIdByDni(dni: string): Promise<string | null>;
+  findDocumentIdBySiglasCode(siglasCode: string): Promise<string | null>;
+  upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

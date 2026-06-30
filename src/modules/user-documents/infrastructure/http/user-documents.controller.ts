@@ -13,7 +13,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
+import { AnyFilesInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -35,10 +35,12 @@ import { UploadFileDocumentUseCase } from '../../application/use-cases/upload-fi
 import { FindUserDocumentsUseCase } from '../../application/use-cases/find-user-documents.use-case';
 import { AceptarDocumentUseCase } from '../../application/use-cases/aceptar-document.use-case';
 import { ObservarDocumentUseCase } from '../../application/use-cases/observar-document.use-case';
+import { BulkUploadByFilenameUseCase } from '../../application/use-cases/bulk-upload-by-filename.use-case';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
 import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
+import { BulkUploadByFilenameResponseDto } from './dtos/bulk-upload-by-filename-response.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 
 @ApiTags('user-documents')
@@ -52,6 +54,7 @@ export class UserDocumentsController {
     private readonly findUserDocumentsUseCase: FindUserDocumentsUseCase,
     private readonly aceptarDocumentUseCase: AceptarDocumentUseCase,
     private readonly observarDocumentUseCase: ObservarDocumentUseCase,
+    private readonly bulkUploadByFilenameUseCase: BulkUploadByFilenameUseCase,
   ) {}
 
   @Get('by-user/:userId')
@@ -133,5 +136,43 @@ export class UserDocumentsController {
   ) {
     await this.uploadFileDocumentUseCase.execute(file, dto);
     return { message: 'Archivo subido correctamente.' };
+  }
+
+  @Post('bulk-upload-by-filename')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(AnyFilesInterceptor())
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Carga masiva de documentos por nombre de archivo',
+    description:
+      'Recibe múltiples archivos con nombre en formato `{dni}_{siglas}.{extension}` y los vincula automáticamente al usuario y documento correspondiente. ' +
+      'El status se valida sin distinción de mayúsculas/minúsculas. ' +
+      'Si el status es inválido se corta todo. Si un usuario o sigla no existe, se continúa con los demás.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['status', 'files'],
+      properties: {
+        status: {
+          type: 'string',
+          example: 'SUBIDO',
+          description: 'Estado del documento (PENDIENTE | SUBIDO | EN_REVISION | OBSERVADO | REVISADO) — no distingue mayúsculas/minúsculas',
+        },
+        files: {
+          type: 'array',
+          items: { type: 'string', format: 'binary' },
+          description: 'Archivos con nombre {dni}_{siglas}.{extension} (máx. 15 MB c/u)',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({ type: BulkUploadByFilenameResponseDto })
+  bulkUploadByFilename(
+    @Body('status') status: string,
+    @UploadedFiles() files: MulterFile[],
+    @CurrentUser() user: JwtPayload,
+  ): Promise<BulkUploadByFilenameResponseDto> {
+    return this.bulkUploadByFilenameUseCase.execute(status, files ?? [], user.sub);
   }
 }

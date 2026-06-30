@@ -31,7 +31,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new LoggingInterceptor(), new ResponseInterceptor());
   app.useGlobalFilters(new AllExceptionsFilter());
 
-  const swaggerConfig = new DocumentBuilder()
+  const swaggerBuilder = new DocumentBuilder()
     .setTitle(envs.APP_NAME)
     .setDescription(
       `## API REST — ${envs.APP_NAME}\n\n` +
@@ -43,7 +43,13 @@ async function bootstrap() {
       { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', in: 'header' },
       'access-token',
     )
-    .addServer(`http://localhost:${envs.PORT}`, 'Local')
+    .addServer(`http://localhost:${envs.PORT}`, 'Local');
+
+  if (envs.APP_URL) {
+    swaggerBuilder.addServer(envs.APP_URL, 'Producción');
+  }
+
+  const swaggerConfig = swaggerBuilder
     .addTag('auth', 'Autenticación y autorización')
     .build();
 

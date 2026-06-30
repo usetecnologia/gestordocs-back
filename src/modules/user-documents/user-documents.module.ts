@@ -15,6 +15,7 @@ import { FindUserDocumentsUseCase } from './application/use-cases/find-user-docu
 import { SyncUserDocumentsUseCase } from './application/use-cases/sync-user-documents.use-case';
 import { AceptarDocumentUseCase } from './application/use-cases/aceptar-document.use-case';
 import { ObservarDocumentUseCase } from './application/use-cases/observar-document.use-case';
+import { BulkUploadByFilenameUseCase } from './application/use-cases/bulk-upload-by-filename.use-case';
 
 @Module({
   imports: [PrismaModule, AppJwtModule, AwsS3Module],
@@ -25,6 +26,7 @@ import { ObservarDocumentUseCase } from './application/use-cases/observar-docume
     SyncUserDocumentsUseCase,
     AceptarDocumentUseCase,
     ObservarDocumentUseCase,
+    BulkUploadByFilenameUseCase,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },

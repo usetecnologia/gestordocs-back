@@ -51,6 +51,7 @@ import { ChangePasswordUseCase } from '../../application/use-cases/change-passwo
 import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user-status.use-case';
 import { CreateObservationUseCase } from '../../application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from '../../application/use-cases/close-observation.use-case';
+import { BulkLoadUsersUseCase } from '../../application/use-cases/bulk-load-users.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
@@ -62,6 +63,7 @@ import { CreateObservationDto } from './dtos/create-observation.dto';
 import { ObservationResponseDto } from './dtos/observation-response.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
+import { BulkLoadResponseDto } from './dtos/bulk-load-response.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
 
 
@@ -84,6 +86,7 @@ export class UserController {
     private readonly changeUserStatus: ChangeUserStatusUseCase,
     private readonly createObservation: CreateObservationUseCase,
     private readonly closeObservation: CloseObservationUseCase,
+    private readonly bulkLoadUsers: BulkLoadUsersUseCase,
   ) {}
 
   @Post()
@@ -92,6 +95,27 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
   create(@Body() dto: CreateUserDto) {
     return this.createUser.execute(dto);
+  }
+
+  @Post('bulk-load')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Carga masiva de usuarios desde Workuse — crea los que no existen, ignora los duplicados',
+  })
+  @ApiOkResponse({ type: BulkLoadResponseDto })
+  async bulkLoad(): Promise<BulkLoadResponseDto> {
+    const result = await this.bulkLoadUsers.execute();
+    return {
+      message: 'Datos cargados',
+      data: {
+        errors: `Tienes ${result.errors.length} errores`,
+        warning: `Tienes ${result.existing.length} usuarios que ya existen`,
+        success: `Se crearon correctamente ${result.created.length} usuarios`,
+        arrays_errors: result.errors,
+        arrays_warning: result.existing,
+        arrays_success: result.created,
+      },
+    };
   }
 
   @Get()

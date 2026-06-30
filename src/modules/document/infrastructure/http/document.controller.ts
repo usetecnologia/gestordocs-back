@@ -31,6 +31,7 @@ import { CreateDocumentUseCase } from '../../application/use-cases/create-docume
 import { FindAllDocumentUseCase } from '../../application/use-cases/find-all-document.use-case';
 import { FindOneDocumentUseCase } from '../../application/use-cases/find-one-document.use-case';
 import { FindPendingDocumentsUseCase } from '../../application/use-cases/find-pending-documents.use-case';
+import { FindAllActiveDocumentsUseCase } from '../../application/use-cases/find-all-active-documents.use-case';
 import { UpdateDocumentUseCase } from '../../application/use-cases/update-document.use-case';
 import { UpdateDocumentOrderUseCase } from '../../application/use-cases/update-document-order.use-case';
 import { DeleteDocumentUseCase } from '../../application/use-cases/delete-document.use-case';
@@ -54,6 +55,7 @@ export class DocumentController {
     private readonly updateDocument: UpdateDocumentUseCase,
     private readonly updateDocumentOrder: UpdateDocumentOrderUseCase,
     private readonly deleteDocument: DeleteDocumentUseCase,
+    private readonly findAllActiveDocuments: FindAllActiveDocumentsUseCase,
   ) {}
 
   @Post()
@@ -80,6 +82,13 @@ export class DocumentController {
       query.page ?? 1,
       query.limit ?? 20,
     );
+  }
+
+  @Get('active')
+  @ApiOperation({ summary: 'Listar todos los documentos activos (sin paginación)' })
+  @ApiOkResponse({ type: [DocumentResponseDto] })
+  findAllActive() {
+    return this.findAllActiveDocuments.execute();
   }
 
   @Get('pending')

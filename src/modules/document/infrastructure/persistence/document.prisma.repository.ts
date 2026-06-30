@@ -38,6 +38,15 @@ export class DocumentPrismaRepository implements IDocumentRepository {
     return { data: (data as PrismaDocumentFull[]).map(DocumentMapper.toDomain), total };
   }
 
+  async findAllActive(): Promise<Document[]> {
+    const rows = await this.prisma.documents.findMany({
+      where: { status: true },
+      include: DOCUMENT_FULL_INCLUDE,
+      orderBy: [{ order: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+    });
+    return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
+  }
+
   async findBySponsorCode(sponsorCode: string): Promise<Document[]> {
     const rows = await this.prisma.documents.findMany({
       where: {

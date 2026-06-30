@@ -12,6 +12,16 @@ export interface UpsertByDniData {
   sponsorId?: string | null;
   optionProgramId?: string | null;
   passwordHash: string;
+  employer?: string | null;
+  status_hired?: number | null;
+  hired_date?: string | null;
+  jo_use_date?: string | null;
+  programAgreementOK?: boolean | null;
+  fechadeenvioalsponsor?: string | null;
+  fechaDSinUSE?: string | null;
+  statusSolRetiro?: string | null;
+  statusExternal?: string | null;
+  userStatus?: string | null;
 }
 
 export interface IAutoLoginRepository {

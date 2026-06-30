@@ -12,6 +12,7 @@ import { FindPendingDocumentsUseCase } from './application/use-cases/find-pendin
 import { UpdateDocumentUseCase } from './application/use-cases/update-document.use-case';
 import { UpdateDocumentOrderUseCase } from './application/use-cases/update-document-order.use-case';
 import { DeleteDocumentUseCase } from './application/use-cases/delete-document.use-case';
+import { FindAllActiveDocumentsUseCase } from './application/use-cases/find-all-active-documents.use-case';
 
 const useCases = [
   CreateDocumentUseCase,
@@ -21,6 +22,7 @@ const useCases = [
   UpdateDocumentUseCase,
   UpdateDocumentOrderUseCase,
   DeleteDocumentUseCase,
+  FindAllActiveDocumentsUseCase,
 ];
 
 @Module({

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Prisma } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
@@ -9,10 +9,14 @@ import {
   UpdateUserData,
   CreateObservationData,
   ObservationResult,
+  CreateExternalUserData,
 } from '../../domain/user.repository';
 import { User } from '../../domain/user.entity';
 import { UserMapper, USER_INCLUDE, USER_DETAIL_INCLUDE, PrismaUserFull, PrismaUserDetail } from './user.mapper';
 import type { PersonModel } from 'prisma/generated/prisma/models';
+
+const toExternalCode = (name: string): string =>
+  name.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').slice(0, 50);
 
 const PERSON_FIELD_KEYS = [
   'firstname',
@@ -340,6 +344,103 @@ export class UserPrismaRepository implements IUserRepository {
         files: obs.userObservationFiles.map((f) => ({ id: f.id, file: f.file })),
       };
     });
+  }
+
+  async existsByDni(dni: string): Promise<boolean> {
+    const person = await this.prisma.person.findFirst({ where: { dni }, select: { id: true } });
+    if (!person) return false;
+    const user = await this.prisma.user.findUnique({ where: { id: person.id }, select: { id: true } });
+    return !!user;
+  }
+
+  async findCountryByName(name: string): Promise<{ id: string } | null> {
+    return this.prisma.country.findFirst({ where: { name }, select: { id: true } });
+  }
+
+  async findOrCreateProgram(name: string): Promise<{ id: string }> {
+    const code = toExternalCode(name);
+    return this.prisma.program.upsert({
+      where: { code },
+      create: { code, name, status: true },
+      update: {},
+      select: { id: true },
+    });
+  }
+
+  async findOrCreateSponsor(name: string): Promise<{ id: string }> {
+    const code = toExternalCode(name);
+    return this.prisma.sponsor.upsert({
+      where: { code },
+      create: { code, name, status: true },
+      update: {},
+      select: { id: true },
+    });
+  }
+
+  async findOrCreateOptionProgram(
+    name: string,
+    countryId: string,
+    programId: string,
+    sponsorId: string | null,
+  ): Promise<{ id: string }> {
+    const existing = await this.prisma.optionProgram.findFirst({ where: { name }, select: { id: true } });
+    if (existing) return existing;
+    const shortName = name.split(/[\s(]/)[0].slice(0, 50) || name.slice(0, 50);
+    return this.prisma.optionProgram.create({
+      data: { name, shortName, shortDatabase: shortName, countryId, programId, sponsorId: sponsorId ?? undefined, status: true, hideJobFair: false },
+      select: { id: true },
+    });
+  }
+
+  async findDefaultRole(): Promise<{ id: string }> {
+    const role = await this.prisma.role.findFirst({
+      where: { name: 'Participante', status: true },
+      select: { id: true },
+    });
+    if (!role) throw new InternalServerErrorException('Rol "Participante" no encontrado.');
+    return role;
+  }
+
+  async createWithHistory(data: CreateExternalUserData): Promise<void> {
+    const id = randomUUID();
+    await this.prisma.$transaction([
+      this.prisma.person.create({
+        data: {
+          id,
+          firstname: data.firstname,
+          middlename: data.middlename,
+          lastfathername: data.lastfathername,
+          lastmothername: data.lastmothername,
+          birthdate: data.birthdate,
+          dni: data.dni,
+        },
+      }),
+      this.prisma.user.create({
+        data: {
+          id,
+          username: data.dni,
+          password: data.passwordHash,
+          roleId: data.roleId,
+          countryId: data.countryId,
+          programId: data.programId,
+          sponsorId: data.sponsorId,
+          optionProgramId: data.optionProgramId,
+          status: data.status as never,
+          employer: data.employer ?? null,
+          status_hired: data.status_hired ?? null,
+          hired_date: data.hired_date ?? null,
+          jo_use_date: data.jo_use_date ?? null,
+          programAgreementOK: data.programAgreementOK ?? null,
+          fechadeenvioalsponsor: data.fechadeenvioalsponsor ?? null,
+          fechaDSinUSE: data.fechaDSinUSE ?? null,
+          statusSolRetiro: data.statusSolRetiro ?? null,
+          statusExternal: data.statusExternal ?? null,
+        },
+      }),
+      this.prisma.userHistoryStatus.create({
+        data: { userId: id, status: data.status as never },
+      }),
+    ]);
   }
 
   async closeObservation(observationId: string, createdById?: string): Promise<void> {
