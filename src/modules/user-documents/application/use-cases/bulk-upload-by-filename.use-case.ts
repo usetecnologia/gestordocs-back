@@ -5,6 +5,7 @@ import {
   IUserDocumentsRepository,
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
+import { IUserStatusPort, USER_STATUS_PORT } from '../../domain/user-status.port';
 
 const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15 MB
 const VALID_STATUSES = ['PENDIENTE', 'SUBIDO', 'EN_REVISION', 'OBSERVADO', 'REVISADO'] as const;
@@ -52,6 +53,8 @@ export class BulkUploadByFilenameUseCase {
   constructor(
     @Inject(USER_DOCUMENTS_REPOSITORY)
     private readonly userDocumentsRepo: IUserDocumentsRepository,
+    @Inject(USER_STATUS_PORT)
+    private readonly userStatusPort: IUserStatusPort,
     private readonly awsS3Service: AwsS3Service,
   ) {}
 
@@ -106,6 +109,13 @@ export class BulkUploadByFilenameUseCase {
         errors.push({ filename, reason: 'Error al subir el archivo al servidor.', dni, siglasCode });
       }
     }
+
+    const uniqueUserIds = [...new Set(successes.map((s) => s.userId))];
+    await Promise.all(
+      uniqueUserIds.map((userId) =>
+        this.userStatusPort.updateStatus(userId, 'PENDIENTE_REVISAR', createdById),
+      ),
+    );
 
     return {
       totalSuccess: successes.length,
