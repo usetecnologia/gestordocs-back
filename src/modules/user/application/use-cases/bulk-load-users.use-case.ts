@@ -5,6 +5,8 @@ import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.p
 const WORKUSE_BULK_URL = 'https://secure.workuse.com/api/user/userinfo.php';
 const DEFAULT_PASSWORD = 'password26';
 const EMPTY_SPONSOR_VALUES = new Set(['', '&NBSP;', '_NBSP_']);
+const TARGET_COUNTRY = 'PERU';
+const TARGET_PROGRAM = 'WAT USA';
 
 interface WorkuseUserItem {
   valid: boolean;
@@ -66,43 +68,40 @@ export class BulkLoadUsersUseCase {
         continue;
       }
 
-      try {
-        const exists = await this.userRepo.existsByDni(item.dni);
-        if (exists) {
-          result.existing.push(item.dni);
-          continue;
-        }
+      if (
+        item.country.trim().toUpperCase() !== TARGET_COUNTRY ||
+        item.program.trim().toUpperCase() !== TARGET_PROGRAM
+      ) {
+        continue;
+      }
 
+      try {
         const country = await this.userRepo.findCountryByName(item.country.trim().toUpperCase());
         if (!country) {
           result.errors.push(item.dni);
           continue;
         }
 
-        const program = await this.userRepo.findOrCreateProgram(item.program.trim().toUpperCase());
-        const sponsor = normalizeSponsor(item.sponsor)
-          ? await this.userRepo.findOrCreateSponsor(normalizeSponsor(item.sponsor)!)
-          : null;
+        const program = await this.userRepo.findOrCreateProgram(item.program.trim());
+        const sponsorName = normalizeSponsor(item.sponsor);
+        const sponsor = sponsorName ? await this.userRepo.findOrCreateSponsor(sponsorName) : null;
         const optionProgram = await this.userRepo.findOrCreateOptionProgram(
-          item.optionPrograma.trim().toUpperCase(),
+          item.optionPrograma.trim(),
           country.id,
           program.id,
           sponsor?.id ?? null,
         );
 
-        await this.userRepo.createWithHistory({
-          dni: item.dni,
+        const commonData = {
           firstname: item.firstname,
           middlename: item.middlename || null,
           lastfathername: item.lastfathername,
           lastmothername: item.lastmothername || null,
           birthdate: item.birthdate || null,
-          roleId: role.id,
           countryId: country.id,
           programId: program.id,
           sponsorId: sponsor?.id ?? null,
           optionProgramId: optionProgram.id,
-          passwordHash,
           status: resolveUserStatus(item),
           employer: item.employer || null,
           status_hired: item.status_hired ?? null,
@@ -113,9 +112,21 @@ export class BulkLoadUsersUseCase {
           fechaDSinUSE: item.fechaDSinUSE || null,
           statusSolRetiro: item.statusSolRetiro || null,
           statusExternal: item.status || null,
-        });
+        };
 
-        result.created.push(item.dni);
+        const exists = await this.userRepo.existsByDni(item.dni);
+        if (exists) {
+          await this.userRepo.updateByDni(item.dni, commonData);
+          result.existing.push(item.dni);
+        } else {
+          await this.userRepo.createWithHistory({
+            dni: item.dni,
+            roleId: role.id,
+            passwordHash,
+            ...commonData,
+          });
+          result.created.push(item.dni);
+        }
       } catch {
         result.errors.push(item.dni);
       }

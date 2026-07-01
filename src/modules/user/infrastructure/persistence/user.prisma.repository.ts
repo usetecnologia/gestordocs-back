@@ -10,6 +10,7 @@ import {
   CreateObservationData,
   ObservationResult,
   CreateExternalUserData,
+  UpdateExternalUserData,
 } from '../../domain/user.repository';
 import { User } from '../../domain/user.entity';
 import { UserMapper, USER_INCLUDE, USER_DETAIL_INCLUDE, PrismaUserFull, PrismaUserDetail } from './user.mapper';
@@ -438,6 +439,46 @@ export class UserPrismaRepository implements IUserRepository {
       }),
       this.prisma.userHistoryStatus.create({
         data: { userId: id, status: data.status as never },
+      }),
+    ]);
+  }
+
+  async updateByDni(dni: string, data: UpdateExternalUserData): Promise<void> {
+    const person = await this.prisma.person.findFirst({ where: { dni }, select: { id: true } });
+    if (!person) throw new NotFoundException(`Usuario con DNI "${dni}" no encontrado.`);
+
+    await this.prisma.$transaction([
+      this.prisma.person.update({
+        where: { id: person.id },
+        data: {
+          firstname: data.firstname,
+          middlename: data.middlename,
+          lastfathername: data.lastfathername,
+          lastmothername: data.lastmothername,
+          birthdate: data.birthdate,
+        },
+      }),
+      this.prisma.user.update({
+        where: { id: person.id },
+        data: {
+          countryId: data.countryId,
+          programId: data.programId,
+          sponsorId: data.sponsorId,
+          optionProgramId: data.optionProgramId,
+          status: data.status as never,
+          employer: data.employer ?? null,
+          status_hired: data.status_hired ?? null,
+          hired_date: data.hired_date ?? null,
+          jo_use_date: data.jo_use_date ?? null,
+          programAgreementOK: data.programAgreementOK ?? null,
+          fechadeenvioalsponsor: data.fechadeenvioalsponsor ?? null,
+          fechaDSinUSE: data.fechaDSinUSE ?? null,
+          statusSolRetiro: data.statusSolRetiro ?? null,
+          statusExternal: data.statusExternal ?? null,
+        },
+      }),
+      this.prisma.userHistoryStatus.create({
+        data: { userId: person.id, status: data.status as never },
       }),
     ]);
   }

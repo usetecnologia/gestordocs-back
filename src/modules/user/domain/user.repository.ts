@@ -97,6 +97,28 @@ export interface CreateExternalUserData {
   statusExternal?: string | null;
 }
 
+export interface UpdateExternalUserData {
+  firstname: string;
+  middlename?: string | null;
+  lastfathername: string;
+  lastmothername?: string | null;
+  birthdate?: string | null;
+  countryId?: string | null;
+  programId?: string | null;
+  sponsorId?: string | null;
+  optionProgramId?: string | null;
+  status: string;
+  employer?: string | null;
+  status_hired?: number | null;
+  hired_date?: string | null;
+  jo_use_date?: string | null;
+  programAgreementOK?: boolean | null;
+  fechadeenvioalsponsor?: string | null;
+  fechaDSinUSE?: string | null;
+  statusSolRetiro?: string | null;
+  statusExternal?: string | null;
+}
+
 export interface IUserRepository {
   findAll(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   findAllStaff(filters: UserFilters): Promise<{ data: User[]; total: number }>;
@@ -114,6 +136,7 @@ export interface IUserRepository {
   findOrCreateOptionProgram(name: string, countryId: string, programId: string, sponsorId: string | null): Promise<{ id: string }>;
   findDefaultRole(): Promise<{ id: string }>;
   createWithHistory(data: CreateExternalUserData): Promise<void>;
+  updateByDni(dni: string, data: UpdateExternalUserData): Promise<void>;
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');
