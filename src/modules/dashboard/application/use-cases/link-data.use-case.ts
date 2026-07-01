@@ -19,6 +19,12 @@ import {
   SPONSOR_REPOSITORY,
 } from '@modules/sponsor/domain/sponsor.repository';
 
+// Case-insensitive code comparison so a pre-existing record without idExterno
+// (e.g. "Wat USA" vs "WAT USA") gets linked to the external id instead of spawning a duplicate.
+function normalizeCode(code: string): string {
+  return code.trim().toUpperCase();
+}
+
 export interface SyncEntityResult {
   created: number;
   updated: number;
@@ -101,7 +107,7 @@ export class LinkDataUseCase {
     const byIdExterno = new Map(
       local.filter((p) => p.idExterno).map((p) => [p.idExterno!, p]),
     );
-    const byCode = new Map(local.map((p) => [p.code, p]));
+    const byCode = new Map(local.map((p) => [normalizeCode(p.code), p]));
 
     let created = 0;
     let updated = 0;
@@ -110,7 +116,7 @@ export class LinkDataUseCase {
       const idExternoStr = String(ext.id);
       // Strip HTML tags that may appear in program names (e.g. <b>Work and Travel USA</b>)
       const cleanName = ext.name.replace(/<[^>]*>/g, '').trim();
-      const existing = byIdExterno.get(idExternoStr) ?? byCode.get(ext.short);
+      const existing = byIdExterno.get(idExternoStr) ?? byCode.get(normalizeCode(ext.short));
 
       if (existing) {
         await this.programRepository.update(existing.id, {
@@ -138,8 +144,7 @@ export class LinkDataUseCase {
     const byIdExterno = new Map(
       local.filter((s) => s.idExterno).map((s) => [s.idExterno!, s]),
     );
-    // Case-insensitive name lookup
-    const byName = new Map(local.map((s) => [s.name.toLowerCase(), s]));
+    const byName = new Map(local.map((s) => [normalizeCode(s.name), s]));
 
     let created = 0;
     let updated = 0;
@@ -147,7 +152,7 @@ export class LinkDataUseCase {
     for (const ext of external) {
       const idExternoStr = String(ext.id);
       const existing =
-        byIdExterno.get(idExternoStr) ?? byName.get(ext.name.toLowerCase());
+        byIdExterno.get(idExternoStr) ?? byName.get(normalizeCode(ext.name));
 
       if (existing) {
         await this.sponsorRepository.update(existing.id, {

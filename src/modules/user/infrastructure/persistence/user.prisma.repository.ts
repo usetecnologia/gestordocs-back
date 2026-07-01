@@ -15,9 +15,6 @@ import { User } from '../../domain/user.entity';
 import { UserMapper, USER_INCLUDE, USER_DETAIL_INCLUDE, PrismaUserFull, PrismaUserDetail } from './user.mapper';
 import type { PersonModel } from 'prisma/generated/prisma/models';
 
-const toExternalCode = (name: string): string =>
-  name.toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').slice(0, 50);
-
 const PERSON_FIELD_KEYS = [
   'firstname',
   'middlename',
@@ -358,21 +355,23 @@ export class UserPrismaRepository implements IUserRepository {
   }
 
   async findOrCreateProgram(name: string): Promise<{ id: string }> {
-    const code = toExternalCode(name);
-    return this.prisma.program.upsert({
-      where: { code },
-      create: { code, name, status: true },
-      update: {},
+    const code = name.trim();
+    const programs = await this.prisma.program.findMany({ select: { id: true, code: true } });
+    const existing = programs.find((p) => p.code.trim().toUpperCase() === code.toUpperCase());
+    if (existing) return { id: existing.id };
+    return this.prisma.program.create({
+      data: { code, name, status: true },
       select: { id: true },
     });
   }
 
   async findOrCreateSponsor(name: string): Promise<{ id: string }> {
-    const code = toExternalCode(name);
-    return this.prisma.sponsor.upsert({
-      where: { code },
-      create: { code, name, status: true },
-      update: {},
+    const code = name.trim();
+    const sponsors = await this.prisma.sponsor.findMany({ select: { id: true, code: true } });
+    const existing = sponsors.find((s) => s.code.trim().toUpperCase() === code.toUpperCase());
+    if (existing) return { id: existing.id };
+    return this.prisma.sponsor.create({
+      data: { code, name, status: true },
       select: { id: true },
     });
   }
