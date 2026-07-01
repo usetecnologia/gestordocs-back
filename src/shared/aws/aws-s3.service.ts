@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
+import * as mime from 'mime-types';
 import { envs } from '@config/envs';
 import { S3UploadFile, S3UploadResult } from './interfaces/s3-upload.interface';
 
@@ -22,13 +23,14 @@ export class AwsS3Service {
   async uploadOne(file: S3UploadFile, folder?: string): Promise<S3UploadResult> {
     const ext = file.originalname.split('.').pop() ?? 'bin';
     const key = folder ? `${folder}/${randomUUID()}.${ext}` : `${randomUUID()}.${ext}`;
+    const contentType = mime.lookup(ext) || file.mimetype || 'application/octet-stream';
 
     await this.client.send(
       new PutObjectCommand({
         Bucket: this.bucket,
         Key: key,
         Body: file.buffer,
-        ContentType: file.mimetype,
+        ContentType: contentType,
       }),
     );
 
