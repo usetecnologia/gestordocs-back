@@ -119,6 +119,25 @@ export interface UpdateExternalUserData {
   statusExternal?: string | null;
 }
 
+export interface ExportUsersFilters {
+  status?: UserStatus;
+  roleId?: string;
+  countryId?: string;
+  sponsorId?: string;
+  programId?: string;
+  optionProgramId?: string;
+  search?: string;
+}
+
+export interface ExportUserRow {
+  id: string;
+  dni: string | null;
+  firstname: string;
+  middlename: string | null;
+  lastfathername: string;
+  lastmothername: string | null;
+}
+
 export interface IUserRepository {
   findAll(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   findAllStaff(filters: UserFilters): Promise<{ data: User[]; total: number }>;
@@ -137,6 +156,7 @@ export interface IUserRepository {
   findDefaultRole(): Promise<{ id: string }>;
   createWithHistory(data: CreateExternalUserData): Promise<void>;
   updateByDni(dni: string, data: UpdateExternalUserData): Promise<void>;
+  findAllForExport(filters: ExportUsersFilters): Promise<ExportUserRow[]>;
 }
 
 export const USER_REPOSITORY = Symbol('USER_REPOSITORY');

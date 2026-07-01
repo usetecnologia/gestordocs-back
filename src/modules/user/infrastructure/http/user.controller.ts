@@ -14,7 +14,9 @@ import {
   UploadedFiles,
   Query,
   ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -29,6 +31,7 @@ import {
   ApiConsumes,
   ApiBody,
   ApiParam,
+  ApiProduces,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
@@ -51,6 +54,7 @@ import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user
 import { CreateObservationUseCase } from '../../application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from '../../application/use-cases/close-observation.use-case';
 import { BulkLoadUsersUseCase } from '../../application/use-cases/bulk-load-users.use-case';
+import { ExportParticipantsDocumentsUseCase } from '../../application/use-cases/export-participants-documents.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
@@ -62,6 +66,7 @@ import { CreateObservationDto } from './dtos/create-observation.dto';
 import { ObservationResponseDto } from './dtos/observation-response.dto';
 import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
+import { ExportUsersQueryDto } from './dtos/export-users-query.dto';
 import { BulkLoadResponseDto } from './dtos/bulk-load-response.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
 
@@ -86,6 +91,7 @@ export class UserController {
     private readonly createObservation: CreateObservationUseCase,
     private readonly closeObservation: CloseObservationUseCase,
     private readonly bulkLoadUsers: BulkLoadUsersUseCase,
+    private readonly exportParticipantsDocuments: ExportParticipantsDocumentsUseCase,
   ) {}
 
   @Post()
@@ -145,6 +151,31 @@ export class UserController {
       query.page ?? 1,
       query.limit ?? 20,
     );
+  }
+
+  @Get('export')
+  @ApiOperation({
+    summary: 'Exportar a Excel el estado de documentos de los usuarios — sin paginación, por defecto rol Participante',
+  })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiOkResponse({ description: 'Archivo Excel (.xlsx) con el estado de documentos por usuario.' })
+  async exportDocumentsStatus(
+    @Query() query: ExportUsersQueryDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.exportParticipantsDocuments.execute({
+      status: query.status,
+      roleId: query.roleId,
+      countryId: query.countryId,
+      sponsorId: query.sponsorId,
+      programId: query.programId,
+      optionProgramId: query.optionProgramId,
+      search: query.search,
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="document-status-report.xlsx"');
+    res.send(buffer);
   }
 
   @Patch('update-user')

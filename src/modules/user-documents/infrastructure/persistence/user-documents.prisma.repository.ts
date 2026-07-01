@@ -12,6 +12,7 @@ import {
   AceptarDocumentData,
   ObservarDocumentData,
   BulkUploadFileData,
+  ActiveUserDocumentStatus,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -324,5 +325,19 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         },
       });
     }
+  }
+
+  async findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]> {
+    if (!userIds.length) return [];
+    const rows = await this.prisma.userDocuments.findMany({
+      where: { userId: { in: userIds }, statusDocument: true },
+      select: { userId: true, documentId: true, documentSponsorId: true, status: true },
+    });
+    return rows.map((r) => ({
+      userId: r.userId,
+      documentId: r.documentId,
+      documentSponsorId: r.documentSponsorId,
+      status: r.status as string,
+    }));
   }
 }

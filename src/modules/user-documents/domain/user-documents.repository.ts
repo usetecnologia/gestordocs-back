@@ -94,6 +94,13 @@ export interface BulkUploadFileData {
   createdById: string;
 }
 
+export interface ActiveUserDocumentStatus {
+  userId: string;
+  documentId: string | null;
+  documentSponsorId: string | null;
+  status: string;
+}
+
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
   findUserSponsorCode(userId: string): Promise<string | null>;
@@ -108,6 +115,7 @@ export interface IUserDocumentsRepository {
   findUserIdByDni(dni: string): Promise<string | null>;
   findDocumentIdBySiglasCode(siglasCode: string): Promise<string | null>;
   upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;
+  findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

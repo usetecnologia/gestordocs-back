@@ -14,6 +14,7 @@ async function bootstrap() {
     origin: envs.ALLOWED_ORIGINS?.split(',') ?? true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Content-Disposition'],
     credentials: true,
   });
 
