@@ -113,7 +113,7 @@ export class BulkUploadByFilenameUseCase {
     const uniqueUserIds = [...new Set(successes.map((s) => s.userId))];
     await Promise.all(
       uniqueUserIds.map((userId) =>
-        this.userStatusPort.updateStatus(userId, 'PENDIENTE_REVISAR', createdById),
+        this.userStatusPort.updateStatus(userId, 'DOCUMENTOS_INCOMPLETOS', createdById),
       ),
     );
 
