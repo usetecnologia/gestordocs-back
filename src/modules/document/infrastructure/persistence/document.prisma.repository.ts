@@ -165,6 +165,9 @@ export class DocumentPrismaRepository implements IDocumentRepository {
               await tx.userDocumentHistoryEtiquetas.deleteMany({
                 where: { userDocumentHistoryId: { in: historyIds } },
               });
+              await tx.userDocumentObservationFiles.deleteMany({
+                where: { userDocumentHistoryId: { in: historyIds } },
+              });
               await tx.userDocumentHistory.deleteMany({
                 where: { id: { in: historyIds } },
               });
@@ -233,6 +236,9 @@ export class DocumentPrismaRepository implements IDocumentRepository {
 
         if (historyIds.length > 0) {
           await tx.userDocumentHistoryEtiquetas.deleteMany({
+            where: { userDocumentHistoryId: { in: historyIds } },
+          });
+          await tx.userDocumentObservationFiles.deleteMany({
             where: { userDocumentHistoryId: { in: historyIds } },
           });
           await tx.userDocumentHistory.deleteMany({
