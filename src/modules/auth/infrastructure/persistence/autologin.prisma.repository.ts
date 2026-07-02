@@ -157,6 +157,7 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
             ...(data.statusSolRetiro !== undefined && { statusSolRetiro: data.statusSolRetiro }),
             ...(data.statusExternal !== undefined && { statusExternal: data.statusExternal }),
             ...(data.userStatus && { status: data.userStatus as never }),
+            ...(data.email !== undefined && { email: data.email }),
           },
         }),
       ];
@@ -190,6 +191,7 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
             id,
             username: data.dni,
             password: data.passwordHash,
+            email: data.email ?? null,
             roleId: role.id,
             countryId: data.countryId,
             programId: data.programId,

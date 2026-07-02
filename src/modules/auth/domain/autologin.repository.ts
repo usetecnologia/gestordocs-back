@@ -22,6 +22,7 @@ export interface UpsertByDniData {
   statusSolRetiro?: string | null;
   statusExternal?: string | null;
   userStatus?: string | null;
+  email?: string | null;
 }
 
 export interface IAutoLoginRepository {

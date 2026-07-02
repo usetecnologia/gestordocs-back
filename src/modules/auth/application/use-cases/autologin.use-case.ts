@@ -48,6 +48,7 @@ interface WorkuseResponse {
   fechaDSinUSE?: string;
   statusSolRetiro?: string;
   status?: string;
+  email?: string;
 }
 
 @Injectable()
@@ -111,6 +112,7 @@ export class AutoLoginUseCase {
       statusSolRetiro: data.statusSolRetiro || null,
       statusExternal: data.status || null,
       userStatus,
+      email: data.email || null,
     });
 
     await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);
