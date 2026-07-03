@@ -69,7 +69,7 @@ export class AutoLoginUseCase {
     }
 
     const program = data.program.trim().toUpperCase();
-    const sponsor = normalizeSponsor(data.sponsor);
+    const sponsor = data.sponsor.trim().toUpperCase();
     const optionPrograma = data.optionPrograma.trim().toUpperCase();
 
     const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(program);

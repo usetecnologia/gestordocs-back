@@ -77,6 +77,11 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
   }
 
   async findOrCreateProgram(name: string): Promise<{ id: string }> {
+    const normalized = name.trim().toUpperCase();
+    const programs = await this.prisma.program.findMany({ select: { id: true, name: true } });
+    const existing = programs.find((p) => p.name.trim().toUpperCase() === normalized);
+    if (existing) return { id: existing.id };
+
     const code = toCode(name);
     return this.prisma.program.upsert({
       where: { code },
@@ -87,6 +92,11 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
   }
 
   async findOrCreateSponsor(name: string): Promise<{ id: string }> {
+    const normalized = name.trim().toUpperCase();
+    const sponsors = await this.prisma.sponsor.findMany({ select: { id: true, name: true } });
+    const existing = sponsors.find((s) => s.name.trim().toUpperCase() === normalized);
+    if (existing) return { id: existing.id };
+
     const code = toCode(name);
     return this.prisma.sponsor.upsert({
       where: { code },
