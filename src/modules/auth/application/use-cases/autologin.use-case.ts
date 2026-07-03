@@ -37,7 +37,9 @@ interface WorkuseResponse {
   birthdate: string;
   country: string;
   program: string;
+  programId?: string;
   sponsor: string;
+  sponsorId?: string;
   optionPrograma: string;
   employer?: string;
   status_hired?: number;
@@ -72,9 +74,12 @@ export class AutoLoginUseCase {
     const sponsor = normalizeSponsor(data.sponsor);
     const optionPrograma = data.optionPrograma.trim().toUpperCase();
 
-    const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(program);
+    const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(
+      program,
+      data.programId?.trim() || null,
+    );
     const sponsorId = sponsor
-      ? (await this.autoLoginRepo.findOrCreateSponsor(sponsor)).id
+      ? (await this.autoLoginRepo.findOrCreateSponsor(sponsor, data.sponsorId?.trim() || null)).id
       : null;
     const { id: optionProgramId } = await this.autoLoginRepo.findOrCreateOptionProgram(
       optionPrograma,

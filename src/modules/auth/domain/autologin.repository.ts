@@ -28,8 +28,8 @@ export interface UpsertByDniData {
 export interface IAutoLoginRepository {
   findByDni(dni: string): Promise<AuthCredentials | null>;
   findCountryByName(name: string): Promise<{ id: string } | null>;
-  findOrCreateProgram(name: string): Promise<{ id: string }>;
-  findOrCreateSponsor(name: string): Promise<{ id: string }>;
+  findOrCreateProgram(code: string, externalId: string | null): Promise<{ id: string }>;
+  findOrCreateSponsor(code: string, externalId: string | null): Promise<{ id: string }>;
   findOrCreateOptionProgram(
     name: string,
     countryId: string,

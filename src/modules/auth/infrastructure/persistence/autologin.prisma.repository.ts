@@ -26,13 +26,6 @@ const AUTH_INCLUDE = {
   optionProgram: { select: { id: true, name: true, shortName: true } },
 } as const;
 
-const toCode = (name: string): string =>
-  name
-    .toUpperCase()
-    .replace(/[^A-Z0-9]/g, '_')
-    .replace(/_+/g, '_')
-    .slice(0, 50);
-
 function toCredentials(user: PrismaAuthUser, person: PersonModel): AuthCredentials {
   return {
     id: user.id,
@@ -76,31 +69,73 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
     return this.prisma.country.findFirst({ where: { name }, select: { id: true } });
   }
 
-  async findOrCreateProgram(name: string): Promise<{ id: string }> {
-    const normalized = name.trim().toUpperCase();
-    const programs = await this.prisma.program.findMany({ select: { id: true, name: true } });
-    const existing = programs.find((p) => p.name.trim().toUpperCase() === normalized);
-    if (existing) return { id: existing.id };
+  async findOrCreateProgram(code: string, externalId: string | null): Promise<{ id: string }> {
+    const normalizedCode = code.trim().toUpperCase();
+    const normalizedExternalId = externalId?.trim() || null;
 
-    const code = toCode(name);
+    const programs = await this.prisma.program.findMany({
+      select: { id: true, code: true, idExterno: true },
+    });
+
+    if (normalizedExternalId) {
+      const byExternalId = programs.find((p) => {
+        if (!p.idExterno) return false;
+        const dbExternalId = p.idExterno.trim();
+        return (
+          dbExternalId === normalizedExternalId ||
+          Number(dbExternalId) === Number(normalizedExternalId)
+        );
+      });
+      if (byExternalId) return { id: byExternalId.id };
+    }
+
+    const byCode = programs.find((p) => p.code.trim().toUpperCase() === normalizedCode);
+    if (byCode) return { id: byCode.id };
+
     return this.prisma.program.upsert({
-      where: { code },
-      create: { code, name, status: true },
+      where: { code: normalizedCode },
+      create: {
+        idExterno: normalizedExternalId,
+        code: normalizedCode,
+        name: normalizedCode,
+        status: true,
+      },
       update: {},
       select: { id: true },
     });
   }
 
-  async findOrCreateSponsor(name: string): Promise<{ id: string }> {
-    const normalized = name.trim().toUpperCase();
-    const sponsors = await this.prisma.sponsor.findMany({ select: { id: true, name: true } });
-    const existing = sponsors.find((s) => s.name.trim().toUpperCase() === normalized);
-    if (existing) return { id: existing.id };
+  async findOrCreateSponsor(code: string, externalId: string | null): Promise<{ id: string }> {
+    const normalizedCode = code.trim().toUpperCase();
+    const normalizedExternalId = externalId?.trim() || null;
 
-    const code = toCode(name);
+    const sponsors = await this.prisma.sponsor.findMany({
+      select: { id: true, code: true, idExterno: true },
+    });
+
+    if (normalizedExternalId) {
+      const byExternalId = sponsors.find((s) => {
+        if (!s.idExterno) return false;
+        const dbExternalId = s.idExterno.trim();
+        return (
+          dbExternalId === normalizedExternalId ||
+          Number(dbExternalId) === Number(normalizedExternalId)
+        );
+      });
+      if (byExternalId) return { id: byExternalId.id };
+    }
+
+    const byCode = sponsors.find((s) => s.code.trim().toUpperCase() === normalizedCode);
+    if (byCode) return { id: byCode.id };
+
     return this.prisma.sponsor.upsert({
-      where: { code },
-      create: { code, name, status: true },
+      where: { code: normalizedCode },
+      create: {
+        idExterno: normalizedExternalId,
+        code: normalizedCode,
+        name: normalizedCode,
+        status: true,
+      },
       update: {},
       select: { id: true },
     });
