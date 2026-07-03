@@ -150,8 +150,8 @@ export interface IUserRepository {
   closeObservation(observationId: string, createdById?: string): Promise<void>;
   existsByDni(dni: string): Promise<boolean>;
   findCountryByName(name: string): Promise<{ id: string } | null>;
-  findOrCreateProgram(name: string): Promise<{ id: string }>;
-  findOrCreateSponsor(name: string): Promise<{ id: string }>;
+  findOrCreateProgram(code: string, externalId: string | null): Promise<{ id: string }>;
+  findOrCreateSponsor(code: string, externalId: string | null): Promise<{ id: string }>;
   findOrCreateOptionProgram(name: string, countryId: string, programId: string, sponsorId: string | null): Promise<{ id: string }>;
   findDefaultRole(): Promise<{ id: string }>;
   createWithHistory(data: CreateExternalUserData): Promise<void>;

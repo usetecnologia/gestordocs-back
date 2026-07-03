@@ -18,7 +18,9 @@ interface WorkuseUserItem {
   birthdate?: string;
   country: string;
   program: string;
+  programId?: string;
   sponsor: string;
+  sponsorId?: string;
   optionPrograma: string;
   status?: string;
   employer?: string;
@@ -82,9 +84,14 @@ export class BulkLoadUsersUseCase {
           continue;
         }
 
-        const program = await this.userRepo.findOrCreateProgram(item.program.trim());
+        const program = await this.userRepo.findOrCreateProgram(
+          item.program.trim(),
+          item.programId?.trim() || null,
+        );
         const sponsorName = normalizeSponsor(item.sponsor);
-        const sponsor = sponsorName ? await this.userRepo.findOrCreateSponsor(sponsorName) : null;
+        const sponsor = sponsorName
+          ? await this.userRepo.findOrCreateSponsor(sponsorName, item.sponsorId?.trim() || null)
+          : null;
         const optionProgram = await this.userRepo.findOrCreateOptionProgram(
           item.optionPrograma.trim(),
           country.id,
