@@ -26,4 +26,12 @@ export class UserStatusPrisma implements IUserStatusPort {
       });
     });
   }
+
+  async getRole(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: { select: { name: true } } },
+    });
+    return user?.role?.name ?? null;
+  }
 }

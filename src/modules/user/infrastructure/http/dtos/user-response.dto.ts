@@ -78,6 +78,7 @@ export class UserResponseDto {
   @ApiPropertyOptional({ example: 'uuid-del-programa' }) programId!: string | null;
   @ApiPropertyOptional({ example: 'uuid-de-la-opcion' }) optionProgramId!: string | null;
   @ApiProperty({ enum: UserStatus }) status!: UserStatus;
+  @ApiPropertyOptional({ example: 'APROBADO', nullable: true }) statusSolRetiro!: string | null;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' }) createdAt!: Date;
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' }) updatedAt!: Date;
   @ApiPropertyOptional({ type: RoleRefDto }) role?: RoleRefDto | null;

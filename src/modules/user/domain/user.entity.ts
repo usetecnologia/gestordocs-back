@@ -41,6 +41,7 @@ export class User {
     public programId: string | null,
     public optionProgramId: string | null,
     public status: UserStatus,
+    public statusSolRetiro: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public readonly role?: { id: string; name: string; code: string | null } | null,

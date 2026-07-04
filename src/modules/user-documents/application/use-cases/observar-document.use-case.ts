@@ -4,7 +4,6 @@ import {
   IUserDocumentsRepository,
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
-import { IUserStatusPort, USER_STATUS_PORT } from '../../domain/user-status.port';
 import type { MulterFile } from '../../domain/multer-file.interface';
 import type { ObservarDocumentDto } from '../../infrastructure/http/dtos/review-document.dto';
 
@@ -13,8 +12,6 @@ export class ObservarDocumentUseCase {
   constructor(
     @Inject(USER_DOCUMENTS_REPOSITORY)
     private readonly userDocumentsRepo: IUserDocumentsRepository,
-    @Inject(USER_STATUS_PORT)
-    private readonly userStatusPort: IUserStatusPort,
     private readonly awsS3Service: AwsS3Service,
   ) {}
 
@@ -42,7 +39,5 @@ export class ObservarDocumentUseCase {
       url: lastSubido?.url ?? null,
       files: fileUrls,
     });
-
-    await this.userStatusPort.updateStatus(userDoc.userId, 'OBSERVADO');
   }
 }

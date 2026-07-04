@@ -259,20 +259,46 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async countRequiredDocs(userId: string): Promise<RequiredDocsCount> {
+    // Un documento obligatorio es aquel con type DOCUMENT y required:true,
+    // ya sea marcado en el vínculo con el sponsor o directamente en el documento.
+    const requiredDocFilter = {
+      OR: [
+        {
+          documentSponsors: {
+            required: true,
+            document: { type: $Enums.TypeDocument.DOCUMENT },
+          },
+        },
+        {
+          documentSponsorId: null,
+          documents: {
+            required: true,
+            type: $Enums.TypeDocument.DOCUMENT,
+          },
+        },
+      ],
+    };
+
     const [totalRequired, submittedRequired] = await this.prisma.$transaction([
       this.prisma.userDocuments.count({
         where: {
           userId,
           statusDocument: true,
-          documentSponsors: { required: true, document: { type: 'DOCUMENT' } },
+          AND: [requiredDocFilter],
         },
       }),
       this.prisma.userDocuments.count({
         where: {
           userId,
           statusDocument: true,
-          status: $Enums.DocumentSponsorStatus.SUBIDO,
-          documentSponsors: { required: true, document: { type: 'DOCUMENT' } },
+          status: {
+            in: [
+              $Enums.DocumentSponsorStatus.SUBIDO,
+              $Enums.DocumentSponsorStatus.EN_REVISION,
+              $Enums.DocumentSponsorStatus.REVISADO,
+            ],
+          },
+          AND: [requiredDocFilter],
         },
       }),
     ]);

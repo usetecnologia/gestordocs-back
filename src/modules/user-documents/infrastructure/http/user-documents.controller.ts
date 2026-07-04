@@ -36,11 +36,13 @@ import { FindUserDocumentsUseCase } from '../../application/use-cases/find-user-
 import { AceptarDocumentUseCase } from '../../application/use-cases/aceptar-document.use-case';
 import { ObservarDocumentUseCase } from '../../application/use-cases/observar-document.use-case';
 import { BulkUploadByFilenameUseCase } from '../../application/use-cases/bulk-upload-by-filename.use-case';
+import { TerminarRevisionUseCase } from '../../application/use-cases/terminar-revision.use-case';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
 import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
 import { BulkUploadByFilenameResponseDto } from './dtos/bulk-upload-by-filename-response.dto';
+import { TerminarRevisionDto } from './dtos/terminar-revision.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 
 @ApiTags('user-documents')
@@ -55,6 +57,7 @@ export class UserDocumentsController {
     private readonly aceptarDocumentUseCase: AceptarDocumentUseCase,
     private readonly observarDocumentUseCase: ObservarDocumentUseCase,
     private readonly bulkUploadByFilenameUseCase: BulkUploadByFilenameUseCase,
+    private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
   ) {}
 
   @Get('by-user/:userId')
@@ -136,6 +139,16 @@ export class UserDocumentsController {
   ) {
     await this.uploadFileDocumentUseCase.execute(file, dto);
     return { message: 'Archivo subido correctamente.' };
+  }
+
+  @Post('terminar-revision')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Terminar revisión — evalúa documentos del participante y actualiza su estado' })
+  @ApiOkResponse({ schema: { example: { message: 'Revisión finalizada correctamente.' } } })
+  @ApiNotFoundResponse({ description: 'Participante no encontrado.' })
+  async terminarRevision(@Body() dto: TerminarRevisionDto) {
+    await this.terminarRevisionUseCase.execute(dto.participantId, dto.createdById);
+    return { message: 'Revisión finalizada correctamente.' };
   }
 
   @Post('bulk-upload-by-filename')
