@@ -9,6 +9,9 @@ import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repositor
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
 import { USER_DOCUMENTS_REPOSITORY } from '@modules/user-documents/domain/user-documents.repository';
 import { UserDocumentsPrismaRepository } from '@modules/user-documents/infrastructure/persistence/user-documents.prisma.repository';
+import { USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
+import { UserStatusPrisma } from '@modules/user-documents/infrastructure/persistence/user-status.prisma';
+import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { USER_REPOSITORY } from './domain/user.repository';
 import { PASSWORD_HASHER } from './domain/password-hasher.port';
 import { PASSWORD_VERIFIER } from './domain/password-verifier.port';
@@ -44,6 +47,7 @@ const useCases = [
   CloseObservationUseCase,
   BulkLoadUsersUseCase,
   ExportParticipantsDocumentsUseCase,
+  TerminarRevisionUseCase,
 ];
 
 @Module({
@@ -56,6 +60,7 @@ const useCases = [
     { provide: PASSWORD_VERIFIER, useClass: BcryptService },
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
+    { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     JwtAuthGuard,
   ],
 })

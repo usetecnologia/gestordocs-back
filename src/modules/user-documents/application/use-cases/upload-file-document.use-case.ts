@@ -45,6 +45,8 @@ export class UploadFileDocumentUseCase {
       }
     }
 
+    const wasPendingDocument = userDoc.status === 'PENDIENTE';
+
     const { url } = await this.awsS3Service.uploadOne(file, 'user-documents');
 
     await this.userDocumentsRepo.addHistory(userDoc.id, 'SUBIDO', url, dto.userCreatedId);
@@ -59,9 +61,12 @@ export class UploadFileDocumentUseCase {
 
     const isComplete = totalRequired === 0 || submittedRequired === totalRequired;
 
+    // Si un usuario que no es participante sube un documento que estaba en
+    // PENDIENTE (nunca subido), y todavía quedan obligatorios pendientes,
+    // se considera igual que si lo subiera el participante: DOCUMENTOS_SUBIDOS.
     let newUserStatus = isComplete
       ? 'PENDIENTE_REVISAR'
-      : isParticipant
+      : isParticipant || wasPendingDocument
         ? 'DOCUMENTOS_SUBIDOS'
         : 'DOCUMENTOS_INCOMPLETOS';
 

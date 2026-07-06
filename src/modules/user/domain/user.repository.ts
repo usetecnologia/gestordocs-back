@@ -147,7 +147,7 @@ export interface IUserRepository {
   delete(id: string): Promise<void>;
   addStatusHistory(userId: string, status: UserStatus, createdById?: string): Promise<void>;
   createObservation(data: CreateObservationData): Promise<ObservationResult>;
-  closeObservation(observationId: string, createdById?: string): Promise<void>;
+  closeObservation(observationId: string): Promise<string>;
   existsByDni(dni: string): Promise<boolean>;
   findCountryByName(name: string): Promise<{ id: string } | null>;
   findOrCreateProgram(code: string, externalId: string | null): Promise<{ id: string }>;

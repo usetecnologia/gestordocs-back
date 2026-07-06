@@ -15,7 +15,7 @@ export class TerminarRevisionUseCase {
     private readonly userStatusPort: IUserStatusPort,
   ) {}
 
-  async execute(participantId: string, createdById: string): Promise<void> {
+  async execute(participantId: string, createdById?: string): Promise<void> {
     const docs = await this.userDocumentsRepo.findByUserIdWithHistory(
       participantId,
       UserDocumentFilter.ALL,
@@ -53,9 +53,15 @@ export class TerminarRevisionUseCase {
       return;
     }
 
-    // 4. Algún documento obligatorio sigue en PENDIENTE → DOCUMENTOS_INCOMPLETOS
+    // 4. Algún documento obligatorio sigue en PENDIENTE.
+    //    Si hay obligatorios subidos aún sin revisar (SUBIDO/EN_REVISION) → DOCUMENTOS_SUBIDOS.
+    //    Si todos los subidos ya fueron aprobados (REVISADO) o ninguno se subió → DOCUMENTOS_INCOMPLETOS.
     if (requiredDocs.some((d) => d.status === 'PENDIENTE')) {
-      await this.userStatusPort.updateStatus(participantId, 'DOCUMENTOS_INCOMPLETOS', createdById);
+      const hayEnEsperaDeRevision = requiredDocs.some(
+        (d) => d.status === 'SUBIDO' || d.status === 'EN_REVISION',
+      );
+      const nuevoEstado = hayEnEsperaDeRevision ? 'DOCUMENTOS_SUBIDOS' : 'DOCUMENTOS_INCOMPLETOS';
+      await this.userStatusPort.updateStatus(participantId, nuevoEstado, createdById);
       return;
     }
 

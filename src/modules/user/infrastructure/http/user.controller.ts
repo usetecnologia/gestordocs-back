@@ -266,7 +266,7 @@ export class UserController {
   }
 
   @Patch('observations/:id/close')
-  @ApiOperation({ summary: 'Cerrar observación — pasa al usuario a PENDIENTE_REVISAR y registra historial' })
+  @ApiOperation({ summary: 'Cerrar observación — recalcula el estado del participante según sus documentos' })
   @ApiParam({ name: 'id', description: 'UUID de la observación' })
   @ApiOkResponse({ type: ChangePasswordResponseDto })
   @ApiNotFoundResponse({ description: 'Observación no encontrada.' })

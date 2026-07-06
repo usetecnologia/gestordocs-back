@@ -607,25 +607,18 @@ export class UserPrismaRepository implements IUserRepository {
     ]);
   }
 
-  async closeObservation(observationId: string, createdById?: string): Promise<void> {
+  async closeObservation(observationId: string): Promise<string> {
     const obs = await this.prisma.userObservations.findUnique({
       where: { id: observationId },
       select: { userId: true },
     });
     if (!obs) throw new NotFoundException(`Observación #${observationId} no encontrada.`);
 
-    await this.prisma.$transaction([
-      this.prisma.userObservations.update({
-        where: { id: observationId },
-        data: { endDate: new Date(), status: false },
-      }),
-      this.prisma.user.update({
-        where: { id: obs.userId },
-        data: { status: 'PENDIENTE_REVISAR' as never },
-      }),
-      this.prisma.userHistoryStatus.create({
-        data: { userId: obs.userId, status: 'PENDIENTE_REVISAR' as never, createdById },
-      }),
-    ]);
+    await this.prisma.userObservations.update({
+      where: { id: observationId },
+      data: { endDate: new Date(), status: false },
+    });
+
+    return obs.userId;
   }
 }
