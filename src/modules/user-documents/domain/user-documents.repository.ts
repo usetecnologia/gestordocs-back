@@ -116,6 +116,7 @@ export interface IUserDocumentsRepository {
   findDocumentIdBySiglasCode(siglasCode: string): Promise<string | null>;
   upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;
   findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
+  hasObservedDocument(userId: string): Promise<boolean>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

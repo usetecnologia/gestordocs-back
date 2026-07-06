@@ -28,6 +28,8 @@ export class UploadFileDocumentUseCase {
 
     const isParticipant = uploaderRole === 'Participante';
 
+    const currentStatus = await this.userStatusPort.getStatus(userDoc.userId);
+
     if (isParticipant) {
       const BLOCKED_STATUSES: Record<string, string> = {
         EN_REVISION:       'Tus documentos están en revisión, por favor espere.',
@@ -38,7 +40,6 @@ export class UploadFileDocumentUseCase {
         RETIRADO:          'Tu expediente está retirado, no puedes subir documentos.',
       };
 
-      const currentStatus = await this.userStatusPort.getStatus(userDoc.userId);
       if (currentStatus && BLOCKED_STATUSES[currentStatus]) {
         throw new ConflictException(BLOCKED_STATUSES[currentStatus]);
       }
@@ -48,19 +49,33 @@ export class UploadFileDocumentUseCase {
 
     await this.userDocumentsRepo.addHistory(userDoc.id, 'SUBIDO', url, dto.userCreatedId);
 
-    if (isParticipant) {
-      const { totalRequired, submittedRequired } = await this.userDocumentsRepo.countRequiredDocs(
-        userDoc.userId,
-      );
+    // Si un usuario que no es participante sube un documento mientras el
+    // participante está EN_REVISION, no se debe alterar ese estado.
+    if (!isParticipant && currentStatus === 'EN_REVISION') return;
 
-      console.log(totalRequired, submittedRequired)
+    const { totalRequired, submittedRequired } = await this.userDocumentsRepo.countRequiredDocs(
+      userDoc.userId,
+    );
 
-      const newUserStatus =
-        totalRequired === 0 || submittedRequired === totalRequired
-          ? 'PENDIENTE_REVISAR'
-          : 'DOCUMENTOS_INCOMPLETOS';
+    const isComplete = totalRequired === 0 || submittedRequired === totalRequired;
 
-      await this.userStatusPort.updateStatus(userDoc.userId, newUserStatus, dto.userCreatedId ?? undefined);
+    let newUserStatus = isComplete
+      ? 'PENDIENTE_REVISAR'
+      : isParticipant
+        ? 'DOCUMENTOS_SUBIDOS'
+        : 'DOCUMENTOS_INCOMPLETOS';
+
+    if (currentStatus === 'OBSERVADO') {
+      const [hasActiveObservation, hasObservedDocument] = await Promise.all([
+        this.userStatusPort.hasActiveObservation(userDoc.userId),
+        this.userDocumentsRepo.hasObservedDocument(userDoc.userId),
+      ]);
+
+      if (hasActiveObservation || hasObservedDocument) {
+        newUserStatus = 'OBSERVADO';
+      }
     }
+
+    await this.userStatusPort.updateStatus(userDoc.userId, newUserStatus, dto.userCreatedId ?? undefined);
   }
 }

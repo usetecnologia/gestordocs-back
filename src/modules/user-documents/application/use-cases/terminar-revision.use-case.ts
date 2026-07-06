@@ -29,6 +29,12 @@ export class TerminarRevisionUseCase {
       return (d.document?.required ?? false) && d.document?.type === 'DOCUMENT';
     });
 
+    // 0. Tiene una observación vigente (activa y sin endDate) → se mantiene/pasa a OBSERVADO
+    if (await this.userStatusPort.hasActiveObservation(participantId)) {
+      await this.userStatusPort.updateStatus(participantId, 'OBSERVADO', createdById);
+      return;
+    }
+
     // 1. Existe algún documento OBSERVADO → participante pasa a OBSERVADO
     if (docs.some((d) => d.status === 'OBSERVADO')) {
       await this.userStatusPort.updateStatus(participantId, 'OBSERVADO', createdById);

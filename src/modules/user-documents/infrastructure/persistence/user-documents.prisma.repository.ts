@@ -366,4 +366,15 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       status: r.status as string,
     }));
   }
+
+  async hasObservedDocument(userId: string): Promise<boolean> {
+    const count = await this.prisma.userDocuments.count({
+      where: {
+        userId,
+        statusDocument: true,
+        status: $Enums.DocumentSponsorStatus.OBSERVADO,
+      },
+    });
+    return count > 0;
+  }
 }

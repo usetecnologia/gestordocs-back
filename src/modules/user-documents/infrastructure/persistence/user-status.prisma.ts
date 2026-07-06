@@ -34,4 +34,11 @@ export class UserStatusPrisma implements IUserStatusPort {
     });
     return user?.role?.name ?? null;
   }
+
+  async hasActiveObservation(userId: string): Promise<boolean> {
+    const count = await this.prisma.userObservations.count({
+      where: { userId, status: true, endDate: null },
+    });
+    return count > 0;
+  }
 }
