@@ -72,11 +72,21 @@ export class ExportParticipantsDocumentsUseCase {
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Document Status Report');
 
-    const headerRow = sheet.addRow(['DNI', 'LAST NAME', 'NAMES', ...columns.map((c) => c.siglasCode)]);
+    const headerRow = sheet.addRow([
+      'DNI',
+      'LAST NAME',
+      'NAMES',
+      'HIRED',
+      'SPONSOR',
+      'STATUS PARTICIPANTE',
+      ...columns.map((c) => c.siglasCode),
+    ]);
     headerRow.eachCell((cell) => {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF000000' } };
     });
+
+    const FIRST_DOC_COLUMN = 7; // DNI, LAST NAME, NAMES, HIRED, SPONSOR, STATUS PARTICIPANTE, luego los docs
 
     for (const user of users) {
       const lastName = [user.lastfathername, user.lastmothername].filter(Boolean).join(' ');
@@ -87,6 +97,9 @@ export class ExportParticipantsDocumentsUseCase {
         user.dni ?? '',
         lastName,
         names,
+        user.status_hired ?? '',
+        user.sponsor ?? '',
+        user.status,
         ...columns.map((c) => (c.siglasCode && statuses?.get(c.siglasCode)) || NOT_ASSIGNED),
       ]);
 
@@ -95,7 +108,7 @@ export class ExportParticipantsDocumentsUseCase {
       row.getCell(3).font = { bold: true };
 
       columns.forEach((_, index) => {
-        const cell = row.getCell(4 + index);
+        const cell = row.getCell(FIRST_DOC_COLUMN + index);
         const style = STATUS_STYLES[String(cell.value)];
         if (style) cell.font = { bold: style.bold, color: { argb: style.color } };
       });

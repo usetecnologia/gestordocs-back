@@ -53,7 +53,10 @@ export class UserPrismaRepository implements IUserRepository {
     sponsorId,
     programId,
     optionProgramId,
+    statusSolRetiro,
     search,
+    sortBy,
+    sortOrder,
   }: UserFilters) {
     let searchIds: string[] | undefined;
     if (search) {
@@ -81,6 +84,22 @@ export class UserPrismaRepository implements IUserRepository {
       searchIds = rows.map((r) => r.id);
     }
 
+    let statusSolRetiroIds: string[] | undefined;
+    if (statusSolRetiro) {
+      const normalized = statusSolRetiro.trim().toUpperCase();
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+        Prisma.sql`SELECT id FROM \`User\` WHERE UPPER(TRIM(statusSolRetiro)) = ${normalized}`,
+      );
+      statusSolRetiroIds = rows.map((r) => r.id);
+    }
+
+    const idFilters = [searchIds, statusSolRetiroIds].filter(
+      (ids): ids is string[] => ids !== undefined,
+    );
+    const combinedIds = idFilters.length
+      ? idFilters.reduce((acc, ids) => acc.filter((id) => ids.includes(id)))
+      : undefined;
+
     const where = {
       ...(status && { status }),
       ...(roleId && { roleId }),
@@ -88,21 +107,59 @@ export class UserPrismaRepository implements IUserRepository {
       ...(sponsorId && { sponsorId }),
       ...(programId && { programId }),
       ...(optionProgramId && { optionProgramId }),
-      ...(searchIds !== undefined && { id: { in: searchIds } }),
+      ...(combinedIds !== undefined && { id: { in: combinedIds } }),
     };
 
-    const [usersRaw, total] = await this.prisma.$transaction([
-      this.prisma.user.findMany({
-        where,
-        include: USER_INCLUDE,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.user.count({ where }),
-    ]);
+    let users: PrismaUserFull[];
+    let total: number;
 
-    const users = usersRaw as PrismaUserFull[];
+    if (sortBy) {
+      // firstname/lastfathername viven en Person, sin relación Prisma con User,
+      // así que el orden y la paginación se resuelven en memoria sobre los ids.
+      const matchingIds = (
+        await this.prisma.user.findMany({ where, select: { id: true } })
+      ).map((u) => u.id);
+
+      const sortPersons = matchingIds.length
+        ? await this.prisma.person.findMany({
+            where: { id: { in: matchingIds } },
+            select: { id: true, firstname: true, lastfathername: true },
+          })
+        : [];
+      const sortValueMap = new Map<string, string>(
+        sortPersons.map((p) => [p.id, (sortBy === 'firstname' ? p.firstname : p.lastfathername) ?? '']),
+      );
+
+      const direction = sortOrder === 'desc' ? -1 : 1;
+      const sortedIds = [...matchingIds].sort((a, b) => {
+        const va = sortValueMap.get(a) ?? '';
+        const vb = sortValueMap.get(b) ?? '';
+        return direction * va.localeCompare(vb, 'es', { sensitivity: 'base' });
+      });
+
+      total = sortedIds.length;
+      const pageIds = sortedIds.slice((page - 1) * limit, (page - 1) * limit + limit);
+
+      const pageUsersRaw = pageIds.length
+        ? await this.prisma.user.findMany({ where: { id: { in: pageIds } }, include: USER_INCLUDE })
+        : [];
+      const byId = new Map((pageUsersRaw as PrismaUserFull[]).map((u) => [u.id, u]));
+      users = pageIds.map((id) => byId.get(id)).filter((u): u is PrismaUserFull => !!u);
+    } else {
+      const [usersRaw, totalCount] = await this.prisma.$transaction([
+        this.prisma.user.findMany({
+          where,
+          include: USER_INCLUDE,
+          skip: (page - 1) * limit,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.user.count({ where }),
+      ]);
+      users = usersRaw as PrismaUserFull[];
+      total = totalCount;
+    }
+
     const userIds = users.map((u) => u.id);
     const persons: PersonModel[] = userIds.length
       ? await this.prisma.person.findMany({ where: { id: { in: userIds } } })
@@ -234,11 +291,17 @@ export class UserPrismaRepository implements IUserRepository {
 
     const users = await this.prisma.user.findMany({
       where,
-      select: { id: true },
+      select: {
+        id: true,
+        status: true,
+        status_hired: true,
+        sponsor: { select: { name: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
     const userIds = users.map((u) => u.id);
     if (!userIds.length) return [];
+    const userMap = new Map(users.map((u) => [u.id, u]));
 
     const persons = await this.prisma.person.findMany({
       where: { id: { in: userIds } },
@@ -248,6 +311,7 @@ export class UserPrismaRepository implements IUserRepository {
 
     return userIds.map((id) => {
       const person = personMap.get(id);
+      const user = userMap.get(id);
       return {
         id,
         dni: person?.dni ?? null,
@@ -255,6 +319,9 @@ export class UserPrismaRepository implements IUserRepository {
         middlename: person?.middlename ?? null,
         lastfathername: person?.lastfathername ?? '',
         lastmothername: person?.lastmothername ?? null,
+        status_hired: user?.status_hired ?? null,
+        sponsor: user?.sponsor?.name ?? null,
+        status: user?.status ?? '',
       };
     });
   }

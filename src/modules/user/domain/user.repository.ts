@@ -32,7 +32,10 @@ export interface UserFilters {
   sponsorId?: string;
   programId?: string;
   optionProgramId?: string;
+  statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
   search?: string;
+  sortBy?: 'firstname' | 'lastfathername';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface CreateUserData {
@@ -136,6 +139,9 @@ export interface ExportUserRow {
   middlename: string | null;
   lastfathername: string;
   lastmothername: string | null;
+  status_hired: number | null;
+  sponsor: string | null;
+  status: string;
 }
 
 export interface IUserRepository {

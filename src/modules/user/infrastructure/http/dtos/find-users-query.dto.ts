@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { UserStatus } from '../../../domain/user.enums';
 
 export class FindUsersQueryDto {
@@ -45,8 +45,27 @@ export class FindUsersQueryDto {
   @IsUUID()
   optionProgramId?: string;
 
+  @ApiPropertyOptional({ enum: ['ACCEPTED', 'INPROCESS'], example: 'ACCEPTED' })
+  @IsOptional()
+  @IsIn(['ACCEPTED', 'INPROCESS'])
+  statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
+
   @ApiPropertyOptional({ example: 'john' })
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    enum: ['firstname', 'lastfathername'],
+    example: 'lastfathername',
+    description: 'Si no se envía, se mantiene el orden por defecto (createdAt desc).',
+  })
+  @IsOptional()
+  @IsIn(['firstname', 'lastfathername'])
+  sortBy?: 'firstname' | 'lastfathername';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], example: 'asc', description: 'Solo aplica junto con sortBy.' })
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
 }

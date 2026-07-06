@@ -17,7 +17,10 @@ export class FindAllUserUseCase {
       sponsorId: query.sponsorId,
       programId: query.programId,
       optionProgramId: query.optionProgramId,
+      statusSolRetiro: query.statusSolRetiro,
       search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder ?? 'asc',
     });
   }
 }
