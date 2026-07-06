@@ -51,7 +51,8 @@ export interface BulkUploadSuccessItem {
   dni: string;
   siglasCode: string;
   userId: string;
-  documentId: string;
+  documentId: string | null;
+  documentSponsorId: string | null;
 }
 
 export interface BulkUploadErrorItem {
@@ -85,9 +86,9 @@ export class BulkUploadByFilenameUseCase {
   ): Promise<BulkUploadByFilenameResult> {
     const status = resolveStatus(statusInput);
     if (!status) {
-      throw new BadRequestException(
-        `Estado no vinculado: "${statusInput}". Los valores válidos son: ${VALID_STATUSES.join(', ')}.`,
-      );
+      const message = `Estado no vinculado: "${statusInput}". Los valores válidos son: ${VALID_STATUSES.join(', ')}.`;
+      console.log('[BulkUploadByFilenameUseCase] error:', message);
+      throw new BadRequestException(message);
     }
 
     const outcomes = await mapWithConcurrency(files, UPLOAD_CONCURRENCY, (file) =>
@@ -111,12 +112,16 @@ export class BulkUploadByFilenameUseCase {
       ),
     );
 
-    return {
+    const result: BulkUploadByFilenameResult = {
       totalSuccess: successes.length,
       totalErrors: errors.length,
       successes,
       errors,
     };
+
+    console.log('[BulkUploadByFilenameUseCase] response:', JSON.stringify(result, null, 2));
+
+    return result;
   }
 
   private async processFile(
@@ -149,11 +154,7 @@ export class BulkUploadByFilenameUseCase {
 
     const { dni, siglasCode } = parsed;
 
-    const [userId, documentId] = await Promise.all([
-      this.userDocumentsRepo.findUserIdByDni(dni),
-      this.userDocumentsRepo.findDocumentIdBySiglasCode(siglasCode),
-    ]);
-
+    const userId = await this.userDocumentsRepo.findUserIdByDni(dni);
     if (!userId) {
       return {
         kind: 'error',
@@ -161,10 +162,25 @@ export class BulkUploadByFilenameUseCase {
       };
     }
 
-    if (!documentId) {
+    const sponsorCode = await this.userDocumentsRepo.findUserSponsorCode(userId);
+    const target = await this.userDocumentsRepo.findDocumentTargetBySiglasCode(siglasCode, sponsorCode);
+
+    if (!target.found) {
       return {
         kind: 'error',
         item: { filename, reason: `Documento con siglas "${siglasCode}" no encontrado.`, dni, siglasCode },
+      };
+    }
+
+    if (!target.applicable) {
+      return {
+        kind: 'error',
+        item: {
+          filename,
+          reason: `El documento "${siglasCode}" no aplica al sponsor del participante.`,
+          dni,
+          siglasCode,
+        },
       };
     }
 
@@ -172,12 +188,23 @@ export class BulkUploadByFilenameUseCase {
       const { url } = await this.awsS3Service.uploadOne(file, 'user-documents/bulk');
       await this.userDocumentsRepo.upsertUserDocumentWithStatus({
         userId,
-        documentId,
+        documentId: target.documentId,
+        documentSponsorId: target.documentSponsorId,
         status,
         url,
         createdById,
       });
-      return { kind: 'success', item: { filename, dni, siglasCode, userId, documentId } };
+      return {
+        kind: 'success',
+        item: {
+          filename,
+          dni,
+          siglasCode,
+          userId,
+          documentId: target.documentId,
+          documentSponsorId: target.documentSponsorId,
+        },
+      };
     } catch {
       return {
         kind: 'error',

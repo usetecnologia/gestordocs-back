@@ -88,11 +88,17 @@ export enum UserDocumentFilter {
 
 export interface BulkUploadFileData {
   userId: string;
-  documentId: string;
+  documentId: string | null;
+  documentSponsorId: string | null;
   status: string;
   url: string;
   createdById: string;
 }
+
+export type DocumentTargetResult =
+  | { found: false }
+  | { found: true; applicable: false }
+  | { found: true; applicable: true; documentId: string | null; documentSponsorId: string | null };
 
 export interface ActiveUserDocumentStatus {
   userId: string;
@@ -113,7 +119,7 @@ export interface IUserDocumentsRepository {
   aceptarDocument(data: AceptarDocumentData): Promise<void>;
   observarDocument(data: ObservarDocumentData): Promise<void>;
   findUserIdByDni(dni: string): Promise<string | null>;
-  findDocumentIdBySiglasCode(siglasCode: string): Promise<string | null>;
+  findDocumentTargetBySiglasCode(siglasCode: string, sponsorCode: string | null): Promise<DocumentTargetResult>;
   upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;
   findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
   hasObservedDocument(userId: string): Promise<boolean>;

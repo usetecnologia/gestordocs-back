@@ -5,7 +5,8 @@ export class BulkUploadSuccessItemDto {
   @ApiProperty({ example: '12345678' }) dni!: string;
   @ApiProperty({ example: 'DS2019' }) siglasCode!: string;
   @ApiProperty({ example: 'uuid-del-usuario' }) userId!: string;
-  @ApiProperty({ example: 'uuid-del-documento' }) documentId!: string;
+  @ApiPropertyOptional({ nullable: true, example: 'uuid-del-documento' }) documentId!: string | null;
+  @ApiPropertyOptional({ nullable: true, example: 'uuid-del-vinculo-sponsor' }) documentSponsorId!: string | null;
 }
 
 export class BulkUploadErrorItemDto {

@@ -12,6 +12,7 @@ import {
   AceptarDocumentData,
   ObservarDocumentData,
   BulkUploadFileData,
+  DocumentTargetResult,
   ActiveUserDocumentStatus,
 } from '../../domain/user-documents.repository';
 
@@ -312,19 +313,48 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     return user?.id ?? null;
   }
 
-  async findDocumentIdBySiglasCode(siglasCode: string): Promise<string | null> {
+  async findDocumentTargetBySiglasCode(
+    siglasCode: string,
+    sponsorCode: string | null,
+  ): Promise<DocumentTargetResult> {
     const doc = await this.prisma.documents.findFirst({
       where: { siglasCode, status: true },
-      select: { id: true },
+      select: {
+        id: true,
+        documentSponsors: {
+          where: { status: true },
+          select: { id: true, sponsor: { select: { code: true } } },
+        },
+      },
     });
-    return doc?.id ?? null;
+
+    if (!doc) return { found: false };
+
+    // Documento sin vínculos a sponsors: se rastrea directo por documentId.
+    if (doc.documentSponsors.length === 0) {
+      return { found: true, applicable: true, documentId: doc.id, documentSponsorId: null };
+    }
+
+    // Documento específico de sponsor: debe rastrearse por documentSponsorId
+    // del vínculo que corresponde al sponsor del participante.
+    const matching = doc.documentSponsors.find((ds) => ds.sponsor.code === sponsorCode);
+    if (!matching) return { found: true, applicable: false };
+
+    return { found: true, applicable: true, documentId: null, documentSponsorId: matching.id };
   }
 
-  async upsertUserDocumentWithStatus({ userId, documentId, status, url, createdById }: BulkUploadFileData): Promise<void> {
+  async upsertUserDocumentWithStatus({
+    userId,
+    documentId,
+    documentSponsorId,
+    status,
+    url,
+    createdById,
+  }: BulkUploadFileData): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
 
     const existing = await this.prisma.userDocuments.findFirst({
-      where: { userId, documentId },
+      where: { userId, ...(documentSponsorId ? { documentSponsorId } : { documentId }) },
       select: { id: true },
     });
 
@@ -343,6 +373,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         data: {
           userId,
           documentId,
+          documentSponsorId,
           status: castedStatus,
           statusDocument: true,
           userDocumentHistory: {
