@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { UserStatus } from '../../../domain/user.enums';
 
 export class FindUsersQueryDto {
@@ -34,6 +35,21 @@ export class FindUsersQueryDto {
   @IsOptional()
   @IsUUID()
   sponsorId?: string;
+
+  @ApiPropertyOptional({
+    type: Boolean,
+    description:
+      'true = solo participantes con sponsor asociado. false = solo participantes sin sponsor.',
+  })
+  @IsOptional()
+  @Transform(({ obj, key }) => {
+    const raw = (obj as Record<string, unknown>)[key as string];
+    if (raw === 'true') return true;
+    if (raw === 'false') return false;
+    return undefined;
+  })
+  @IsBoolean()
+  hasSponsor?: boolean;
 
   @ApiPropertyOptional({ example: 'uuid-del-programa' })
   @IsOptional()

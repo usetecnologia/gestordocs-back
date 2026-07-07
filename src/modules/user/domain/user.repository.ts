@@ -30,6 +30,7 @@ export interface UserFilters {
   roleId?: string;
   countryId?: string;
   sponsorId?: string;
+  hasSponsor?: boolean;
   programId?: string;
   optionProgramId?: string;
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';

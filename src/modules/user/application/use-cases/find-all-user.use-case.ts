@@ -15,6 +15,7 @@ export class FindAllUserUseCase {
       roleId: query.roleId,
       countryId: query.countryId,
       sponsorId: query.sponsorId,
+      hasSponsor: query.hasSponsor,
       programId: query.programId,
       optionProgramId: query.optionProgramId,
       statusSolRetiro: query.statusSolRetiro,
