@@ -17,6 +17,7 @@ import { AceptarDocumentUseCase } from './application/use-cases/aceptar-document
 import { ObservarDocumentUseCase } from './application/use-cases/observar-document.use-case';
 import { BulkUploadByFilenameUseCase } from './application/use-cases/bulk-upload-by-filename.use-case';
 import { TerminarRevisionUseCase } from './application/use-cases/terminar-revision.use-case';
+import { DownloadDocumentsBySponsorUseCase } from './application/use-cases/download-documents-by-sponsor.use-case';
 
 @Module({
   imports: [PrismaModule, AppJwtModule, AwsS3Module],
@@ -29,6 +30,7 @@ import { TerminarRevisionUseCase } from './application/use-cases/terminar-revisi
     ObservarDocumentUseCase,
     BulkUploadByFilenameUseCase,
     TerminarRevisionUseCase,
+    DownloadDocumentsBySponsorUseCase,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },

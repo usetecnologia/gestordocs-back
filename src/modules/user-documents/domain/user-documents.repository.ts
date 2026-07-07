@@ -107,6 +107,22 @@ export interface ActiveUserDocumentStatus {
   status: string;
 }
 
+export interface ParticipantSponsorInfo {
+  id: string;
+  dni: string | null;
+  firstname: string;
+  middlename: string | null;
+  lastfathername: string;
+  lastmothername: string | null;
+  sponsorCode: string | null;
+}
+
+export interface UserDocumentTargetHistoryItem {
+  status: string;
+  url: string | null;
+  createdAt: Date;
+}
+
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
   findUserSponsorCode(userId: string): Promise<string | null>;
@@ -123,6 +139,12 @@ export interface IUserDocumentsRepository {
   upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;
   findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
   hasObservedDocument(userId: string): Promise<boolean>;
+  findParticipantInfo(userId: string): Promise<ParticipantSponsorInfo | null>;
+  findHistoryByUserAndTarget(
+    userId: string,
+    documentId: string | null,
+    documentSponsorId: string | null,
+  ): Promise<UserDocumentTargetHistoryItem[]>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

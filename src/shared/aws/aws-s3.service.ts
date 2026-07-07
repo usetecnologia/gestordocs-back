@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { randomUUID } from 'crypto';
 import * as mime from 'mime-types';
 import { envs } from '@config/envs';
@@ -36,5 +36,12 @@ export class AwsS3Service {
 
     const url = `https://${this.bucket}.s3.${envs.AWS_REGION}.amazonaws.com/${key}`;
     return { url, key };
+  }
+
+  async downloadOne(url: string): Promise<Buffer> {
+    const key = decodeURIComponent(new URL(url).pathname.replace(/^\//, ''));
+    const result = await this.client.send(new GetObjectCommand({ Bucket: this.bucket, Key: key }));
+    const bytes = await result.Body!.transformToByteArray();
+    return Buffer.from(bytes);
   }
 }

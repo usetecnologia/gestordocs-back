@@ -8,14 +8,17 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
   UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AnyFilesInterceptor, FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
@@ -23,6 +26,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiProduces,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -37,6 +41,7 @@ import { AceptarDocumentUseCase } from '../../application/use-cases/aceptar-docu
 import { ObservarDocumentUseCase } from '../../application/use-cases/observar-document.use-case';
 import { BulkUploadByFilenameUseCase } from '../../application/use-cases/bulk-upload-by-filename.use-case';
 import { TerminarRevisionUseCase } from '../../application/use-cases/terminar-revision.use-case';
+import { DownloadDocumentsBySponsorUseCase } from '../../application/use-cases/download-documents-by-sponsor.use-case';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
@@ -58,6 +63,7 @@ export class UserDocumentsController {
     private readonly observarDocumentUseCase: ObservarDocumentUseCase,
     private readonly bulkUploadByFilenameUseCase: BulkUploadByFilenameUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
+    private readonly downloadDocumentsBySponsorUseCase: DownloadDocumentsBySponsorUseCase,
   ) {}
 
   @Get('by-user/:userId')
@@ -71,6 +77,34 @@ export class UserDocumentsController {
     @Query() query: FindUserDocumentsQueryDto,
   ): Promise<UserDocumentWithHistoryDto[]> {
     return this.findUserDocumentsUseCase.execute(userId, query.filter);
+  }
+
+  @Get('download-by-sponsor/:userId')
+  @ApiOperation({
+    summary: 'Descargar y combinar en un solo PDF los documentos del sponsor ASPIRE (PASSPORT, JOASPIRE, ULETTER, TRANSLATION)',
+  })
+  @ApiParam({ name: 'userId', description: 'UUID del participante' })
+  @ApiProduces('application/pdf')
+  @ApiOkResponse({ description: 'Archivo PDF combinado.' })
+  @ApiNotFoundResponse({ description: 'Participante no encontrado o sin documentos subidos.' })
+  @ApiBadRequestResponse({ description: 'El participante no pertenece al sponsor ASPIRE.' })
+  async downloadBySponsor(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, filename } = await this.downloadDocumentsBySponsorUseCase.execute(userId);
+
+    const asciiFallback = filename
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^\x20-\x7E]/g, '');
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    );
+    res.send(buffer);
   }
 
   @Post('aceptar-document')

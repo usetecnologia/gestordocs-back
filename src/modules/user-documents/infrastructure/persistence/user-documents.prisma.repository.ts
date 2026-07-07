@@ -14,6 +14,8 @@ import {
   BulkUploadFileData,
   DocumentTargetResult,
   ActiveUserDocumentStatus,
+  ParticipantSponsorInfo,
+  UserDocumentTargetHistoryItem,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -407,5 +409,49 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       },
     });
     return count > 0;
+  }
+
+  async findParticipantInfo(userId: string): Promise<ParticipantSponsorInfo | null> {
+    const [user, person] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, sponsor: { select: { code: true } } },
+      }),
+      this.prisma.person.findUnique({
+        where: { id: userId },
+        select: { dni: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+      }),
+    ]);
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      dni: person?.dni ?? null,
+      firstname: person?.firstname ?? '',
+      middlename: person?.middlename ?? null,
+      lastfathername: person?.lastfathername ?? '',
+      lastmothername: person?.lastmothername ?? null,
+      sponsorCode: user.sponsor?.code ?? null,
+    };
+  }
+
+  async findHistoryByUserAndTarget(
+    userId: string,
+    documentId: string | null,
+    documentSponsorId: string | null,
+  ): Promise<UserDocumentTargetHistoryItem[]> {
+    const userDoc = await this.prisma.userDocuments.findFirst({
+      where: {
+        userId,
+        ...(documentSponsorId ? { documentSponsorId } : { documentId }),
+      },
+      select: {
+        userDocumentHistory: {
+          select: { status: true, url: true, createdAt: true },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+    return userDoc?.userDocumentHistory ?? [];
   }
 }
