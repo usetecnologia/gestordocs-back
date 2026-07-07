@@ -140,6 +140,7 @@ export interface IUserDocumentsRepository {
   findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
   hasObservedDocument(userId: string): Promise<boolean>;
   findParticipantInfo(userId: string): Promise<ParticipantSponsorInfo | null>;
+  findAllParticipantIds(): Promise<string[]>;
   findHistoryByUserAndTarget(
     userId: string,
     documentId: string | null,

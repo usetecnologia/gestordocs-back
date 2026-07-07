@@ -41,6 +41,7 @@ import { AceptarDocumentUseCase } from '../../application/use-cases/aceptar-docu
 import { ObservarDocumentUseCase } from '../../application/use-cases/observar-document.use-case';
 import { BulkUploadByFilenameUseCase } from '../../application/use-cases/bulk-upload-by-filename.use-case';
 import { TerminarRevisionUseCase } from '../../application/use-cases/terminar-revision.use-case';
+import { BulkTerminarRevisionUseCase } from '../../application/use-cases/bulk-terminar-revision.use-case';
 import { DownloadDocumentsBySponsorUseCase } from '../../application/use-cases/download-documents-by-sponsor.use-case';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
@@ -48,6 +49,7 @@ import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.
 import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
 import { BulkUploadByFilenameResponseDto } from './dtos/bulk-upload-by-filename-response.dto';
 import { TerminarRevisionDto } from './dtos/terminar-revision.dto';
+import { TerminarRevisionMasivoResponseDto } from './dtos/terminar-revision-masivo-response.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 
 @ApiTags('user-documents')
@@ -63,6 +65,7 @@ export class UserDocumentsController {
     private readonly observarDocumentUseCase: ObservarDocumentUseCase,
     private readonly bulkUploadByFilenameUseCase: BulkUploadByFilenameUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
+    private readonly bulkTerminarRevisionUseCase: BulkTerminarRevisionUseCase,
     private readonly downloadDocumentsBySponsorUseCase: DownloadDocumentsBySponsorUseCase,
   ) {}
 
@@ -81,25 +84,29 @@ export class UserDocumentsController {
 
   @Get('download-by-sponsor/:userId')
   @ApiOperation({
-    summary: 'Descargar y combinar en un solo PDF los documentos del sponsor ASPIRE (PASSPORT, JOASPIRE, ULETTER, TRANSLATION)',
+    summary: 'Descargar los documentos del participante según su sponsor',
+    description:
+      'ASPIRE: combina PASSPORT, JOASPIRE, ULETTER y TRANSLATION en un solo PDF (con sello en TRANSLATION). ' +
+      'UNITED: genera un .zip con una carpeta {dni}_{apellidos, nombres} conteniendo PROOF.pdf (UWTPOSS), ' +
+      'ULETTER.pdf (ULETTER+TRANSLATION), PBC.pdf (PBC+PBC2), PASSPORT.pdf y JO.pdf (SPONSOR).',
   })
   @ApiParam({ name: 'userId', description: 'UUID del participante' })
-  @ApiProduces('application/pdf')
-  @ApiOkResponse({ description: 'Archivo PDF combinado.' })
+  @ApiProduces('application/pdf', 'application/zip')
+  @ApiOkResponse({ description: 'Archivo PDF (ASPIRE) o ZIP (UNITED) con los documentos.' })
   @ApiNotFoundResponse({ description: 'Participante no encontrado o sin documentos subidos.' })
-  @ApiBadRequestResponse({ description: 'El participante no pertenece al sponsor ASPIRE.' })
+  @ApiBadRequestResponse({ description: 'El participante no pertenece a un sponsor soportado (ASPIRE o UNITED).' })
   async downloadBySponsor(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Res() res: Response,
   ): Promise<void> {
-    const { buffer, filename } = await this.downloadDocumentsBySponsorUseCase.execute(userId);
+    const { buffer, filename, contentType } = await this.downloadDocumentsBySponsorUseCase.execute(userId);
 
     const asciiFallback = filename
       .normalize('NFD')
       .replace(/[̀-ͯ]/g, '')
       .replace(/[^\x20-\x7E]/g, '');
 
-    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Type', contentType);
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
@@ -183,6 +190,17 @@ export class UserDocumentsController {
   async terminarRevision(@Body() dto: TerminarRevisionDto) {
     await this.terminarRevisionUseCase.execute(dto.participantId, dto.createdById);
     return { message: 'Revisión finalizada correctamente.' };
+  }
+
+  @Post('terminar-revision-masivo')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Terminar revisión de forma masiva — evalúa y actualiza el estado de todos los participantes',
+  })
+  @ApiOkResponse({ type: TerminarRevisionMasivoResponseDto })
+  async terminarRevisionMasivo(): Promise<TerminarRevisionMasivoResponseDto> {
+    const result = await this.bulkTerminarRevisionUseCase.execute();
+    return { message: 'Revisión masiva finalizada.', ...result };
   }
 
   @Post('bulk-upload-by-filename')

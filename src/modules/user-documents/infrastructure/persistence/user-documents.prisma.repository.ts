@@ -435,6 +435,14 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     };
   }
 
+  async findAllParticipantIds(): Promise<string[]> {
+    const users = await this.prisma.user.findMany({
+      where: { role: { code: 'PARTICIPANTE' } },
+      select: { id: true },
+    });
+    return users.map((u) => u.id);
+  }
+
   async findHistoryByUserAndTarget(
     userId: string,
     documentId: string | null,
