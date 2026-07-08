@@ -1,8 +1,8 @@
 # Etapa 1: Builder
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 
 # Instalar dependencias del sistema para Prisma
-RUN apk add --no-cache openssl libc6-compat
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -26,9 +26,9 @@ RUN npx prisma generate
 RUN npm run build
 
 # Etapa 2: Production
-FROM node:20-alpine AS production
+FROM node:20-slim AS production
 
-RUN apk add --no-cache openssl libc6-compat
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
