@@ -16,6 +16,7 @@ import {
   ActiveUserDocumentStatus,
   ParticipantSponsorInfo,
   UserDocumentTargetHistoryItem,
+  CloneDocumentForSponsorData,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -128,7 +129,10 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByUserId(userId: string): Promise<ExistingUserDocument[]> {
-    const rows = await this.prisma.userDocuments.findMany({ where: { userId } });
+    const rows = await this.prisma.userDocuments.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+    });
     return rows.map((r) => ({
       id: r.id,
       userId: r.userId,
@@ -136,6 +140,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       documentId: r.documentId,
       status: r.status as string,
       statusDocument: r.statusDocument,
+      createdAt: r.createdAt,
     }));
   }
 
@@ -196,6 +201,26 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         statusDocument: true,
         userDocumentHistory: {
           create: { status: 'PENDIENTE' },
+        },
+      },
+    });
+  }
+
+  async cloneDocumentForNewSponsor({
+    userId,
+    documentSponsorId,
+    status,
+    url,
+  }: CloneDocumentForSponsorData): Promise<void> {
+    const castedStatus = status as $Enums.DocumentSponsorStatus;
+    await this.prisma.userDocuments.create({
+      data: {
+        userId,
+        documentSponsorId,
+        status: castedStatus,
+        statusDocument: true,
+        userDocumentHistory: {
+          create: { status: castedStatus, url },
         },
       },
     });

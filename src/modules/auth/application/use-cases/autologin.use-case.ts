@@ -95,6 +95,10 @@ export class AutoLoginUseCase {
 
     const userStatus = resolveUserStatus(data);
 
+    // Un participante contratado (status_hired = 1) queda sin sponsor asignado —
+    // solo se limpia el vínculo (FK a null), no se borra su historial ni documentos previos.
+    const userSponsorId = data.status_hired === 1 ? null : sponsorId;
+
     const credentials = await this.autoLoginRepo.upsertByDni({
       dni,
       firstname: data.firstname,
@@ -104,7 +108,7 @@ export class AutoLoginUseCase {
       birthdate: data.birthdate || null,
       countryId: country.id,
       programId,
-      sponsorId,
+      sponsorId: userSponsorId,
       optionProgramId,
       passwordHash,
       employer: data.employer || null,
