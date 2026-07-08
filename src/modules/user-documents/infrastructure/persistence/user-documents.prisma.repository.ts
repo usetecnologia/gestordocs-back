@@ -17,6 +17,7 @@ import {
   ParticipantSponsorInfo,
   UserDocumentTargetHistoryItem,
   CloneDocumentForSponsorData,
+  RefreshDocumentFromLatestData,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -129,9 +130,12 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByUserId(userId: string): Promise<ExistingUserDocument[]> {
+    // Ordenado por última actividad real (updatedAt), no por fecha de creación del vínculo:
+    // así se puede identificar el avance más reciente de un documento entre TODOS los
+    // sponsors que alguna vez lo tuvieron, sin importar cuál vínculo es más antiguo.
     const rows = await this.prisma.userDocuments.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { updatedAt: 'desc' },
     });
     return rows.map((r) => ({
       id: r.id,
@@ -140,7 +144,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       documentId: r.documentId,
       status: r.status as string,
       statusDocument: r.statusDocument,
-      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
     }));
   }
 
@@ -224,6 +228,23 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         },
       },
     });
+  }
+
+  async refreshDocumentFromLatest({
+    userDocumentId,
+    status,
+    url,
+  }: RefreshDocumentFromLatestData): Promise<void> {
+    const castedStatus = status as $Enums.DocumentSponsorStatus;
+    await this.prisma.$transaction([
+      this.prisma.userDocuments.update({
+        where: { id: userDocumentId },
+        data: { status: castedStatus, statusDocument: true },
+      }),
+      this.prisma.userDocumentHistory.create({
+        data: { userDocumentsId: userDocumentId, status: castedStatus, url },
+      }),
+    ]);
   }
 
   async updateStatusDocument(id: string, statusDocument: boolean): Promise<void> {

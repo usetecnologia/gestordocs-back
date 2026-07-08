@@ -35,8 +35,9 @@ export class SyncUserDocumentsUseCase {
       }
     }
 
-    // `existing` viene ordenado del más reciente al más antiguo (ver repositorio),
-    // por lo que el primer valor que se guarda por clave es siempre el más reciente.
+    // `existing` viene ordenado por última actividad real (updatedAt) del más reciente al
+    // más antiguo (ver repositorio) — por lo que el primer valor que se guarda por clave es
+    // siempre el de actividad más reciente.
     const existingByDocSponsorId = new Map<string, ExistingUserDocument>();
     const existingByDocId = new Map<string, ExistingUserDocument>();
     const existingByParentDocId = new Map<string, ExistingUserDocument[]>();
@@ -69,36 +70,65 @@ export class SyncUserDocumentsUseCase {
 
         validDocSponsorIds.add(matchingDs.id);
 
-        const existingRecord = existingByDocSponsorId.get(matchingDs.id);
-        if (existingRecord) {
-          if (existingRecord.statusDocument !== doc.status) {
-            await this.userDocumentsRepo.updateStatusDocument(existingRecord.id, doc.status);
+        const currentLinkRecord = existingByDocSponsorId.get(matchingDs.id);
+
+        // El registro con progreso real (no PENDIENTE) más reciente entre TODOS los
+        // sponsors que alguna vez tuvieron este documento — no solo el sponsor actual.
+        // El grupo ya viene ordenado por última actividad (updatedAt) descendente.
+        const group = existingByParentDocId.get(doc.id) ?? [];
+        const bestRecord = group.find((r) => r.status !== PENDIENTE_STATUS);
+
+        if (currentLinkRecord) {
+          if (!bestRecord || bestRecord.id === currentLinkRecord.id) {
+            // El registro del sponsor actual ya es el más reciente (o no hay nada mejor
+            // que heredar): solo se sincroniza si el documento sigue vigente.
+            if (currentLinkRecord.statusDocument !== doc.status) {
+              await this.userDocumentsRepo.updateStatusDocument(currentLinkRecord.id, doc.status);
+            }
+            continue;
           }
+
+          // Otro sponsor tiene el avance MÁS RECIENTE de este mismo documento (p. ej. el
+          // participante volvió a un sponsor anterior, pero subió un archivo más nuevo
+          // mientras estaba con otro sponsor). Se refresca el registro del sponsor actual
+          // con ese estado/archivo y se desactiva el otro (sin borrar su historial).
+          const bestHistory = await this.userDocumentsRepo.findHistoryByUserAndTarget(
+            userId,
+            null,
+            bestRecord.documentSponsorId,
+          );
+          const lastUrl = bestHistory[bestHistory.length - 1]?.url ?? null;
+
+          await this.userDocumentsRepo.refreshDocumentFromLatest({
+            userDocumentId: currentLinkRecord.id,
+            status: bestRecord.status,
+            url: lastUrl,
+          });
+          await this.userDocumentsRepo.updateStatusDocument(bestRecord.id, false);
+          alreadyDeactivatedIds.add(bestRecord.id);
           continue;
         }
 
         if (!doc.status) continue;
 
-        // El participante cambió de sponsor: si ya tenía este mismo documento avanzado
-        // (subido/revisado/observado) bajo otro sponsor, se conserva ese registro como
-        // histórico (se desactiva, no se borra ni se reescribe) y se crea uno nuevo para
-        // el sponsor actual heredando el mismo estado y archivo.
-        const priorRecord = existingByParentDocId.get(doc.id)?.[0];
-        if (priorRecord && priorRecord.status !== PENDIENTE_STATUS) {
-          const priorHistory = await this.userDocumentsRepo.findHistoryByUserAndTarget(
+        if (bestRecord) {
+          // El participante nunca tuvo este documento bajo el sponsor actual, pero sí bajo
+          // otro con progreso real: se clona ese estado/archivo para el sponsor actual y se
+          // desactiva el registro de origen (se conserva como histórico, no se borra).
+          const bestHistory = await this.userDocumentsRepo.findHistoryByUserAndTarget(
             userId,
             null,
-            priorRecord.documentSponsorId,
+            bestRecord.documentSponsorId,
           );
-          const lastUrl = priorHistory[priorHistory.length - 1]?.url ?? null;
+          const lastUrl = bestHistory[bestHistory.length - 1]?.url ?? null;
 
-          await this.userDocumentsRepo.updateStatusDocument(priorRecord.id, false);
-          alreadyDeactivatedIds.add(priorRecord.id);
+          await this.userDocumentsRepo.updateStatusDocument(bestRecord.id, false);
+          alreadyDeactivatedIds.add(bestRecord.id);
 
           await this.userDocumentsRepo.cloneDocumentForNewSponsor({
             userId,
             documentSponsorId: matchingDs.id,
-            status: priorRecord.status,
+            status: bestRecord.status,
             url: lastUrl,
           });
         } else {

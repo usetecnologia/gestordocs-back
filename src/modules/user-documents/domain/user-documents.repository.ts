@@ -5,12 +5,18 @@ export interface ExistingUserDocument {
   documentId: string | null;
   status: string;
   statusDocument: boolean;
-  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface CloneDocumentForSponsorData {
   userId: string;
   documentSponsorId: string;
+  status: string;
+  url: string | null;
+}
+
+export interface RefreshDocumentFromLatestData {
+  userDocumentId: string;
   status: string;
   url: string | null;
 }
@@ -138,6 +144,7 @@ export interface IUserDocumentsRepository {
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;
   cloneDocumentForNewSponsor(data: CloneDocumentForSponsorData): Promise<void>;
+  refreshDocumentFromLatest(data: RefreshDocumentFromLatestData): Promise<void>;
   updateStatusDocument(id: string, statusDocument: boolean): Promise<void>;
   addHistory(userDocumentsId: string, status: string, url: string, createdById: string): Promise<void>;
   countRequiredDocs(userId: string): Promise<RequiredDocsCount>;
