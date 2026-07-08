@@ -10,9 +10,23 @@ import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.p
 import { LoginResult } from '../../domain/login-result.entity';
 import { JwtTokenService } from '@shared/jwt/jwt.service';
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
+import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 
 const WORKUSE_USER_URL = 'https://secure.workuse.com/api/user/user.php';
 const DEFAULT_PASSWORD = 'password26';
+const ADMIN_CREATED_BY_ID = 'd5165eff-2df4-4a87-a65e-3ea50cf4ad3d';
+
+// Estados que ya salieron del flujo de revisión de documentos — una vez que el participante
+// llega a alguno de ellos, no se deben pisar con la reevaluación automática por documentos.
+const STATUSES_LOCKED_FROM_DOCUMENT_SYNC = new Set([
+  'ENVIADO_SPONSOR',
+  'OBSERVADO_SPONSOR',
+  'RECHAZADO_SPONSOR',
+  'APROBADO_SPONSOR',
+  'DS2019_EMITIDO',
+  'RETENIDO_USE',
+  'INACTIVO',
+]);
 
 const EMPTY_SPONSOR_VALUES = new Set(['', '&NBSP;', '_NBSP_']);
 
@@ -60,6 +74,7 @@ export class AutoLoginUseCase {
     @Inject(PASSWORD_HASHER) private readonly passwordHasher: IPasswordHasher,
     private readonly jwtTokenService: JwtTokenService,
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
+    private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
   ) {}
 
   async execute(dni: string): Promise<LoginResult> {
@@ -95,9 +110,10 @@ export class AutoLoginUseCase {
 
     const userStatus = resolveUserStatus(data);
 
-    // Un participante contratado (status_hired = 1) queda sin sponsor asignado —
+    // Solo un participante contratado (status_hired = 1) conserva su sponsor asignado.
+    // Si status_hired no es 1 (null, undefined o cualquier otro valor), queda sin sponsor —
     // solo se limpia el vínculo (FK a null), no se borra su historial ni documentos previos.
-    const userSponsorId = data.status_hired === 1 ? null : sponsorId;
+    const userSponsorId = data.status_hired === 1 ? sponsorId : null;
 
     const credentials = await this.autoLoginRepo.upsertByDni({
       dni,
@@ -126,6 +142,19 @@ export class AutoLoginUseCase {
 
     await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);
 
+    // El estado final del participante se determina por el estado real de sus documentos
+    // (misma lógica de TerminarRevisionUseCase), sin importar si Workuse reporta un estado
+    // externo (RETIRADO/ENVIADO_SPONSOR). Esto evita que quede desactualizado (p. ej. en
+    // PREPARACION) cuando el sync anterior le agregó documentos nuevos en PENDIENTE por un
+    // cambio de sponsor. Excepción: si el participante ya está en un estado "cerrado" del
+    // flujo con el sponsor (o retenido/inactivo), no se reevalúa — esos estados no cambian
+    // por la sincronización automática de documentos.
+    let currentStatus = credentials.status;
+    if (!STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)) {
+      await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID);
+      currentStatus = (await this.autoLoginRepo.findByDni(dni))?.status ?? currentStatus;
+    }
+
     const role = credentials.role.code ?? credentials.role.name;
     const accessToken = this.jwtTokenService.sign({
       sub: credentials.id,
@@ -140,7 +169,7 @@ export class AutoLoginUseCase {
       username: credentials.username,
       email: credentials.email,
       role: credentials.role,
-      status: credentials.status,
+      status: currentStatus,
       person: credentials.person,
       country: credentials.country,
       program: credentials.program,
