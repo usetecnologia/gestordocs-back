@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PDFDocument, PDFImage, PDFPage } from 'pdf-lib';
-import sharp from 'sharp';
+import { Jimp, JimpMime } from 'jimp';
 import JSZip from 'jszip';
 import { AwsS3Service } from '@shared/aws/aws-s3.service';
 import {
@@ -28,7 +28,7 @@ const UNITED_OUTPUTS: UnitedOutputSpec[] = [
   { filename: 'JO', siglasList: ['SPONSOR'] },
 ];
 
-const OTHER_IMAGE_EXTENSIONS = new Set(['webp', 'gif', 'bmp', 'tiff', 'tif', 'avif']);
+const OTHER_IMAGE_EXTENSIONS = new Set(['gif', 'bmp', 'tiff', 'tif']);
 
 const SEAL_WIDTH = 120;
 const SEAL_MARGIN_RIGHT = 20;
@@ -159,7 +159,8 @@ export class DownloadDocumentsBySponsorUseCase {
       } else if (OTHER_IMAGE_EXTENSIONS.has(ext)) {
         // pdf-lib solo embebe JPEG/PNG nativamente — el resto se reconvierte a JPEG
         // (más liviano que PNG para fotos/escaneos) antes de insertarlo.
-        const jpegBytes = await sharp(bytes).jpeg({ quality: 90 }).toBuffer();
+        const image = await Jimp.read(bytes);
+        const jpegBytes = await image.getBuffer(JimpMime.jpeg, { quality: 90 });
         pages = [this.addImagePage(merged, await merged.embedJpg(jpegBytes))];
       }
       // Formatos no soportados (ni pdf ni imagen) se omiten.
