@@ -11,6 +11,7 @@ import { FindOneDocumentUseCase } from './application/use-cases/find-one-documen
 import { FindPendingDocumentsUseCase } from './application/use-cases/find-pending-documents.use-case';
 import { UpdateDocumentUseCase } from './application/use-cases/update-document.use-case';
 import { UpdateDocumentOrderUseCase } from './application/use-cases/update-document-order.use-case';
+import { NormalizeDocumentOrderUseCase } from './application/use-cases/normalize-document-order.use-case';
 import { DeleteDocumentUseCase } from './application/use-cases/delete-document.use-case';
 import { FindAllActiveDocumentsUseCase } from './application/use-cases/find-all-active-documents.use-case';
 
@@ -21,6 +22,7 @@ const useCases = [
   FindPendingDocumentsUseCase,
   UpdateDocumentUseCase,
   UpdateDocumentOrderUseCase,
+  NormalizeDocumentOrderUseCase,
   DeleteDocumentUseCase,
   FindAllActiveDocumentsUseCase,
 ];

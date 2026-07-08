@@ -435,6 +435,30 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     };
   }
 
+  async findParticipantInfoByDni(dni: string): Promise<ParticipantSponsorInfo | null> {
+    const person = await this.prisma.person.findFirst({
+      where: { dni },
+      select: { id: true, dni: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+    });
+    if (!person) return null;
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: person.id },
+      select: { id: true, sponsor: { select: { code: true } } },
+    });
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      dni: person.dni,
+      firstname: person.firstname,
+      middlename: person.middlename,
+      lastfathername: person.lastfathername,
+      lastmothername: person.lastmothername,
+      sponsorCode: user.sponsor?.code ?? null,
+    };
+  }
+
   async findAllParticipantIds(): Promise<string[]> {
     const users = await this.prisma.user.findMany({
       where: { role: { code: 'PARTICIPANTE' } },

@@ -22,6 +22,7 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiConsumes,
+  ApiHeader,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -43,7 +44,9 @@ import { BulkUploadByFilenameUseCase } from '../../application/use-cases/bulk-up
 import { TerminarRevisionUseCase } from '../../application/use-cases/terminar-revision.use-case';
 import { BulkTerminarRevisionUseCase } from '../../application/use-cases/bulk-terminar-revision.use-case';
 import { DownloadDocumentsBySponsorUseCase } from '../../application/use-cases/download-documents-by-sponsor.use-case';
+import { BulkDownloadDocumentsBySponsorUseCase } from '../../application/use-cases/bulk-download-documents-by-sponsor.use-case';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
+import { BulkDownloadBySponsorDto } from './dtos/bulk-download-by-sponsor.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
 import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
@@ -67,6 +70,7 @@ export class UserDocumentsController {
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     private readonly bulkTerminarRevisionUseCase: BulkTerminarRevisionUseCase,
     private readonly downloadDocumentsBySponsorUseCase: DownloadDocumentsBySponsorUseCase,
+    private readonly bulkDownloadDocumentsBySponsorUseCase: BulkDownloadDocumentsBySponsorUseCase,
   ) {}
 
   @Get('by-user/:userId')
@@ -111,6 +115,40 @@ export class UserDocumentsController {
       'Content-Disposition',
       `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
     );
+    res.send(buffer);
+  }
+
+  @Post('download-by-sponsor/bulk')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Descargar de forma masiva los documentos de varios participantes, agrupados por sponsor',
+    description:
+      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con dos carpetas: ASPIRE (un PDF combinado y sellado ' +
+      'por participante) y UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante con PROOF, ULETTER, ' +
+      'PBC, PASSPORT y JO). Los DNIs no encontrados, sin sponsor soportado o sin documentos NO detienen el proceso: ' +
+      'se omiten y se listan en el header X-Skipped-Participants como JSON codificado con encodeURIComponent.',
+  })
+  @ApiProduces('application/zip')
+  @ApiHeader({
+    name: 'X-Skipped-Participants',
+    description:
+      'JSON (URI-encoded) con los DNIs omitidos: [{ dni, fullName, reason }]',
+    required: false,
+  })
+  @ApiOkResponse({ description: 'Archivo .zip con los documentos agrupados por sponsor.' })
+  @ApiNotFoundResponse({ description: 'Ningún participante tiene documentos disponibles para descargar.' })
+  @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
+  async downloadBySponsorBulk(
+    @Body() dto: BulkDownloadBySponsorDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, filename, contentType, skipped } = await this.bulkDownloadDocumentsBySponsorUseCase.execute(
+      dto.dnis,
+    );
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('X-Skipped-Participants', encodeURIComponent(JSON.stringify(skipped)));
     res.send(buffer);
   }
 

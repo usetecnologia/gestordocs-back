@@ -54,6 +54,7 @@ export interface IDocumentRepository {
   create(data: CreateDocumentData): Promise<Document>;
   update(id: string, data: UpdateDocumentData): Promise<Document>;
   updateOrder(id: string, order: number | null): Promise<Document | null>;
+  normalizeOrder(): Promise<Document[]>;
   delete(id: string): Promise<void>;
 }
 

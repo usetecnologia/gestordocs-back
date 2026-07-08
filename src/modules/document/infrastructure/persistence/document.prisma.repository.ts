@@ -197,11 +197,77 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   }
 
   async updateOrder(id: string, order: number | null): Promise<Document | null> {
-    const affected: number = await this.prisma.$executeRaw`
-      UPDATE \`documents\` SET \`order\` = ${order}, \`updated_at\` = NOW() WHERE \`id\` = ${id}
-    `;
-    if (affected === 0) return null;
+    const found = await this.prisma.$transaction(async (tx) => {
+      // FOR UPDATE bloquea la fila hasta que la transacción termine: si llegan dos
+      // peticiones concurrentes para el mismo documento, la segunda espera a que la
+      // primera confirme y recién ahí lee el `order` ya actualizado (evita leer un
+      // valor viejo y desplazar a los demás documentos por duplicado).
+      const rows = await tx.$queryRaw<Array<{ order: number | null }>>`
+        SELECT \`order\` FROM \`documents\` WHERE \`id\` = ${id} FOR UPDATE
+      `;
+      if (rows.length === 0) return false;
+
+      const oldOrder = rows[0].order;
+
+      if (order === oldOrder) {
+        // No hay cambio real de posición; no se desplaza a nadie más.
+      } else if (order === null) {
+        if (oldOrder !== null) {
+          await tx.documents.updateMany({
+            where: { order: { gt: oldOrder } },
+            data: { order: { decrement: 1 } },
+          });
+        }
+      } else if (oldOrder === null) {
+        // El documento entra a la lista ordenada: todo lo que esté desde `order` en
+        // adelante retrocede un puesto para abrir espacio.
+        await tx.documents.updateMany({
+          where: { id: { not: id }, order: { gte: order } },
+          data: { order: { increment: 1 } },
+        });
+      } else if (order > oldOrder) {
+        // Se mueve hacia abajo: lo que estaba entre (oldOrder, order] sube un puesto.
+        await tx.documents.updateMany({
+          where: { id: { not: id }, order: { gt: oldOrder, lte: order } },
+          data: { order: { decrement: 1 } },
+        });
+      } else {
+        // Se mueve hacia arriba: lo que estaba entre [order, oldOrder) baja un puesto.
+        await tx.documents.updateMany({
+          where: { id: { not: id }, order: { gte: order, lt: oldOrder } },
+          data: { order: { increment: 1 } },
+        });
+      }
+
+      await tx.documents.update({ where: { id }, data: { order } });
+      return true;
+    });
+
+    if (!found) return null;
+
     return this.findById(id);
+  }
+
+  async normalizeOrder(): Promise<Document[]> {
+    const documents = await this.prisma.documents.findMany({
+      select: { id: true },
+      orderBy: [{ order: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+    });
+
+    await this.prisma.$transaction(
+      documents.map((doc, index) =>
+        this.prisma.documents.update({
+          where: { id: doc.id },
+          data: { order: index + 1 },
+        }),
+      ),
+    );
+
+    const rows = await this.prisma.documents.findMany({
+      include: DOCUMENT_FULL_INCLUDE,
+      orderBy: { order: 'asc' },
+    });
+    return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
   }
 
   async delete(id: string): Promise<void> {

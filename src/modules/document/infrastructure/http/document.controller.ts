@@ -34,6 +34,7 @@ import { FindPendingDocumentsUseCase } from '../../application/use-cases/find-pe
 import { FindAllActiveDocumentsUseCase } from '../../application/use-cases/find-all-active-documents.use-case';
 import { UpdateDocumentUseCase } from '../../application/use-cases/update-document.use-case';
 import { UpdateDocumentOrderUseCase } from '../../application/use-cases/update-document-order.use-case';
+import { NormalizeDocumentOrderUseCase } from '../../application/use-cases/normalize-document-order.use-case';
 import { DeleteDocumentUseCase } from '../../application/use-cases/delete-document.use-case';
 import { CreateDocumentDto } from './dtos/create-document.dto';
 import { UpdateDocumentDto } from './dtos/update-document.dto';
@@ -54,6 +55,7 @@ export class DocumentController {
     private readonly findPendingDocuments: FindPendingDocumentsUseCase,
     private readonly updateDocument: UpdateDocumentUseCase,
     private readonly updateDocumentOrder: UpdateDocumentOrderUseCase,
+    private readonly normalizeDocumentOrder: NormalizeDocumentOrderUseCase,
     private readonly deleteDocument: DeleteDocumentUseCase,
     private readonly findAllActiveDocuments: FindAllActiveDocumentsUseCase,
   ) {}
@@ -142,6 +144,19 @@ export class DocumentController {
     @Body() dto: UpdateDocumentOrderDto,
   ) {
     return this.updateDocumentOrder.execute(id, dto.order ?? null);
+  }
+
+  @Post('normalize-order')
+  @ApiOperation({
+    summary: 'Normalizar el orden de todos los documentos',
+    description:
+      'Recalcula el campo `order` de todos los documentos según el orden de listado actual ' +
+      '(order asc con nulls al final, luego createdAt desc), dejando una secuencia limpia ' +
+      '1..N sin huecos ni valores duplicados.',
+  })
+  @ApiOkResponse({ type: [DocumentResponseDto] })
+  normalizeOrder() {
+    return this.normalizeDocumentOrder.execute();
   }
 
   @Delete(':id')
