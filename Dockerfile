@@ -43,7 +43,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 # Exponer puerto
-EXPOSE 3011
+EXPOSE 3088
 
 # Iniciar app (Prisma Client ya viene generado desde el builder en prisma/generated/prisma)
 CMD ["node", "dist/src/main"]
