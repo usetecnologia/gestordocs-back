@@ -6,6 +6,7 @@ import {
 } from '../../domain/user-documents.repository';
 import {
   ASPIRE_SPONSOR_CODE,
+  INTRAX_SPONSOR_CODE,
   SponsorDocumentBuilder,
   UNITED_SPONSOR_CODE,
 } from '../services/sponsor-document-builder.service';
@@ -52,8 +53,23 @@ export class DownloadDocumentsBySponsorUseCase {
       return { buffer, filename: `${baseFilename}.zip`, contentType: 'application/zip' };
     }
 
+    if (participant.sponsorCode === INTRAX_SPONSOR_CODE) {
+      const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
+      const outputs = await this.sponsorDocumentBuilder.buildIntraxOutputs(userId);
+      if (!outputs.length) {
+        throw new NotFoundException('El participante no tiene documentos subidos para combinar.');
+      }
+
+      const zip = new JSZip();
+      const folder = zip.folder(baseFilename)!;
+      outputs.forEach(({ filename, buffer }) => folder.file(filename, buffer));
+
+      const buffer = await zip.generateAsync({ type: 'nodebuffer' });
+      return { buffer, filename: `${baseFilename}.zip`, contentType: 'application/zip' };
+    }
+
     throw new BadRequestException(
-      `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE} o ${UNITED_SPONSOR_CODE}).`,
+      `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE} o ${INTRAX_SPONSOR_CODE}).`,
     );
   }
 }

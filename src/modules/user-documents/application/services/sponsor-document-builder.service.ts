@@ -11,6 +11,7 @@ import { SELLO_TRANSLATION_PNG_BASE64 } from '../../infrastructure/assets/sello-
 
 export const ASPIRE_SPONSOR_CODE = 'ASPIRE';
 export const UNITED_SPONSOR_CODE = 'UNITED';
+export const INTRAX_SPONSOR_CODE = 'INTRAX';
 
 const ASPIRE_SIGLAS_ORDER = ['PASSPORT', 'JOASPIRE', 'ULETTER', 'TRANSLATION'] as const;
 const TRANSLATION_SIGLAS = 'TRANSLATION';
@@ -26,6 +27,13 @@ const UNITED_OUTPUTS: UnitedOutputSpec[] = [
   { filename: 'PBC', siglasList: ['PBC', 'PBC2'] },
   { filename: 'PASSPORT', siglasList: ['PASSPORT'] },
   { filename: 'JO', siglasList: ['JOUWT'] },
+];
+
+const INTRAX_OUTPUTS: UnitedOutputSpec[] = [
+  { filename: 'ULETTER', siglasList: ['ULETTER'] },
+  { filename: 'TRANSLATION', siglasList: ['TRANSLATION'] },
+  { filename: 'PASSPORT', siglasList: ['PASSPORT'] },
+  { filename: 'PEF', siglasList: ['PEF'] },
 ];
 
 const OTHER_IMAGE_EXTENSIONS = new Set(['gif', 'bmp', 'tiff', 'tif']);
@@ -106,10 +114,22 @@ export class SponsorDocumentBuilder {
   }
 
   async buildUnitedOutputs(userId: string): Promise<NamedPdf[]> {
+    return this.buildOutputsFor(userId, UNITED_SPONSOR_CODE, UNITED_OUTPUTS);
+  }
+
+  async buildIntraxOutputs(userId: string): Promise<NamedPdf[]> {
+    return this.buildOutputsFor(userId, INTRAX_SPONSOR_CODE, INTRAX_OUTPUTS);
+  }
+
+  private async buildOutputsFor(
+    userId: string,
+    sponsorCode: string,
+    outputSpecs: readonly UnitedOutputSpec[],
+  ): Promise<NamedPdf[]> {
     const outputs: NamedPdf[] = [];
 
-    for (const output of UNITED_OUTPUTS) {
-      const documents = await this.collectDocuments(userId, UNITED_SPONSOR_CODE, output.siglasList);
+    for (const output of outputSpecs) {
+      const documents = await this.collectDocuments(userId, sponsorCode, output.siglasList);
       if (!documents.length) continue;
 
       const buffer = await this.buildMergedPdf(documents, { applySeal: false });
