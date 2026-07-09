@@ -48,14 +48,23 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   }
 
   async findBySponsorCode(sponsorCode: string): Promise<Document[]> {
+    // Solo vínculos documentSponsor activos cuentan para el sync del participante — los
+    // desactivados (status: false) son sponsors retirados y deben ignorarse aquí.
     const rows = await this.prisma.documents.findMany({
       where: {
         OR: [
-          { documentSponsors: { some: { sponsor: { code: sponsorCode } } } },
-          { documentSponsors: { none: {} } },
+          { documentSponsors: { some: { sponsor: { code: sponsorCode }, status: true } } },
+          { documentSponsors: { none: { status: true } } },
         ],
       },
-      include: DOCUMENT_FULL_INCLUDE,
+      include: {
+        ...DOCUMENT_FULL_INCLUDE,
+        documentSponsors: {
+          where: { status: true },
+          include: { sponsor: { select: { id: true, name: true, code: true } } },
+          orderBy: { order: 'asc' as const },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
@@ -120,7 +129,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         const willHaveSponsors =
           sponsors !== undefined
             ? sponsors.length > 0
-            : (await tx.documentSponsor.count({ where: { documentId: id } })) > 0;
+            : (await tx.documentSponsor.count({ where: { documentId: id, status: true } })) > 0;
 
         if (!willHaveSponsors || fields.status === false) {
           await tx.userDocuments.updateMany({
@@ -131,11 +140,17 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       }
 
       if (sponsors !== undefined) {
+        // Sincroniza por diff — NUNCA se borra un DocumentSponsor existente. Recrearlo con
+        // un id nuevo huerfanaría (y en cascada borraría) el historial de todos los usuarios
+        // que ya tenían progreso bajo ese vínculo, aunque el sponsor no haya cambiado
+        // realmente. En su lugar: se actualiza el vínculo que sigue vigente, se crea el que
+        // es nuevo, y el que se retira se desactiva (status: false) conservando su historial.
         const existingSponsors = await tx.documentSponsor.findMany({
           where: { documentId: id },
-          select: { id: true },
+          select: { id: true, sponsorId: true, status: true },
         });
-        const existingSponsorIds = existingSponsors.map((ds) => ds.id);
+        const existingBySponsorId = new Map(existingSponsors.map((ds) => [ds.sponsorId, ds]));
+        const incomingSponsorIds = new Set(sponsors.map((s) => s.sponsorId));
 
         // Cuando el documento pasa a ser sponsor-específico, desactivar los registros
         // userDocuments creados en el camino "visible a todos" (documentId sin documentSponsorId).
@@ -147,47 +162,45 @@ export class DocumentPrismaRepository implements IDocumentRepository {
           });
         }
 
-        if (existingSponsorIds.length > 0) {
-          const userDocs = await tx.userDocuments.findMany({
-            where: { documentSponsorId: { in: existingSponsorIds } },
-            select: { id: true },
-          });
-          const userDocIds = userDocs.map((ud) => ud.id);
-
-          if (userDocIds.length > 0) {
-            const histories = await tx.userDocumentHistory.findMany({
-              where: { userDocumentsId: { in: userDocIds } },
-              select: { id: true },
+        for (const s of sponsors) {
+          const existing = existingBySponsorId.get(s.sponsorId);
+          if (existing) {
+            await tx.documentSponsor.update({
+              where: { id: existing.id },
+              data: {
+                required: s.required ?? false,
+                order: s.order,
+                status: true,
+                ...(updatedById && { updatedById }),
+              },
             });
-            const historyIds = histories.map((h) => h.id);
-
-            if (historyIds.length > 0) {
-              await tx.userDocumentHistoryEtiquetas.deleteMany({
-                where: { userDocumentHistoryId: { in: historyIds } },
-              });
-              await tx.userDocumentObservationFiles.deleteMany({
-                where: { userDocumentHistoryId: { in: historyIds } },
-              });
-              await tx.userDocumentHistory.deleteMany({
-                where: { id: { in: historyIds } },
-              });
-            }
-
-            await tx.userDocuments.deleteMany({ where: { id: { in: userDocIds } } });
+          } else {
+            await tx.documentSponsor.create({
+              data: {
+                documentId: id,
+                sponsorId: s.sponsorId,
+                required: s.required ?? false,
+                order: s.order,
+                ...(updatedById && { createdById: updatedById }),
+              },
+            });
           }
         }
 
-        await tx.documentSponsor.deleteMany({ where: { documentId: id } });
+        const removedSponsorIds = existingSponsors
+          .filter((ds) => ds.status && !incomingSponsorIds.has(ds.sponsorId))
+          .map((ds) => ds.id);
 
-        if (sponsors.length > 0) {
-          await tx.documentSponsor.createMany({
-            data: sponsors.map(({ sponsorId, required, order }) => ({
-              documentId: id,
-              sponsorId,
-              required: required ?? false,
-              order,
-              ...(updatedById && { createdById: updatedById }),
-            })),
+        if (removedSponsorIds.length > 0) {
+          await tx.documentSponsor.updateMany({
+            where: { id: { in: removedSponsorIds } },
+            data: { status: false, ...(updatedById && { updatedById }) },
+          });
+          // Se desactiva (nunca se borra) el UserDocuments de los usuarios vinculados al
+          // sponsor retirado — su historial se conserva íntegro.
+          await tx.userDocuments.updateMany({
+            where: { documentSponsorId: { in: removedSponsorIds } },
+            data: { statusDocument: false },
           });
         }
       }
