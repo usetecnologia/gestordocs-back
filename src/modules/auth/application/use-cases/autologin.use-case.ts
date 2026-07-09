@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { IAutoLoginRepository, AUTOLOGIN_REPOSITORY } from '../../domain/autologin.repository';
@@ -35,8 +36,14 @@ function normalizeSponsor(value: string): string | null {
   return EMPTY_SPONSOR_VALUES.has(trimmed) ? null : trimmed;
 }
 
+function isRetiredStatus(status: string | undefined): boolean {
+  return status?.trim().toLowerCase() === 'retired';
+}
+
 function resolveUserStatus(data: WorkuseResponse): string | null {
-  if (data.status?.trim().toLowerCase() === 'retired') return 'RETIRADO';
+  // Un participante "Retired" en Workuse queda INACTIVO de forma definitiva — este estado
+  // ya está en STATUSES_LOCKED_FROM_DOCUMENT_SYNC, por lo que no se reevalúa por documentos.
+  if (isRetiredStatus(data.status)) return 'INACTIVO';
   if (data.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
   return null;
 }
@@ -153,6 +160,10 @@ export class AutoLoginUseCase {
     if (!STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)) {
       await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID);
       currentStatus = (await this.autoLoginRepo.findByDni(dni))?.status ?? currentStatus;
+    }
+
+    if (currentStatus === 'INACTIVO') {
+      throw new UnauthorizedException('El usuario se encuentra retirado y no puede iniciar sesión.');
     }
 
     const role = credentials.role.code ?? credentials.role.name;
