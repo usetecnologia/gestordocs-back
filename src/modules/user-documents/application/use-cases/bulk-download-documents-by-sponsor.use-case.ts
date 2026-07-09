@@ -7,6 +7,7 @@ import {
 } from '../../domain/user-documents.repository';
 import {
   ASPIRE_SPONSOR_CODE,
+  CENET_SPONSOR_CODE,
   getErrorMessage,
   INTRAX_SPONSOR_CODE,
   SponsorDocumentBuilder,
@@ -17,7 +18,7 @@ const ZIP_FILENAME = 'documentos_sponsor';
 
 const NOT_FOUND_REASON = 'DNI no encontrado.';
 const NO_DOCUMENTS_REASON = 'El participante no tiene documentos subidos para combinar.';
-const UNSUPPORTED_SPONSOR_REASON = `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE} o ${INTRAX_SPONSOR_CODE}).`;
+const UNSUPPORTED_SPONSOR_REASON = `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE}, ${INTRAX_SPONSOR_CODE} o ${CENET_SPONSOR_CODE}).`;
 const PROCESSING_ERROR_REASON = 'Ocurrió un error al procesar los documentos del participante.';
 
 export interface BulkDownloadSkippedEntry {
@@ -48,6 +49,7 @@ export class BulkDownloadDocumentsBySponsorUseCase {
     const aspireFolder = zip.folder(ASPIRE_SPONSOR_CODE)!;
     const unitedFolder = zip.folder(UNITED_SPONSOR_CODE)!;
     const intraxFolder = zip.folder(INTRAX_SPONSOR_CODE)!;
+    const cenetFolder = zip.folder(CENET_SPONSOR_CODE)!;
     const skipped: BulkDownloadSkippedEntry[] = [];
     let hasAnyFile = false;
 
@@ -98,6 +100,20 @@ export class BulkDownloadDocumentsBySponsorUseCase {
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
           const participantFolder = intraxFolder.folder(baseFilename)!;
+          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          hasAnyFile = true;
+          continue;
+        }
+
+        if (participant.sponsorCode === CENET_SPONSOR_CODE) {
+          const outputs = await this.sponsorDocumentBuilder.buildCenetOutputs(participant.id);
+          if (!outputs.length) {
+            skipped.push({ dni, fullName, reason: NO_DOCUMENTS_REASON });
+            continue;
+          }
+
+          const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
+          const participantFolder = cenetFolder.folder(baseFilename)!;
           outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
           hasAnyFile = true;
           continue;

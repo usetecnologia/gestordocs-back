@@ -94,14 +94,17 @@ export class UserDocumentsController {
       'UNITED: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo PROOF.pdf (UWTPOSS), ' +
       'ULETTER.pdf (ULETTER+TRANSLATION), PBC.pdf (PBC+PBC2), PASSPORT.pdf y JO.pdf (SPONSOR). ' +
       'INTRAX: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf, ' +
-      'TRANSLATION.pdf, PASSPORT.pdf y PEF.pdf.',
+      'TRANSLATION.pdf, PASSPORT.pdf y PEF.pdf. ' +
+      'CENET: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf ' +
+      '(ULETTER+TRANSLATION), PASSPORT.pdf, ENGLISH.pdf (CENETENGLISH), FEE.pdf (CENETFEE), JO.pdf (JOCENET) ' +
+      'y PHOTO (PHOTO, se entrega tal cual en su formato de imagen original, sin convertir a PDF).',
   })
   @ApiParam({ name: 'userId', description: 'UUID del participante' })
   @ApiProduces('application/pdf', 'application/zip')
-  @ApiOkResponse({ description: 'Archivo PDF (ASPIRE) o ZIP (UNITED/INTRAX) con los documentos.' })
+  @ApiOkResponse({ description: 'Archivo PDF (ASPIRE) o ZIP (UNITED/INTRAX/CENET) con los documentos.' })
   @ApiNotFoundResponse({ description: 'Participante no encontrado o sin documentos subidos.' })
   @ApiBadRequestResponse({
-    description: 'El participante no pertenece a un sponsor soportado (ASPIRE, UNITED o INTRAX).',
+    description: 'El participante no pertenece a un sponsor soportado (ASPIRE, UNITED, INTRAX o CENET).',
   })
   async downloadBySponsor(
     @Param('userId', ParseUUIDPipe) userId: string,
@@ -127,11 +130,13 @@ export class UserDocumentsController {
   @ApiOperation({
     summary: 'Descargar de forma masiva los documentos de varios participantes, agrupados por sponsor',
     description:
-      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con tres carpetas: ASPIRE (un PDF combinado y sellado ' +
-      'por participante), UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante con PROOF, ULETTER, ' +
-      'PBC, PASSPORT y JO) e INTRAX (una subcarpeta {dni} - {apellidos, nombres} por participante con ULETTER, ' +
-      'TRANSLATION, PASSPORT y PEF). Los DNIs no encontrados, sin sponsor soportado o sin documentos NO detienen el ' +
-      'proceso: se omiten y se listan en el header X-Skipped-Participants como JSON codificado con encodeURIComponent.',
+      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con cuatro carpetas: ASPIRE (un PDF combinado y ' +
+      'sellado por participante), UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante con PROOF, ' +
+      'ULETTER, PBC, PASSPORT y JO), INTRAX (una subcarpeta {dni} - {apellidos, nombres} por participante con ' +
+      'ULETTER, TRANSLATION, PASSPORT y PEF) y CENET (una subcarpeta {dni} - {apellidos, nombres} por participante ' +
+      'con ULETTER, PASSPORT, ENGLISH, FEE, JO y PHOTO — este último en su formato de imagen original). ' +
+      'Los DNIs no encontrados, sin sponsor soportado o sin documentos NO detienen el proceso: se omiten y se ' +
+      'listan en el header X-Skipped-Participants como JSON codificado con encodeURIComponent.',
   })
   @ApiProduces('application/zip')
   @ApiHeader({
