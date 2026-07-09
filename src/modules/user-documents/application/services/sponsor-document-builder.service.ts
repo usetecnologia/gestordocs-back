@@ -13,9 +13,15 @@ export const ASPIRE_SPONSOR_CODE = 'ASPIRE';
 export const UNITED_SPONSOR_CODE = 'UNITED';
 export const INTRAX_SPONSOR_CODE = 'INTRAX';
 export const CENET_SPONSOR_CODE = 'CENET';
+export const AAG_SPONSOR_CODE = 'AAG';
 
 const ASPIRE_SIGLAS_ORDER = ['PASSPORT', 'JOASPIRE', 'ULETTER', 'TRANSLATION'] as const;
 const TRANSLATION_SIGLAS = 'TRANSLATION';
+
+const AAG_VACATION_LETTER_SIGLAS = 'VacationLetter';
+const AAG_VACATION_LETTER_FILENAME = 'VacationLetter.pdf';
+const AAG_VACATION_LETTER_S3_FOLDER = 'aag-vacation-letters';
+const AAG_ULETTER_SIGLAS_ORDER = ['ULETTER', 'TRANSLATION'] as const;
 
 interface UnitedOutputSpec {
   filename: string;
@@ -56,12 +62,21 @@ const SEAL_MARGIN_BOTTOM = 90;
 
 interface DocumentToMerge {
   siglas: string;
-  url: string;
+  /** Presente cuando el documento debe descargarse de S3. */
+  url?: string;
+  /** Presente cuando el documento ya está en memoria (p. ej. un archivo recién subido) y no requiere descarga. */
+  bytes?: Buffer;
 }
 
 export interface NamedPdf {
   filename: string;
   buffer: Buffer;
+}
+
+export interface VacationLetterFile {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
 }
 
 type FileKind = 'pdf' | 'jpg' | 'png' | 'other-image' | 'unknown';
@@ -159,6 +174,39 @@ export class SponsorDocumentBuilder {
     return this.buildOutputsFor(userId, CENET_SPONSOR_CODE, CENET_OUTPUTS);
   }
 
+  /**
+   * El VacationLetter no pertenece a ningún documento registrado del participante: se sube a S3
+   * solo para dejar constancia (no se persiste su URL en ningún lado). Se llama una sola vez por
+   * petición — en la descarga masiva un mismo VacationLetter se reutiliza para varios participantes.
+   */
+  async uploadVacationLetterRecord(vacationLetter: VacationLetterFile): Promise<void> {
+    await this.awsS3Service.uploadOne(
+      { ...vacationLetter, originalname: AAG_VACATION_LETTER_FILENAME },
+      AAG_VACATION_LETTER_S3_FOLDER,
+    );
+  }
+
+  /**
+   * Combina en memoria el VacationLetter (ya subido a S3 vía uploadVacationLetterRecord) dentro
+   * de ULETTER.pdf junto a ULETTER y TRANSLATION.
+   */
+  async buildAagOutputs(userId: string, vacationLetter: VacationLetterFile): Promise<NamedPdf[]> {
+    const outputs: NamedPdf[] = [];
+
+    const uletterDocuments = await this.collectDocuments(userId, AAG_SPONSOR_CODE, AAG_ULETTER_SIGLAS_ORDER);
+    uletterDocuments.push({ siglas: AAG_VACATION_LETTER_SIGLAS, bytes: vacationLetter.buffer });
+    const uletterBuffer = await this.buildMergedPdf(uletterDocuments, { applySeal: false });
+    outputs.push({ filename: 'ULETTER.pdf', buffer: uletterBuffer });
+
+    const passportDocuments = await this.collectDocuments(userId, AAG_SPONSOR_CODE, ['PASSPORT']);
+    if (passportDocuments.length) {
+      const buffer = await this.buildMergedPdf(passportDocuments, { applySeal: false });
+      outputs.push({ filename: 'PASSPORT.pdf', buffer });
+    }
+
+    return outputs;
+  }
+
   private async buildOutputsFor(
     userId: string,
     sponsorCode: string,
@@ -187,8 +235,8 @@ export class SponsorDocumentBuilder {
     document: DocumentToMerge,
   ): Promise<{ buffer: Buffer; extension: string } | null> {
     try {
-      const bytes = await this.awsS3Service.downloadOne(document.url);
-      return { buffer: bytes, extension: resolveRawExtension(bytes, document.url) };
+      const bytes = await this.awsS3Service.downloadOne(document.url!);
+      return { buffer: bytes, extension: resolveRawExtension(bytes, document.url!) };
     } catch (error) {
       this.logger.warn(
         `No se pudo procesar el documento "${document.siglas}" (${document.url}): ${getErrorMessage(error)}`,
@@ -229,16 +277,16 @@ export class SponsorDocumentBuilder {
     const merged = await PDFDocument.create();
     let sealImage: PDFImage | undefined;
 
-    for (const { siglas, url } of documents) {
+    for (const { siglas, url, bytes: preloadedBytes } of documents) {
       let pages: PDFPage[] = [];
 
       try {
-        const bytes = await this.awsS3Service.downloadOne(url);
+        const bytes = preloadedBytes ?? (await this.awsS3Service.downloadOne(url!));
         let kind = detectFileKind(bytes);
 
         if (kind === 'unknown') {
           // Firma de bytes no reconocida: se recurre a la extensión de la URL como respaldo.
-          const ext = url.split('.').pop()?.toLowerCase() ?? '';
+          const ext = (url ?? '').split('.').pop()?.toLowerCase() ?? '';
           if (ext === 'pdf') kind = 'pdf';
           else if (ext === 'jpg' || ext === 'jpeg') kind = 'jpg';
           else if (ext === 'png') kind = 'png';
@@ -265,7 +313,9 @@ export class SponsorDocumentBuilder {
       } catch (error) {
         // Un archivo corrupto o con extensión que no coincide con su contenido real
         // no debe tumbar la combinación del resto de documentos del participante.
-        this.logger.warn(`No se pudo procesar el documento "${siglas}" (${url}): ${getErrorMessage(error)}`);
+        this.logger.warn(
+          `No se pudo procesar el documento "${siglas}" (${url ?? 'archivo en memoria'}): ${getErrorMessage(error)}`,
+        );
         pages = [];
       }
 

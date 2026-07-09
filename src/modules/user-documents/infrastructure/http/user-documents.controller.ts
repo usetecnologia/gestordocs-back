@@ -54,6 +54,7 @@ import { BulkUploadByFilenameResponseDto } from './dtos/bulk-upload-by-filename-
 import { TerminarRevisionDto } from './dtos/terminar-revision.dto';
 import { TerminarRevisionMasivoResponseDto } from './dtos/terminar-revision-masivo-response.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
+import { ParseOptionalPdfPipe } from './pipes/parse-optional-pdf.pipe';
 
 @ApiTags('user-documents')
 @ApiBearerAuth('access-token')
@@ -86,57 +87,42 @@ export class UserDocumentsController {
     return this.findUserDocumentsUseCase.execute(userId, query.filter);
   }
 
-  @Get('download-by-sponsor/:userId')
-  @ApiOperation({
-    summary: 'Descargar los documentos del participante según su sponsor',
-    description:
-      'ASPIRE: combina PASSPORT, JOASPIRE, ULETTER y TRANSLATION en un solo PDF (con sello en TRANSLATION). ' +
-      'UNITED: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo PROOF.pdf (UWTPOSS), ' +
-      'ULETTER.pdf (ULETTER+TRANSLATION), PBC.pdf (PBC+PBC2), PASSPORT.pdf y JO.pdf (SPONSOR). ' +
-      'INTRAX: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf, ' +
-      'TRANSLATION.pdf, PASSPORT.pdf y PEF.pdf. ' +
-      'CENET: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf ' +
-      '(ULETTER+TRANSLATION), PASSPORT.pdf, ENGLISH.pdf (CENETENGLISH), FEE.pdf (CENETFEE), JO.pdf (JOCENET) ' +
-      'y PHOTO (PHOTO, se entrega tal cual en su formato de imagen original, sin convertir a PDF).',
-  })
-  @ApiParam({ name: 'userId', description: 'UUID del participante' })
-  @ApiProduces('application/pdf', 'application/zip')
-  @ApiOkResponse({ description: 'Archivo PDF (ASPIRE) o ZIP (UNITED/INTRAX/CENET) con los documentos.' })
-  @ApiNotFoundResponse({ description: 'Participante no encontrado o sin documentos subidos.' })
-  @ApiBadRequestResponse({
-    description: 'El participante no pertenece a un sponsor soportado (ASPIRE, UNITED, INTRAX o CENET).',
-  })
-  async downloadBySponsor(
-    @Param('userId', ParseUUIDPipe) userId: string,
-    @Res() res: Response,
-  ): Promise<void> {
-    const { buffer, filename, contentType } = await this.downloadDocumentsBySponsorUseCase.execute(userId);
-
-    const asciiFallback = filename
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/[^\x20-\x7E]/g, '');
-
-    res.setHeader('Content-Type', contentType);
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
-    );
-    res.send(buffer);
-  }
-
   @Post('download-by-sponsor/bulk')
   @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('vacationLetter'))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Descargar de forma masiva los documentos de varios participantes, agrupados por sponsor',
     description:
-      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con cuatro carpetas: ASPIRE (un PDF combinado y ' +
+      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con cinco carpetas: ASPIRE (un PDF combinado y ' +
       'sellado por participante), UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante con PROOF, ' +
       'ULETTER, PBC, PASSPORT y JO), INTRAX (una subcarpeta {dni} - {apellidos, nombres} por participante con ' +
-      'ULETTER, TRANSLATION, PASSPORT y PEF) y CENET (una subcarpeta {dni} - {apellidos, nombres} por participante ' +
-      'con ULETTER, PASSPORT, ENGLISH, FEE, JO y PHOTO — este último en su formato de imagen original). ' +
-      'Los DNIs no encontrados, sin sponsor soportado o sin documentos NO detienen el proceso: se omiten y se ' +
-      'listan en el header X-Skipped-Participants como JSON codificado con encodeURIComponent.',
+      'ULETTER, TRANSLATION, PASSPORT y PEF), CENET (una subcarpeta {dni} - {apellidos, nombres} por participante ' +
+      'con ULETTER, PASSPORT, ENGLISH, FEE, JO y PHOTO — este último en su formato de imagen original) y AAG ' +
+      '(una subcarpeta {dni} - {apellidos, nombres} por participante con ULETTER y PASSPORT). El campo ' +
+      '`vacationLetter` es un único PDF que se reutiliza para todos los participantes AAG del lote — si no se ' +
+      'adjunta, esos DNIs se listan como omitidos. Los DNIs no encontrados, sin sponsor soportado o sin ' +
+      'documentos NO detienen el proceso: se omiten y se listan en el header X-Skipped-Participants como JSON ' +
+      'codificado con encodeURIComponent.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['dnis'],
+      properties: {
+        dnis: {
+          type: 'string',
+          example: '["12345678","87654321"]',
+          description: 'JSON string con el array de DNIs (máx. 100).',
+        },
+        vacationLetter: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'PDF de VacationLetter reutilizado para todos los participantes AAG del lote (opcional, máx. 10 MB).',
+        },
+      },
+    },
   })
   @ApiProduces('application/zip')
   @ApiHeader({
@@ -150,15 +136,80 @@ export class UserDocumentsController {
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
   async downloadBySponsorBulk(
     @Body() dto: BulkDownloadBySponsorDto,
+    @UploadedFile(new ParseOptionalPdfPipe()) vacationLetter: MulterFile | undefined,
     @Res() res: Response,
   ): Promise<void> {
     const { buffer, filename, contentType, skipped } = await this.bulkDownloadDocumentsBySponsorUseCase.execute(
       dto.dnis,
+      vacationLetter,
     );
 
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.setHeader('X-Skipped-Participants', encodeURIComponent(JSON.stringify(skipped)));
+    res.send(buffer);
+  }
+
+  @Post('download-by-sponsor/:userId')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('vacationLetter'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Descargar los documentos del participante según su sponsor',
+    description:
+      'ASPIRE: combina PASSPORT, JOASPIRE, ULETTER y TRANSLATION en un solo PDF (con sello en TRANSLATION). ' +
+      'UNITED: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo PROOF.pdf (UWTPOSS), ' +
+      'ULETTER.pdf (ULETTER+TRANSLATION), PBC.pdf (PBC+PBC2), PASSPORT.pdf y JO.pdf (SPONSOR). ' +
+      'INTRAX: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf, ' +
+      'TRANSLATION.pdf, PASSPORT.pdf y PEF.pdf. ' +
+      'CENET: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf ' +
+      '(ULETTER+TRANSLATION), PASSPORT.pdf, ENGLISH.pdf (CENETENGLISH), FEE.pdf (CENETFEE), JO.pdf (JOCENET) ' +
+      'y PHOTO (PHOTO, se entrega tal cual en su formato de imagen original, sin convertir a PDF). ' +
+      'AAG: requiere adjuntar el campo `vacationLetter` (PDF) — se sube a S3 como VacationLetter.pdf sin ' +
+      'persistir su referencia, y se combina en memoria dentro de ULETTER.pdf junto a ULETTER y TRANSLATION. ' +
+      'Genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf y PASSPORT.pdf.',
+  })
+  @ApiParam({ name: 'userId', description: 'UUID del participante' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        vacationLetter: {
+          type: 'string',
+          format: 'binary',
+          description: 'PDF de VacationLetter — obligatorio solo cuando el sponsor del participante es AAG (máx. 10 MB).',
+        },
+      },
+    },
+  })
+  @ApiProduces('application/pdf', 'application/zip')
+  @ApiOkResponse({ description: 'Archivo PDF (ASPIRE) o ZIP (UNITED/INTRAX/CENET/AAG) con los documentos.' })
+  @ApiNotFoundResponse({ description: 'Participante no encontrado o sin documentos subidos.' })
+  @ApiBadRequestResponse({
+    description:
+      'El participante no pertenece a un sponsor soportado (ASPIRE, UNITED, INTRAX, CENET o AAG), o falta el ' +
+      'PDF de VacationLetter cuando el sponsor es AAG.',
+  })
+  async downloadBySponsor(
+    @Param('userId', ParseUUIDPipe) userId: string,
+    @UploadedFile(new ParseOptionalPdfPipe()) vacationLetter: MulterFile | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, filename, contentType } = await this.downloadDocumentsBySponsorUseCase.execute(
+      userId,
+      vacationLetter,
+    );
+
+    const asciiFallback = filename
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/[^\x20-\x7E]/g, '');
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`,
+    );
     res.send(buffer);
   }
 
