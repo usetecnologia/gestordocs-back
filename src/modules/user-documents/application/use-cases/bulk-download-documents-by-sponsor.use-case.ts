@@ -6,17 +6,23 @@ import {
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
 import {
+  AAG_SPONSOR_CODE,
   ASPIRE_SPONSOR_CODE,
+  CENET_SPONSOR_CODE,
   getErrorMessage,
+  INTRAX_SPONSOR_CODE,
   SponsorDocumentBuilder,
   UNITED_SPONSOR_CODE,
+  VacationLetterFile,
 } from '../services/sponsor-document-builder.service';
 
 const ZIP_FILENAME = 'documentos_sponsor';
 
 const NOT_FOUND_REASON = 'DNI no encontrado.';
 const NO_DOCUMENTS_REASON = 'El participante no tiene documentos subidos para combinar.';
-const UNSUPPORTED_SPONSOR_REASON = `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE} o ${UNITED_SPONSOR_CODE}).`;
+const UNSUPPORTED_SPONSOR_REASON = `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE}, ${INTRAX_SPONSOR_CODE}, ${CENET_SPONSOR_CODE} o ${AAG_SPONSOR_CODE}).`;
+const AAG_MISSING_VACATION_LETTER_REASON =
+  'El sponsor AAG requiere adjuntar el PDF de VacationLetter en la descarga masiva.';
 const PROCESSING_ERROR_REASON = 'Ocurrió un error al procesar los documentos del participante.';
 
 export interface BulkDownloadSkippedEntry {
@@ -42,12 +48,19 @@ export class BulkDownloadDocumentsBySponsorUseCase {
     private readonly sponsorDocumentBuilder: SponsorDocumentBuilder,
   ) {}
 
-  async execute(dnis: string[]): Promise<BulkDownloadDocumentsBySponsorResult> {
+  async execute(
+    dnis: string[],
+    vacationLetter?: VacationLetterFile,
+  ): Promise<BulkDownloadDocumentsBySponsorResult> {
     const zip = new JSZip();
     const aspireFolder = zip.folder(ASPIRE_SPONSOR_CODE)!;
     const unitedFolder = zip.folder(UNITED_SPONSOR_CODE)!;
+    const intraxFolder = zip.folder(INTRAX_SPONSOR_CODE)!;
+    const cenetFolder = zip.folder(CENET_SPONSOR_CODE)!;
+    const aagFolder = zip.folder(AAG_SPONSOR_CODE)!;
     const skipped: BulkDownloadSkippedEntry[] = [];
     let hasAnyFile = false;
+    let vacationLetterUploaded = false;
 
     for (const dni of dnis) {
       try {
@@ -82,6 +95,58 @@ export class BulkDownloadDocumentsBySponsorUseCase {
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
           const participantFolder = unitedFolder.folder(baseFilename)!;
+          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          hasAnyFile = true;
+          continue;
+        }
+
+        if (participant.sponsorCode === INTRAX_SPONSOR_CODE) {
+          const outputs = await this.sponsorDocumentBuilder.buildIntraxOutputs(participant.id);
+          if (!outputs.length) {
+            skipped.push({ dni, fullName, reason: NO_DOCUMENTS_REASON });
+            continue;
+          }
+
+          const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
+          const participantFolder = intraxFolder.folder(baseFilename)!;
+          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          hasAnyFile = true;
+          continue;
+        }
+
+        if (participant.sponsorCode === CENET_SPONSOR_CODE) {
+          const outputs = await this.sponsorDocumentBuilder.buildCenetOutputs(participant.id);
+          if (!outputs.length) {
+            skipped.push({ dni, fullName, reason: NO_DOCUMENTS_REASON });
+            continue;
+          }
+
+          const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
+          const participantFolder = cenetFolder.folder(baseFilename)!;
+          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          hasAnyFile = true;
+          continue;
+        }
+
+        if (participant.sponsorCode === AAG_SPONSOR_CODE) {
+          if (!vacationLetter) {
+            skipped.push({ dni, fullName, reason: AAG_MISSING_VACATION_LETTER_REASON });
+            continue;
+          }
+
+          if (!vacationLetterUploaded) {
+            await this.sponsorDocumentBuilder.uploadVacationLetterRecord(vacationLetter);
+            vacationLetterUploaded = true;
+          }
+
+          const outputs = await this.sponsorDocumentBuilder.buildAagOutputs(participant.id, vacationLetter);
+          if (!outputs.length) {
+            skipped.push({ dni, fullName, reason: NO_DOCUMENTS_REASON });
+            continue;
+          }
+
+          const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
+          const participantFolder = aagFolder.folder(baseFilename)!;
           outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
           hasAnyFile = true;
           continue;
