@@ -532,4 +532,30 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     });
     return userDoc?.userDocumentHistory ?? [];
   }
+
+  async findUserDocumentIdForTarget(
+    userId: string,
+    documentId: string,
+    sponsorId: string | null,
+  ): Promise<string | null> {
+    if (sponsorId) {
+      const link = await this.prisma.documentSponsor.findFirst({
+        where: { documentId, sponsorId, status: true },
+        select: { id: true },
+      });
+      if (!link) return null;
+
+      const userDoc = await this.prisma.userDocuments.findFirst({
+        where: { userId, documentSponsorId: link.id },
+        select: { id: true },
+      });
+      return userDoc?.id ?? null;
+    }
+
+    const userDoc = await this.prisma.userDocuments.findFirst({
+      where: { userId, documentId },
+      select: { id: true },
+    });
+    return userDoc?.id ?? null;
+  }
 }

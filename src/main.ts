@@ -10,6 +10,11 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Express 5 usa por defecto el parser "simple" de querystring, que no soporta la
+  // notación de arrays `foo[]=1&foo[]=2` (Express 4 usaba "extended"/qs). Se restaura
+  // "extended" para que los query params tipo array sigan funcionando como antes.
+  app.getHttpAdapter().getInstance().set('query parser', 'extended');
+
   app.enableCors({
     origin: envs.ALLOWED_ORIGINS?.split(',') ?? true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],

@@ -12,6 +12,7 @@ import { LoginResult } from '../../domain/login-result.entity';
 import { JwtTokenService } from '@shared/jwt/jwt.service';
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
+import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
 
 const WORKUSE_USER_URL = 'https://secure.workuse.com/api/user/user.php';
 const DEFAULT_PASSWORD = 'password26';
@@ -82,6 +83,7 @@ export class AutoLoginUseCase {
     private readonly jwtTokenService: JwtTokenService,
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
+    @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
   ) {}
 
   async execute(dni: string): Promise<LoginResult> {
@@ -115,7 +117,17 @@ export class AutoLoginUseCase {
       ? existing.passwordHash
       : await this.passwordHasher.hash(DEFAULT_PASSWORD);
 
-    const userStatus = resolveUserStatus(data);
+    // Reactivación: el participante estaba INACTIVO y Workuse ya no lo reporta como Retired.
+    // En este caso no se recalcula por las reglas normales — se restaura el último estado que
+    // tuvo antes de pasar a INACTIVO (según su historial). Si no tiene historial previo (o solo
+    // tiene entradas INACTIVO), se deja sin estado explícito para que más abajo se reevalúe según
+    // el estado real de sus documentos.
+    const wasInactive = existing?.status === 'INACTIVO';
+    const isReactivation = wasInactive && !isRetiredStatus(data.status);
+
+    const userStatus = isReactivation
+      ? await this.userStatusPort.findLastStatusBeforeInactive(existing!.id)
+      : resolveUserStatus(data);
 
     // Solo un participante contratado (status_hired = 1) conserva su sponsor asignado.
     // Si status_hired no es 1 (null, undefined o cualquier otro valor), queda sin sponsor —
@@ -156,8 +168,13 @@ export class AutoLoginUseCase {
     // cambio de sponsor. Excepción: si el participante ya está en un estado "cerrado" del
     // flujo con el sponsor (o retenido/inactivo), no se reevalúa — esos estados no cambian
     // por la sincronización automática de documentos.
+    // Si es una reactivación sin historial previo utilizable, el estado sigue como INACTIVO en
+    // la BD (no se envió userStatus al upsert) — forzamos la reevaluación por documentos aunque
+    // INACTIVO esté en el set de estados "bloqueados".
+    const noHistoryReactivation = isReactivation && !userStatus;
+
     let currentStatus = credentials.status;
-    if (!STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)) {
+    if (noHistoryReactivation || !STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)) {
       await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID);
       currentStatus = (await this.autoLoginRepo.findByDni(dni))?.status ?? currentStatus;
     }

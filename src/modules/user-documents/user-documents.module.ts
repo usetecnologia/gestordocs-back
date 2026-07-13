@@ -20,6 +20,9 @@ import { TerminarRevisionUseCase } from './application/use-cases/terminar-revisi
 import { BulkTerminarRevisionUseCase } from './application/use-cases/bulk-terminar-revision.use-case';
 import { DownloadDocumentsBySponsorUseCase } from './application/use-cases/download-documents-by-sponsor.use-case';
 import { BulkDownloadDocumentsBySponsorUseCase } from './application/use-cases/bulk-download-documents-by-sponsor.use-case';
+import { FindInformativeDocumentsBySponsorsUseCase } from './application/use-cases/find-informative-documents-by-sponsors.use-case';
+import { BulkAceptarDocumentUseCase } from './application/use-cases/bulk-aceptar-document.use-case';
+import { BulkObservarDocumentUseCase } from './application/use-cases/bulk-observar-document.use-case';
 import { SponsorDocumentBuilder } from './application/services/sponsor-document-builder.service';
 
 @Module({
@@ -36,6 +39,9 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     BulkTerminarRevisionUseCase,
     DownloadDocumentsBySponsorUseCase,
     BulkDownloadDocumentsBySponsorUseCase,
+    FindInformativeDocumentsBySponsorsUseCase,
+    BulkAceptarDocumentUseCase,
+    BulkObservarDocumentUseCase,
     SponsorDocumentBuilder,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
