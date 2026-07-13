@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   IWorkuseGenericPort,
   WorkuseCountry,
@@ -28,6 +28,7 @@ function normalizeCode(code: string): string {
 export interface SyncEntityResult {
   created: number;
   updated: number;
+  failed: number;
 }
 
 export interface SyncDataResult {
@@ -38,6 +39,8 @@ export interface SyncDataResult {
 
 @Injectable()
 export class LinkDataUseCase {
+  private readonly logger = new Logger(LinkDataUseCase.name);
+
   constructor(
     @Inject(WORKUSE_GENERIC_PORT)
     private readonly workuseGenericPort: IWorkuseGenericPort,
@@ -70,35 +73,48 @@ export class LinkDataUseCase {
       local.filter((c) => c.idExterno).map((c) => [c.idExterno!, c]),
     );
     const byCode = new Map(
-      local.filter((c) => c.code).map((c) => [c.code, c]),
+      local.filter((c) => c.code).map((c) => [normalizeCode(c.code), c]),
     );
 
     let created = 0;
     let updated = 0;
+    let failed = 0;
 
     for (const ext of external) {
       if (!ext.code?.trim()) continue;
 
       const idExternoStr = String(ext.id);
-      const existing = byIdExterno.get(idExternoStr) ?? byCode.get(ext.code);
+      const normalizedCode = normalizeCode(ext.code);
+      const existing = byIdExterno.get(idExternoStr) ?? byCode.get(normalizedCode);
 
-      if (existing) {
-        await this.countryRepository.update(existing.id, {
-          name: ext.name,
-          idExterno: idExternoStr,
-        });
-        updated++;
-      } else {
-        await this.countryRepository.create({
-          idExterno: idExternoStr,
-          code: ext.code,
-          name: ext.name,
-        });
-        created++;
+      try {
+        if (existing) {
+          const row = await this.countryRepository.update(existing.id, {
+            name: ext.name,
+            idExterno: idExternoStr,
+          });
+          byIdExterno.set(idExternoStr, row);
+          byCode.set(normalizedCode, row);
+          updated++;
+        } else {
+          const row = await this.countryRepository.create({
+            idExterno: idExternoStr,
+            code: ext.code,
+            name: ext.name,
+          });
+          byIdExterno.set(idExternoStr, row);
+          byCode.set(normalizedCode, row);
+          created++;
+        }
+      } catch (err) {
+        failed++;
+        this.logger.error(
+          `Failed to sync country id=${ext.id} code="${ext.code}": ${(err as Error).message}`,
+        );
       }
     }
 
-    return { created, updated };
+    return { created, updated, failed };
   }
 
   private async syncPrograms(external: WorkuseProgram[]): Promise<SyncEntityResult> {
@@ -111,31 +127,44 @@ export class LinkDataUseCase {
 
     let created = 0;
     let updated = 0;
+    let failed = 0;
 
     for (const ext of external) {
       const idExternoStr = String(ext.id);
       // Strip HTML tags that may appear in program names (e.g. <b>Work and Travel USA</b>)
       const cleanName = ext.name.replace(/<[^>]*>/g, '').trim();
-      const existing = byIdExterno.get(idExternoStr) ?? byCode.get(normalizeCode(ext.short));
+      const normalizedCode = normalizeCode(ext.short);
+      const existing = byIdExterno.get(idExternoStr) ?? byCode.get(normalizedCode);
 
-      if (existing) {
-        await this.programRepository.update(existing.id, {
-          name: cleanName,
-          code: ext.short,
-          idExterno: idExternoStr,
-        });
-        updated++;
-      } else {
-        await this.programRepository.create({
-          idExterno: idExternoStr,
-          code: ext.short,
-          name: cleanName,
-        });
-        created++;
+      try {
+        if (existing) {
+          const row = await this.programRepository.update(existing.id, {
+            name: cleanName,
+            code: ext.short,
+            idExterno: idExternoStr,
+          });
+          byIdExterno.set(idExternoStr, row);
+          byCode.set(normalizedCode, row);
+          updated++;
+        } else {
+          const row = await this.programRepository.create({
+            idExterno: idExternoStr,
+            code: ext.short,
+            name: cleanName,
+          });
+          byIdExterno.set(idExternoStr, row);
+          byCode.set(normalizedCode, row);
+          created++;
+        }
+      } catch (err) {
+        failed++;
+        this.logger.error(
+          `Failed to sync program id=${ext.id} short="${ext.short}": ${(err as Error).message}`,
+        );
       }
     }
 
-    return { created, updated };
+    return { created, updated, failed };
   }
 
   private async syncSponsors(external: WorkuseSponsor[]): Promise<SyncEntityResult> {
@@ -148,29 +177,41 @@ export class LinkDataUseCase {
 
     let created = 0;
     let updated = 0;
+    let failed = 0;
 
     for (const ext of external) {
       const idExternoStr = String(ext.id);
-      const existing =
-        byIdExterno.get(idExternoStr) ?? byName.get(normalizeCode(ext.name));
+      const normalizedName = normalizeCode(ext.name);
+      const existing = byIdExterno.get(idExternoStr) ?? byName.get(normalizedName);
 
-      if (existing) {
-        await this.sponsorRepository.update(existing.id, {
-          name: ext.name,
-          idExterno: idExternoStr,
-        });
-        updated++;
-      } else {
-        // Sponsors have no separate code in the external API — use name as code
-        await this.sponsorRepository.create({
-          idExterno: idExternoStr,
-          code: ext.name,
-          name: ext.name,
-        });
-        created++;
+      try {
+        if (existing) {
+          const row = await this.sponsorRepository.update(existing.id, {
+            name: ext.name,
+            idExterno: idExternoStr,
+          });
+          byIdExterno.set(idExternoStr, row);
+          byName.set(normalizedName, row);
+          updated++;
+        } else {
+          // Sponsors have no separate code in the external API — use name as code
+          const row = await this.sponsorRepository.create({
+            idExterno: idExternoStr,
+            code: ext.name,
+            name: ext.name,
+          });
+          byIdExterno.set(idExternoStr, row);
+          byName.set(normalizedName, row);
+          created++;
+        }
+      } catch (err) {
+        failed++;
+        this.logger.error(
+          `Failed to sync sponsor id=${ext.id} name="${ext.name}": ${(err as Error).message}`,
+        );
       }
     }
 
-    return { created, updated };
+    return { created, updated, failed };
   }
 }

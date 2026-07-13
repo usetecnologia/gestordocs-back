@@ -45,14 +45,22 @@ import { TerminarRevisionUseCase } from '../../application/use-cases/terminar-re
 import { BulkTerminarRevisionUseCase } from '../../application/use-cases/bulk-terminar-revision.use-case';
 import { DownloadDocumentsBySponsorUseCase } from '../../application/use-cases/download-documents-by-sponsor.use-case';
 import { BulkDownloadDocumentsBySponsorUseCase } from '../../application/use-cases/bulk-download-documents-by-sponsor.use-case';
+import { FindInformativeDocumentsBySponsorsUseCase } from '../../application/use-cases/find-informative-documents-by-sponsors.use-case';
+import { BulkAceptarDocumentUseCase } from '../../application/use-cases/bulk-aceptar-document.use-case';
+import { BulkObservarDocumentUseCase } from '../../application/use-cases/bulk-observar-document.use-case';
+import { DocumentResponseDto } from '@modules/document/infrastructure/http/dtos/document-response.dto';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { BulkDownloadBySponsorDto } from './dtos/bulk-download-by-sponsor.dto';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
 import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
+import { FindDocumentsBySponsorQueryDto } from './dtos/find-documents-by-sponsor-query.dto';
 import { BulkUploadByFilenameResponseDto } from './dtos/bulk-upload-by-filename-response.dto';
 import { TerminarRevisionDto } from './dtos/terminar-revision.dto';
 import { TerminarRevisionMasivoResponseDto } from './dtos/terminar-revision-masivo-response.dto';
+import { BulkAceptarDocumentDto } from './dtos/bulk-aceptar-document.dto';
+import { BulkObservarDocumentDto } from './dtos/bulk-observar-document.dto';
+import { BulkReviewDocumentResponseDto } from './dtos/bulk-review-document-response.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 import { ParseOptionalPdfPipe } from './pipes/parse-optional-pdf.pipe';
 
@@ -72,7 +80,29 @@ export class UserDocumentsController {
     private readonly bulkTerminarRevisionUseCase: BulkTerminarRevisionUseCase,
     private readonly downloadDocumentsBySponsorUseCase: DownloadDocumentsBySponsorUseCase,
     private readonly bulkDownloadDocumentsBySponsorUseCase: BulkDownloadDocumentsBySponsorUseCase,
+    private readonly findInformativeDocumentsBySponsorsUseCase: FindInformativeDocumentsBySponsorsUseCase,
+    private readonly bulkAceptarDocumentUseCase: BulkAceptarDocumentUseCase,
+    private readonly bulkObservarDocumentUseCase: BulkObservarDocumentUseCase,
   ) {}
+
+  @Get('documents-by-sponsor')
+  @ApiOperation({
+    summary: 'Documentos informativos por sponsor',
+    description:
+      'Retorna todos los documentos de tipo INFORMATIVE asociados a los sponsors indicados, ' +
+      'más los documentos INFORMATIVE generales (no asociados a ningún sponsor).',
+  })
+  @ApiQuery({
+    name: 'sponsorIds',
+    required: true,
+    example: 'uuid-sponsor-1,uuid-sponsor-2',
+    description: 'IDs de sponsors separados por coma',
+  })
+  @ApiOkResponse({ type: [DocumentResponseDto] })
+  @ApiBadRequestResponse({ description: 'El parámetro sponsorIds es requerido y debe contener UUIDs válidos.' })
+  findDocumentsBySponsor(@Query() query: FindDocumentsBySponsorQueryDto) {
+    return this.findInformativeDocumentsBySponsorsUseCase.execute(query.sponsorIds);
+  }
 
   @Get('by-user/:userId')
   @ApiOperation({ summary: 'Listar documentos con historial de un usuario' })
@@ -252,6 +282,50 @@ export class UserDocumentsController {
   ) {
     await this.observarDocumentUseCase.execute(dto, user.sub, files);
     return { message: 'Documento observado correctamente.' };
+  }
+
+  @Post('bulk-aceptar-document')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Aceptar un documento de forma masiva para varios participantes',
+    description:
+      'Recibe un array de DNIs y aprueba (REVISADO) el documento indicado por documentId para cada uno. ' +
+      'Si el documento está asociado a un sponsor, se debe enviar también sponsorId. Al finalizar, ' +
+      'se reevalúa el estado general de cada participante afectado (ver TerminarRevisionUseCase). ' +
+      'Los DNIs sin ese documento asignado no detienen el proceso: se listan en errors.',
+  })
+  @ApiOkResponse({ type: BulkReviewDocumentResponseDto })
+  async bulkAceptarDocument(
+    @Body() dto: BulkAceptarDocumentDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<BulkReviewDocumentResponseDto> {
+    return this.bulkAceptarDocumentUseCase.execute(dto.dnis, dto.documentId, dto.sponsorId, user.sub);
+  }
+
+  @Post('bulk-observar-document')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Observar un documento de forma masiva para varios participantes',
+    description:
+      'Recibe un array de DNIs y marca como OBSERVADO el documento indicado por documentId para cada uno, ' +
+      'registrando la observación y, opcionalmente, etiquetas. Si el documento está asociado a un sponsor, ' +
+      'se debe enviar también sponsorId. Al finalizar, se reevalúa el estado general de cada participante ' +
+      'afectado (ver TerminarRevisionUseCase). Los DNIs sin ese documento asignado no detienen el proceso: ' +
+      'se listan en errors.',
+  })
+  @ApiOkResponse({ type: BulkReviewDocumentResponseDto })
+  async bulkObservarDocument(
+    @Body() dto: BulkObservarDocumentDto,
+    @CurrentUser() user: JwtPayload,
+  ): Promise<BulkReviewDocumentResponseDto> {
+    return this.bulkObservarDocumentUseCase.execute(
+      dto.dnis,
+      dto.documentId,
+      dto.sponsorId,
+      dto.observation,
+      dto.etiquetaIds ?? [],
+      user.sub,
+    );
   }
 
   @Post('upload-file-document')

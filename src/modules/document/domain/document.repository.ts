@@ -50,6 +50,7 @@ export interface IDocumentRepository {
   findAll(filters: DocumentFilters): Promise<{ data: Document[]; total: number }>;
   findAllActive(): Promise<Document[]>;
   findBySponsorCode(sponsorCode: string): Promise<Document[]>;
+  findInformativeBySponsorIds(sponsorIds: string[]): Promise<Document[]>;
   findById(id: string): Promise<Document | null>;
   create(data: CreateDocumentData): Promise<Document>;
   update(id: string, data: UpdateDocumentData): Promise<Document>;

@@ -41,4 +41,13 @@ export class UserStatusPrisma implements IUserStatusPort {
     });
     return count > 0;
   }
+
+  async findLastStatusBeforeInactive(userId: string): Promise<string | null> {
+    const record = await this.prisma.userHistoryStatus.findFirst({
+      where: { userId, status: { not: 'INACTIVO' } },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true },
+    });
+    return record?.status ?? null;
+  }
 }

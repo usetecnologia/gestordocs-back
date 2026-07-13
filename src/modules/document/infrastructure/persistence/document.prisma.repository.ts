@@ -7,6 +7,7 @@ import {
   UpdateDocumentData,
 } from '../../domain/document.repository';
 import { Document } from '../../domain/document.entity';
+import { TypeDocument } from '../../domain/document.enums';
 import { DocumentMapper, DOCUMENT_FULL_INCLUDE, PrismaDocumentFull } from './document.mapper';
 
 @Injectable()
@@ -66,6 +67,30 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+    return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
+  }
+
+  async findInformativeBySponsorIds(sponsorIds: string[]): Promise<Document[]> {
+    // Mismo criterio que findBySponsorCode: solo vínculos documentSponsor activos cuentan,
+    // y un documento sin ningún vínculo activo se considera general (visible a todos).
+    const rows = await this.prisma.documents.findMany({
+      where: {
+        type: TypeDocument.INFORMATIVE,
+        OR: [
+          { documentSponsors: { some: { sponsorId: { in: sponsorIds }, status: true } } },
+          { documentSponsors: { none: { status: true } } },
+        ],
+      },
+      include: {
+        ...DOCUMENT_FULL_INCLUDE,
+        documentSponsors: {
+          where: { status: true },
+          include: { sponsor: { select: { id: true, name: true, code: true } } },
+          orderBy: { order: 'asc' as const },
+        },
+      },
+      orderBy: [{ order: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
     });
     return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
   }

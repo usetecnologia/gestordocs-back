@@ -28,12 +28,23 @@ export const USER_DETAIL_INCLUDE = {
   },
 } as const;
 
+export const USER_LIST_INCLUDE = {
+  ...USER_INCLUDE,
+  userHistories: {
+    orderBy: { createdAt: 'desc' as const },
+  },
+} as const;
+
 export type PrismaUserFull = UserGetPayload<{
   include: typeof USER_INCLUDE;
 }>;
 
 export type PrismaUserDetail = UserGetPayload<{
   include: typeof USER_DETAIL_INCLUDE;
+}>;
+
+export type PrismaUserList = UserGetPayload<{
+  include: typeof USER_LIST_INCLUDE;
 }>;
 
 export class UserMapper {
@@ -64,6 +75,51 @@ export class UserMapper {
       user.sponsor ?? null,
       user.program ?? null,
       user.optionProgram ?? null,
+    );
+  }
+
+  static toListDomain(
+    user: PrismaUserList,
+    person: PersonModel | null,
+    creatorPersonMap: Map<string, string> = new Map(),
+  ): User {
+    return new User(
+      user.id,
+      person?.firstname ?? '',
+      person?.middlename ?? null,
+      person?.lastfathername ?? '',
+      person?.lastmothername ?? null,
+      person?.birthdate ?? null,
+      person?.phone ?? null,
+      person?.avatar ?? null,
+      user.username,
+      user.email,
+      user.password,
+      user.roleId,
+      user.countryId,
+      user.sponsorId,
+      user.programId,
+      user.optionProgramId,
+      user.status as unknown as UserStatus,
+      user.statusSolRetiro ?? null,
+      user.createdAt,
+      user.updatedAt,
+      user.role,
+      user.country ?? null,
+      user.sponsor ?? null,
+      user.program ?? null,
+      user.optionProgram ?? null,
+      null,
+      user.userHistories.map((h) => ({
+        id: h.id,
+        status: h.status as string,
+        createdById: h.createdById ?? null,
+        createdBy: h.createdById && creatorPersonMap.has(h.createdById)
+          ? { id: h.createdById, fullName: creatorPersonMap.get(h.createdById)! }
+          : null,
+        createdAt: h.createdAt,
+        updatedAt: h.updatedAt,
+      })),
     );
   }
 

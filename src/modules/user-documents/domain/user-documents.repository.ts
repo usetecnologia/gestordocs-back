@@ -163,6 +163,11 @@ export interface IUserDocumentsRepository {
     documentId: string | null,
     documentSponsorId: string | null,
   ): Promise<UserDocumentTargetHistoryItem[]>;
+  findUserDocumentIdForTarget(
+    userId: string,
+    documentId: string,
+    sponsorId: string | null,
+  ): Promise<string | null>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');
