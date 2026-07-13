@@ -15,7 +15,15 @@ import {
   ExportUserRow,
 } from '../../domain/user.repository';
 import { User } from '../../domain/user.entity';
-import { UserMapper, USER_INCLUDE, USER_DETAIL_INCLUDE, PrismaUserFull, PrismaUserDetail } from './user.mapper';
+import {
+  UserMapper,
+  USER_INCLUDE,
+  USER_DETAIL_INCLUDE,
+  USER_LIST_INCLUDE,
+  PrismaUserFull,
+  PrismaUserDetail,
+  PrismaUserList,
+} from './user.mapper';
 import type { PersonModel } from 'prisma/generated/prisma/models';
 
 const PERSON_FIELD_KEYS = [
@@ -116,7 +124,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...(generalStatus === 'ACTIVO' && { status: { not: 'INACTIVO' as never } }),
     };
 
-    let users: PrismaUserFull[];
+    let users: PrismaUserList[];
     let total: number;
 
     if (sortBy) {
@@ -147,22 +155,22 @@ export class UserPrismaRepository implements IUserRepository {
       const pageIds = sortedIds.slice((page - 1) * limit, (page - 1) * limit + limit);
 
       const pageUsersRaw = pageIds.length
-        ? await this.prisma.user.findMany({ where: { id: { in: pageIds } }, include: USER_INCLUDE })
+        ? await this.prisma.user.findMany({ where: { id: { in: pageIds } }, include: USER_LIST_INCLUDE })
         : [];
-      const byId = new Map((pageUsersRaw as PrismaUserFull[]).map((u) => [u.id, u]));
-      users = pageIds.map((id) => byId.get(id)).filter((u): u is PrismaUserFull => !!u);
+      const byId = new Map((pageUsersRaw as PrismaUserList[]).map((u) => [u.id, u]));
+      users = pageIds.map((id) => byId.get(id)).filter((u): u is PrismaUserList => !!u);
     } else {
       const [usersRaw, totalCount] = await this.prisma.$transaction([
         this.prisma.user.findMany({
           where,
-          include: USER_INCLUDE,
+          include: USER_LIST_INCLUDE,
           skip: (page - 1) * limit,
           take: limit,
           orderBy: { createdAt: 'desc' },
         }),
         this.prisma.user.count({ where }),
       ]);
-      users = usersRaw as PrismaUserFull[];
+      users = usersRaw as PrismaUserList[];
       total = totalCount;
     }
 
@@ -172,8 +180,26 @@ export class UserPrismaRepository implements IUserRepository {
       : [];
     const personMap = new Map<string, PersonModel>(persons.map((p) => [p.id, p]));
 
+    const historyCreatorIds = [
+      ...new Set(
+        users.flatMap((u) => u.userHistories.map((h) => h.createdById)).filter((id): id is string => id !== null),
+      ),
+    ];
+    const historyCreatorPersons = historyCreatorIds.length
+      ? await this.prisma.person.findMany({
+          where: { id: { in: historyCreatorIds } },
+          select: { id: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+        })
+      : [];
+    const creatorPersonMap = new Map<string, string>(
+      historyCreatorPersons.map((p) => [
+        p.id,
+        [p.firstname, p.middlename, p.lastfathername, p.lastmothername].filter(Boolean).join(' '),
+      ]),
+    );
+
     return {
-      data: users.map((u) => UserMapper.toDomain(u, personMap.get(u.id) ?? null)),
+      data: users.map((u) => UserMapper.toListDomain(u, personMap.get(u.id) ?? null, creatorPersonMap)),
       total,
     };
   }
