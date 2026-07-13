@@ -55,6 +55,7 @@ export class UserPrismaRepository implements IUserRepository {
     programId,
     optionProgramId,
     statusSolRetiro,
+    generalStatus,
     search,
     sortBy,
     sortOrder,
@@ -111,6 +112,8 @@ export class UserPrismaRepository implements IUserRepository {
       ...(programId && { programId }),
       ...(optionProgramId && { optionProgramId }),
       ...(combinedIds !== undefined && { id: { in: combinedIds } }),
+      ...(generalStatus === 'INACTIVO' && { status: 'INACTIVO' as never }),
+      ...(generalStatus === 'ACTIVO' && { status: { not: 'INACTIVO' as never } }),
     };
 
     let users: PrismaUserFull[];

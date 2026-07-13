@@ -66,6 +66,16 @@ export class FindUsersQueryDto {
   @IsIn(['ACCEPTED', 'INPROCESS'])
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
 
+  @ApiPropertyOptional({
+    enum: ['ACTIVO', 'INACTIVO'],
+    example: 'ACTIVO',
+    description:
+      'Si no se envía, muestra todos. ACTIVO = todos los participantes en cualquier estado excepto INACTIVO. INACTIVO = solo los participantes en estado INACTIVO.',
+  })
+  @IsOptional()
+  @IsIn(['ACTIVO', 'INACTIVO'])
+  generalStatus?: 'ACTIVO' | 'INACTIVO';
+
   @ApiPropertyOptional({ example: 'john' })
   @IsOptional()
   @IsString()
