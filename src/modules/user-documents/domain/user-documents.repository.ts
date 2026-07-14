@@ -131,6 +131,13 @@ export interface ParticipantSponsorInfo {
   sponsorCode: string | null;
 }
 
+export interface UserEmailContext {
+  email: string | null;
+  nombreParticipante: string;
+  nombrePrograma: string;
+  nombreSponsor: string;
+}
+
 export interface UserDocumentTargetHistoryItem {
   status: string;
   url: string | null;
@@ -156,6 +163,7 @@ export interface IUserDocumentsRepository {
   findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
   hasObservedDocument(userId: string): Promise<boolean>;
   findParticipantInfo(userId: string): Promise<ParticipantSponsorInfo | null>;
+  findEmailContextByUserId(userId: string): Promise<UserEmailContext | null>;
   findParticipantInfoByDni(dni: string): Promise<ParticipantSponsorInfo | null>;
   findAllParticipantIds(): Promise<string[]>;
   findHistoryByUserAndTarget(

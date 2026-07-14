@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '@shared/prisma/prisma.module';
 import { AppJwtModule } from '@shared/jwt/jwt.module';
 import { BcryptModule } from '@shared/bcrypt/bcrypt.module';
+import { ResendModule } from '@shared/resend/resend.module';
 import { AUTH_REPOSITORY } from './domain/auth.repository';
 import { PASSWORD_VERIFIER } from './domain/password-verifier.port';
 import { PASSWORD_HASHER } from './domain/password-hasher.port';
@@ -21,6 +22,11 @@ import { USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.por
 import { UserStatusPrisma } from '@modules/user-documents/infrastructure/persistence/user-status.prisma';
 import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
+import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-action.repository';
+import { EmailActionPrismaRepository } from '@modules/email-action/infrastructure/persistence/email-action.prisma.repository';
+import { EMAIL_TEMPLATE_REPOSITORY } from '@modules/email-template/domain/email-template.repository';
+import { EmailTemplatePrismaRepository } from '@modules/email-template/infrastructure/persistence/email-template.prisma.repository';
+import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 
 const useCases = [
   LoginUseCase,
@@ -31,10 +37,11 @@ const useCases = [
 ];
 
 @Module({
-  imports: [PrismaModule, AppJwtModule, BcryptModule],
+  imports: [PrismaModule, AppJwtModule, BcryptModule, ResendModule],
   controllers: [AuthController],
   providers: [
     ...useCases,
+    EmailDispatchService,
     { provide: AUTH_REPOSITORY, useClass: AuthPrismaRepository },
     { provide: PASSWORD_VERIFIER, useClass: BcryptService },
     { provide: PASSWORD_HASHER, useClass: BcryptService },
@@ -42,6 +49,8 @@ const useCases = [
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
+    { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
+    { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
   ],
   exports: [AppJwtModule],
 })

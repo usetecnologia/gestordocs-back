@@ -2,9 +2,15 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '@shared/prisma/prisma.module';
 import { AppJwtModule } from '@shared/jwt/jwt.module';
 import { AwsS3Module } from '@shared/aws/aws-s3.module';
+import { ResendModule } from '@shared/resend/resend.module';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
+import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-action.repository';
+import { EmailActionPrismaRepository } from '@modules/email-action/infrastructure/persistence/email-action.prisma.repository';
+import { EMAIL_TEMPLATE_REPOSITORY } from '@modules/email-template/domain/email-template.repository';
+import { EmailTemplatePrismaRepository } from '@modules/email-template/infrastructure/persistence/email-template.prisma.repository';
+import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 import { USER_DOCUMENTS_REPOSITORY } from './domain/user-documents.repository';
 import { USER_STATUS_PORT } from './domain/user-status.port';
 import { UserDocumentsPrismaRepository } from './infrastructure/persistence/user-documents.prisma.repository';
@@ -26,7 +32,7 @@ import { BulkObservarDocumentUseCase } from './application/use-cases/bulk-observ
 import { SponsorDocumentBuilder } from './application/services/sponsor-document-builder.service';
 
 @Module({
-  imports: [PrismaModule, AppJwtModule, AwsS3Module],
+  imports: [PrismaModule, AppJwtModule, AwsS3Module, ResendModule],
   controllers: [UserDocumentsController],
   providers: [
     UploadFileDocumentUseCase,
@@ -43,9 +49,12 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     BulkAceptarDocumentUseCase,
     BulkObservarDocumentUseCase,
     SponsorDocumentBuilder,
+    EmailDispatchService,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
+    { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
+    { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     JwtAuthGuard,
   ],
 })

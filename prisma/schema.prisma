@@ -47,6 +47,12 @@ enum DocumentSponsorStatus {
   REVISADO
 }
 
+enum EmailTemplateType {
+  NORMAL
+  PROGRAMADA
+  @@map("email_template_type")
+}
+
 model Country {
   id       String   @id @default(uuid())
   idExterno String?
@@ -180,6 +186,9 @@ model User {
   userObservations  UserObservations[]
   userObservationsCreated UserObservations[] @relation("UserObservationsCreatedBy")
   userHistories  UserHistoryStatus[]
+
+  emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
+  emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
 }
 
 model UserObservations {
@@ -350,4 +359,43 @@ model UserDocumentHistoryEtiquetas {
 
   userDocumentHistory UserDocumentHistory @relation(fields: [userDocumentHistoryId], references: [id])
   etiquetas Etiquetas @relation(fields: [etiquetaId], references: [id])
+}
+
+model EmailAction {
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  name      String   @db.VarChar(200)
+  code      String   @unique @db.VarChar(50)
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  emailTemplates EmailTemplate[]
+
+  @@index([status], map: "idx_email_actions_status")
+  @@map("acciones_correo")
+}
+
+model EmailTemplate {
+  id          String            @id @default(uuid()) @db.VarChar(36)
+  name        String            @db.VarChar(100)
+  code        String            @unique @db.VarChar(50)
+  subject     String            @db.VarChar(150)
+  htmlContent String            @db.Text @map("html_content")
+  status      Boolean           @default(true)
+  type        EmailTemplateType
+  actionId    String            @map("action_id") @db.VarChar(36)
+  schedule    Json?
+  createdById String?           @map("created_by_id") @db.VarChar(36)
+  updatedById String?           @map("updated_by_id") @db.VarChar(36)
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+
+  action    EmailAction @relation(fields: [actionId], references: [id])
+  createdBy User?       @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id])
+  updatedBy User?       @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id])
+
+  @@index([actionId], map: "idx_email_templates_action")
+  @@index([status], map: "idx_email_templates_status")
+  @@index([type], map: "idx_email_templates_type")
+  @@map("plantillas_correo")
 }
