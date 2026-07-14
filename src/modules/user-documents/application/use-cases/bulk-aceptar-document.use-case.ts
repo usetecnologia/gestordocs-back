@@ -5,6 +5,7 @@ import {
 } from '../../domain/user-documents.repository';
 import { AceptarDocumentUseCase } from './aceptar-document.use-case';
 import { TerminarRevisionUseCase } from './terminar-revision.use-case';
+import { SyncUserDocumentsUseCase } from './sync-user-documents.use-case';
 
 const CONCURRENCY = 10;
 
@@ -27,6 +28,7 @@ export class BulkAceptarDocumentUseCase {
     private readonly userDocumentsRepo: IUserDocumentsRepository,
     private readonly aceptarDocumentUseCase: AceptarDocumentUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
+    private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
   ) {}
 
   async execute(
@@ -72,6 +74,9 @@ export class BulkAceptarDocumentUseCase {
   ): Promise<string> {
     const userId = await this.userDocumentsRepo.findUserIdByDni(dni);
     if (!userId) throw new Error(`Usuario con DNI "${dni}" no encontrado.`);
+
+    const sponsorCode = await this.userDocumentsRepo.findUserSponsorCode(userId);
+    await this.syncUserDocumentsUseCase.execute(userId, sponsorCode);
 
     const userDocumentId = await this.userDocumentsRepo.findUserDocumentIdForTarget(
       userId,

@@ -5,6 +5,7 @@ import {
 } from '../../domain/user-documents.repository';
 import { ObservarDocumentUseCase } from './observar-document.use-case';
 import { TerminarRevisionUseCase } from './terminar-revision.use-case';
+import { SyncUserDocumentsUseCase } from './sync-user-documents.use-case';
 import type {
   BulkReviewDocumentErrorItem,
   BulkReviewDocumentResult,
@@ -19,6 +20,7 @@ export class BulkObservarDocumentUseCase {
     private readonly userDocumentsRepo: IUserDocumentsRepository,
     private readonly observarDocumentUseCase: ObservarDocumentUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
+    private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
   ) {}
 
   async execute(
@@ -70,6 +72,9 @@ export class BulkObservarDocumentUseCase {
   ): Promise<string> {
     const userId = await this.userDocumentsRepo.findUserIdByDni(dni);
     if (!userId) throw new Error(`Usuario con DNI "${dni}" no encontrado.`);
+
+    const sponsorCode = await this.userDocumentsRepo.findUserSponsorCode(userId);
+    await this.syncUserDocumentsUseCase.execute(userId, sponsorCode);
 
     const userDocumentId = await this.userDocumentsRepo.findUserDocumentIdForTarget(
       userId,
