@@ -1,10 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsOptional, IsUUID, ValidateIf } from 'class-validator';
+import { IsDateString, IsEnum, IsIn, IsOptional, IsUUID, ValidateIf } from 'class-validator';
+import { NO_SPONSOR_FILTER_VALUE, WITH_SPONSOR_FILTER_VALUE } from '@modules/user/domain/user.repository';
 import { DateRangePreset } from '../../../domain/date-range-preset.enum';
 
+const SPONSOR_SENTINEL_VALUES: string[] = [NO_SPONSOR_FILTER_VALUE, WITH_SPONSOR_FILTER_VALUE];
+
 export class DashboardFunnelQueryDto {
-  @ApiPropertyOptional({ example: 'uuid-del-sponsor' })
+  @ApiPropertyOptional({
+    example: 'uuid-del-sponsor',
+    description:
+      `UUID del sponsor. Usa "${NO_SPONSOR_FILTER_VALUE}" para filtrar participantes sin sponsor asociado, ` +
+      `o "${WITH_SPONSOR_FILTER_VALUE}" para filtrar participantes con al menos un sponsor asociado.`,
+  })
   @IsOptional()
+  @ValidateIf((o: DashboardFunnelQueryDto) => !SPONSOR_SENTINEL_VALUES.includes(o.sponsorId ?? ''))
   @IsUUID()
   sponsorId?: string;
 
@@ -37,4 +46,14 @@ export class DashboardFunnelQueryDto {
   @ValidateIf((o: DashboardFunnelQueryDto) => o.range === DateRangePreset.CUSTOM)
   @IsDateString()
   dateTo?: string;
+
+  @ApiPropertyOptional({
+    enum: ['ACTIVO', 'INACTIVO'],
+    example: 'ACTIVO',
+    description:
+      'Si no se envía, no filtra por esto. ACTIVO = cualquier estado excepto INACTIVO. INACTIVO = solo participantes en estado INACTIVO. Si se envía junto con un status específico, generalStatus prevalece.',
+  })
+  @IsOptional()
+  @IsIn(['ACTIVO', 'INACTIVO'])
+  generalStatus?: 'ACTIVO' | 'INACTIVO';
 }

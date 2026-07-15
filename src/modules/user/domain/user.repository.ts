@@ -1,6 +1,20 @@
 import type { User } from './user.entity';
 import type { UserStatus } from './user.enums';
 
+// Valores especiales aceptados en los filtros `sponsorId` de los reportes.
+// SIN_SPONSOR = participantes sin ningún sponsor asociado (sponsorId es NULL).
+// CON_SPONSOR = participantes con al menos un sponsor asociado (sponsorId no es NULL).
+export const NO_SPONSOR_FILTER_VALUE = 'SIN_SPONSOR';
+export const WITH_SPONSOR_FILTER_VALUE = 'CON_SPONSOR';
+
+export function isNoSponsorFilter(sponsorId?: string): boolean {
+  return sponsorId === NO_SPONSOR_FILTER_VALUE;
+}
+
+export function isWithSponsorFilter(sponsorId?: string): boolean {
+  return sponsorId === WITH_SPONSOR_FILTER_VALUE;
+}
+
 export interface CreateObservationData {
   participantId: string;
   observation: string;
@@ -40,6 +54,15 @@ export interface UserFilters {
   sortOrder?: 'asc' | 'desc';
   createdFrom?: Date;
   createdTo?: Date;
+  ids?: string[];
+}
+
+export interface PreviousStatusFilters {
+  sponsorId?: string;
+  programId?: string;
+  countryId?: string;
+  createdFrom?: Date;
+  createdTo?: Date;
 }
 
 export interface UserStatusFunnelFilters {
@@ -48,6 +71,7 @@ export interface UserStatusFunnelFilters {
   countryId?: string;
   createdFrom?: Date;
   createdTo?: Date;
+  generalStatus?: 'ACTIVO' | 'INACTIVO';
 }
 
 export interface UserStatusCount {
@@ -62,6 +86,7 @@ export interface FunnelExportFilters {
   countryId?: string;
   createdFrom?: Date;
   createdTo?: Date;
+  generalStatus?: 'ACTIVO' | 'INACTIVO';
 }
 
 export interface FunnelExportRow {
@@ -187,6 +212,7 @@ export interface IUserRepository {
   findAllStaff(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   countByStatus(statuses: UserStatus[], filters: UserStatusFunnelFilters): Promise<UserStatusCount[]>;
   findAllForFunnelExport(filters: FunnelExportFilters): Promise<FunnelExportRow[]>;
+  findInactiveIdsByPreviousStatus(status: UserStatus, filters: PreviousStatusFilters): Promise<string[]>;
   findById(id: string): Promise<User | null>;
   create(data: CreateUserData): Promise<User>;
   update(id: string, data: UpdateUserData): Promise<User>;

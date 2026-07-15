@@ -30,6 +30,7 @@ export class ExportFunnelParticipantsUseCase {
       countryId: query.countryId,
       createdFrom: from,
       createdTo: to,
+      generalStatus: query.generalStatus,
     });
 
     return this.buildWorkbook(rows);

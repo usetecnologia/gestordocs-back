@@ -17,6 +17,7 @@ export class GetStatusFunnelUseCase {
       countryId: query.countryId,
       createdFrom: from,
       createdTo: to,
+      generalStatus: query.generalStatus,
     });
   }
 }
