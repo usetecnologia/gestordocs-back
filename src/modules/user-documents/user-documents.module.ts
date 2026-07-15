@@ -10,7 +10,10 @@ import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-acti
 import { EmailActionPrismaRepository } from '@modules/email-action/infrastructure/persistence/email-action.prisma.repository';
 import { EMAIL_TEMPLATE_REPOSITORY } from '@modules/email-template/domain/email-template.repository';
 import { EmailTemplatePrismaRepository } from '@modules/email-template/infrastructure/persistence/email-template.prisma.repository';
+import { EMAIL_LOG_REPOSITORY } from '@modules/email-template/domain/email-log.repository';
+import { EmailLogPrismaRepository } from '@modules/email-template/infrastructure/persistence/email-log.prisma.repository';
 import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
+import { EmailLogService } from '@modules/email-template/application/services/email-log.service';
 import { USER_DOCUMENTS_REPOSITORY } from './domain/user-documents.repository';
 import { USER_STATUS_PORT } from './domain/user-status.port';
 import { UserDocumentsPrismaRepository } from './infrastructure/persistence/user-documents.prisma.repository';
@@ -50,11 +53,13 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     BulkObservarDocumentUseCase,
     SponsorDocumentBuilder,
     EmailDispatchService,
+    EmailLogService,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
+    { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },
     JwtAuthGuard,
   ],
 })

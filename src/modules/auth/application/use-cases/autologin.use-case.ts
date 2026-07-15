@@ -165,6 +165,7 @@ export class AutoLoginUseCase {
       const person = credentials.person;
       await this.emailDispatchService.dispatchByActionCode('BIENVENIDA_PARTICIPANTE', {
         email: credentials.email,
+        userId: credentials.id,
         nombreParticipante: person
           ? [person.firstname, person.middlename, person.lastfathername, person.lastmothername]
               .filter(Boolean)

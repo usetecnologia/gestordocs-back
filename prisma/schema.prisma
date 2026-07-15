@@ -189,6 +189,7 @@ model User {
 
   emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
+  emailLogs EmailLog[]
 }
 
 model UserObservations {
@@ -370,6 +371,7 @@ model EmailAction {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   emailTemplates EmailTemplate[]
+  emailLogs      EmailLog[]
 
   @@index([status], map: "idx_email_actions_status")
   @@map("acciones_correo")
@@ -393,9 +395,47 @@ model EmailTemplate {
   action    EmailAction @relation(fields: [actionId], references: [id])
   createdBy User?       @relation("EmailTemplateCreatedBy", fields: [createdById], references: [id])
   updatedBy User?       @relation("EmailTemplateUpdatedBy", fields: [updatedById], references: [id])
+  emailLogs EmailLog[]
 
   @@index([actionId], map: "idx_email_templates_action")
   @@index([status], map: "idx_email_templates_status")
   @@index([type], map: "idx_email_templates_type")
   @@map("plantillas_correo")
+}
+
+enum EmailLogStatus {
+  ENVIADO
+  FALLIDO
+  OMITIDO
+  @@map("email_log_status")
+}
+
+// Historial de todo intento de envío de correo (normal o programado), exitoso o no.
+// Los campos actionCode/templateCode/recipientEmail quedan como snapshot del momento del envío
+// para que el historial siga siendo legible aunque luego se borre/edite la plantilla, la acción
+// o cambie el email del usuario — las FKs son opcionales con onDelete SetNull por lo mismo.
+model EmailLog {
+  id              String            @id @default(uuid()) @db.VarChar(36)
+  actionId        String?           @map("action_id") @db.VarChar(36)
+  actionCode      String            @map("action_code") @db.VarChar(50)
+  templateId      String?           @map("template_id") @db.VarChar(36)
+  templateCode    String?           @map("template_code") @db.VarChar(50)
+  recipientUserId String?           @map("recipient_user_id") @db.VarChar(36)
+  recipientEmail  String?           @map("recipient_email") @db.VarChar(150)
+  subject         String?           @db.VarChar(200)
+  status          EmailLogStatus
+  source          EmailTemplateType
+  errorMessage    String?           @map("error_message") @db.Text
+  sentAt          DateTime          @default(now()) @map("sent_at")
+
+  action    EmailAction?   @relation(fields: [actionId], references: [id], onDelete: SetNull)
+  template  EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  recipient User?          @relation(fields: [recipientUserId], references: [id], onDelete: SetNull)
+
+  @@index([recipientUserId], map: "idx_email_log_recipient")
+  @@index([actionId], map: "idx_email_log_action")
+  @@index([templateId], map: "idx_email_log_template")
+  @@index([status], map: "idx_email_log_status")
+  @@index([sentAt], map: "idx_email_log_sent_at")
+  @@map("historial_correos")
 }

@@ -56,6 +56,7 @@ export class UploadFileDocumentUseCase {
     const emailContext = await this.userDocumentsRepo.findEmailContextByUserId(userDoc.userId);
     await this.emailDispatchService.dispatchByActionCode('DOCUMENTO_SUBIDO', {
       email: emailContext?.email,
+      userId: userDoc.userId,
       nombreParticipante: emailContext?.nombreParticipante,
       nombrePrograma: emailContext?.nombrePrograma,
       nombreSponsor: emailContext?.nombreSponsor,

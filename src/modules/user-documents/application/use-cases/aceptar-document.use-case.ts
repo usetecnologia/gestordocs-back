@@ -30,6 +30,7 @@ export class AceptarDocumentUseCase {
     const emailContext = await this.userDocumentsRepo.findEmailContextByUserId(userDoc.userId);
     await this.emailDispatchService.dispatchByActionCode('DOCUMENTO_APROBADO', {
       email: emailContext?.email,
+      userId: userDoc.userId,
       nombreParticipante: emailContext?.nombreParticipante,
       nombrePrograma: emailContext?.nombrePrograma,
       nombreSponsor: emailContext?.nombreSponsor,

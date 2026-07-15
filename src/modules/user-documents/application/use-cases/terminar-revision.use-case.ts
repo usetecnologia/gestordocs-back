@@ -99,6 +99,7 @@ export class TerminarRevisionUseCase {
 
     await this.emailDispatchService.dispatchByActionCode('DOCUMENTO_OBSERVADO', {
       email: emailContext?.email,
+      userId: participantId,
       nombreParticipante: emailContext?.nombreParticipante,
       nombrePrograma: emailContext?.nombrePrograma,
       nombreSponsor: emailContext?.nombreSponsor,

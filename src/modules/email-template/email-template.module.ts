@@ -8,8 +8,10 @@ import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-acti
 import { EmailActionPrismaRepository } from '@modules/email-action/infrastructure/persistence/email-action.prisma.repository';
 import { EMAIL_TEMPLATE_REPOSITORY } from './domain/email-template.repository';
 import { EMAIL_AUDIENCE_REPOSITORY } from './domain/email-audience.repository';
+import { EMAIL_LOG_REPOSITORY } from './domain/email-log.repository';
 import { EmailTemplatePrismaRepository } from './infrastructure/persistence/email-template.prisma.repository';
 import { EmailAudiencePrismaRepository } from './infrastructure/persistence/email-audience.prisma.repository';
+import { EmailLogPrismaRepository } from './infrastructure/persistence/email-log.prisma.repository';
 import { EmailTemplateController } from './infrastructure/http/email-template.controller';
 import { CreateEmailTemplateUseCase } from './application/use-cases/create-email-template.use-case';
 import { FindAllEmailTemplateUseCase } from './application/use-cases/find-all-email-template.use-case';
@@ -20,6 +22,7 @@ import { UploadImagenEmailTemplateUseCase } from './application/use-cases/upload
 import { FindTemplateVariablesUseCase } from './application/use-cases/find-template-variables.use-case';
 import { EmailDispatchService } from './application/services/email-dispatch.service';
 import { EmailScheduleService } from './application/services/email-schedule.service';
+import { EmailLogService } from './application/services/email-log.service';
 
 const useCases = [
   CreateEmailTemplateUseCase,
@@ -38,9 +41,11 @@ const useCases = [
     ...useCases,
     EmailDispatchService,
     EmailScheduleService,
+    EmailLogService,
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_AUDIENCE_REPOSITORY, useClass: EmailAudiencePrismaRepository },
+    { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },
     JwtAuthGuard,
   ],
   exports: [EmailDispatchService, EMAIL_TEMPLATE_REPOSITORY, EMAIL_ACTION_REPOSITORY],

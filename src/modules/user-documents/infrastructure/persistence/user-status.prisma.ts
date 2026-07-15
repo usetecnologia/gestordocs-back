@@ -62,6 +62,7 @@ export class UserStatusPrisma implements IUserStatusPort {
 
     await this.emailDispatchService.dispatchByActionCode(actionCode, {
       email: user.email,
+      userId,
       nombreParticipante,
       nombrePrograma: user.program?.name ?? '',
       nombreSponsor: user.sponsor?.name ?? '',
