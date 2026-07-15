@@ -13,7 +13,6 @@ import { JwtTokenService } from '@shared/jwt/jwt.service';
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
-import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 
 const WORKUSE_USER_URL = 'https://secure.workuse.com/api/user/user.php';
 const DEFAULT_PASSWORD = 'password26';
@@ -85,7 +84,6 @@ export class AutoLoginUseCase {
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
-    private readonly emailDispatchService: EmailDispatchService,
   ) {}
 
   async execute(dni: string): Promise<LoginResult> {
@@ -160,20 +158,6 @@ export class AutoLoginUseCase {
       userStatus,
       email: data.email || null,
     });
-
-    if (!existing) {
-      const person = credentials.person;
-      await this.emailDispatchService.dispatchByActionCode('BIENVENIDA_PARTICIPANTE', {
-        email: credentials.email,
-        nombreParticipante: person
-          ? [person.firstname, person.middlename, person.lastfathername, person.lastmothername]
-              .filter(Boolean)
-              .join(' ')
-          : '',
-        nombrePrograma: credentials.program?.name ?? '',
-        nombreSponsor: credentials.sponsor?.name ?? '',
-      });
-    }
 
     await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);
 

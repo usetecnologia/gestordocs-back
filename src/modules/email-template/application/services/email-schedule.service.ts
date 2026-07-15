@@ -3,8 +3,9 @@ import { Cron } from '@nestjs/schedule';
 import { ResendService } from '@shared/resend/resend.service';
 import { buildTemplateVariables, substituteTemplateVariables } from '@common/utils/template-variables.util';
 import { ACTION_STATUS_MAP } from '../../domain/action-status-map';
-import { PERU_TIMEZONE, WeekDay } from '../../domain/email-template.enums';
+import { PERU_TIMEZONE, WeekDay, EmailTemplateType } from '../../domain/email-template.enums';
 import { EmailTemplate } from '../../domain/email-template.entity';
+import { EmailLogStatus } from '../../domain/email-log.entity';
 import {
   EMAIL_TEMPLATE_REPOSITORY,
   IEmailTemplateRepository,
@@ -13,6 +14,7 @@ import {
   EMAIL_AUDIENCE_REPOSITORY,
   IEmailAudienceRepository,
 } from '../../domain/email-audience.repository';
+import { EmailLogService } from './email-log.service';
 
 @Injectable()
 export class EmailScheduleService {
@@ -22,6 +24,7 @@ export class EmailScheduleService {
     @Inject(EMAIL_TEMPLATE_REPOSITORY) private readonly templateRepo: IEmailTemplateRepository,
     @Inject(EMAIL_AUDIENCE_REPOSITORY) private readonly audienceRepo: IEmailAudienceRepository,
     private readonly resendService: ResendService,
+    private readonly emailLogService: EmailLogService,
   ) {}
 
   // Corre cada minuto en hora de Perú (America/Lima, sin horario de verano) y dispara las
@@ -47,6 +50,17 @@ export class EmailScheduleService {
         `Plantilla PROGRAMADA "${template.code}" está vinculada a la acción "${template.action.code}", ` +
           'que no tiene un estado de audiencia asociado. Se omite el envío.',
       );
+      await this.emailLogService.record({
+        actionId: template.actionId,
+        actionCode: template.action.code,
+        templateId: template.id,
+        templateCode: template.code,
+        status: EmailLogStatus.OMITIDO,
+        source: EmailTemplateType.PROGRAMADA,
+        errorMessage:
+          `La acción "${template.action.code}" no tiene un estado de audiencia asociado ` +
+          '(no está en ACTION_STATUS_MAP).',
+      });
       return;
     }
 
@@ -55,17 +69,56 @@ export class EmailScheduleService {
         ? await this.audienceRepo.findByUserStatus(mapping.status)
         : await this.audienceRepo.findByDocumentStatus(mapping.status);
 
+    if (recipients.length === 0) {
+      await this.emailLogService.record({
+        actionId: template.actionId,
+        actionCode: template.action.code,
+        templateId: template.id,
+        templateCode: template.code,
+        status: EmailLogStatus.OMITIDO,
+        source: EmailTemplateType.PROGRAMADA,
+        errorMessage: `No había destinatarios con el estado "${mapping.status}" en este momento.`,
+      });
+      return;
+    }
+
     for (const recipient of recipients) {
+      const variables = buildTemplateVariables(recipient);
+      const subject = substituteTemplateVariables(template.subject, variables);
+      const html = substituteTemplateVariables(template.htmlContent, variables);
+
       try {
-        const variables = buildTemplateVariables(recipient);
-        const subject = substituteTemplateVariables(template.subject, variables);
-        const html = substituteTemplateVariables(template.htmlContent, variables);
         await this.resendService.sendMail({ to: recipient.email, subject, html });
+
+        await this.emailLogService.record({
+          actionId: template.actionId,
+          actionCode: template.action.code,
+          templateId: template.id,
+          templateCode: template.code,
+          recipientUserId: recipient.userId,
+          recipientEmail: recipient.email,
+          subject,
+          status: EmailLogStatus.ENVIADO,
+          source: EmailTemplateType.PROGRAMADA,
+        });
       } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         this.logger.error(
-          `No se pudo enviar la plantilla "${template.code}" a ${recipient.email}: ` +
-            (error instanceof Error ? error.message : String(error)),
+          `No se pudo enviar la plantilla "${template.code}" a ${recipient.email}: ${errorMessage}`,
         );
+
+        await this.emailLogService.record({
+          actionId: template.actionId,
+          actionCode: template.action.code,
+          templateId: template.id,
+          templateCode: template.code,
+          recipientUserId: recipient.userId,
+          recipientEmail: recipient.email,
+          subject,
+          status: EmailLogStatus.FALLIDO,
+          source: EmailTemplateType.PROGRAMADA,
+          errorMessage,
+        });
       }
     }
   }

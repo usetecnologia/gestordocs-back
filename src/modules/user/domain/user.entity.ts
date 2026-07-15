@@ -22,6 +22,17 @@ export interface UserHistoryStatusItem {
   updatedAt: Date;
 }
 
+export interface UserEmailLogItem {
+  id: string;
+  actionCode: string;
+  templateCode: string | null;
+  subject: string | null;
+  status: string;
+  source: string;
+  errorMessage: string | null;
+  sentAt: Date;
+}
+
 export class User {
   constructor(
     public readonly id: string,
@@ -51,5 +62,6 @@ export class User {
     public readonly optionProgram?: { id: string; name: string; shortName: string } | null,
     public readonly observations?: UserObservation[] | null,
     public readonly historyStatus?: UserHistoryStatusItem[] | null,
+    public readonly emailHistory?: UserEmailLogItem[] | null,
   ) {}
 }

@@ -26,7 +26,10 @@ import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-acti
 import { EmailActionPrismaRepository } from '@modules/email-action/infrastructure/persistence/email-action.prisma.repository';
 import { EMAIL_TEMPLATE_REPOSITORY } from '@modules/email-template/domain/email-template.repository';
 import { EmailTemplatePrismaRepository } from '@modules/email-template/infrastructure/persistence/email-template.prisma.repository';
+import { EMAIL_LOG_REPOSITORY } from '@modules/email-template/domain/email-log.repository';
+import { EmailLogPrismaRepository } from '@modules/email-template/infrastructure/persistence/email-log.prisma.repository';
 import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
+import { EmailLogService } from '@modules/email-template/application/services/email-log.service';
 
 const useCases = [
   LoginUseCase,
@@ -42,6 +45,7 @@ const useCases = [
   providers: [
     ...useCases,
     EmailDispatchService,
+    EmailLogService,
     { provide: AUTH_REPOSITORY, useClass: AuthPrismaRepository },
     { provide: PASSWORD_VERIFIER, useClass: BcryptService },
     { provide: PASSWORD_HASHER, useClass: BcryptService },
@@ -51,6 +55,7 @@ const useCases = [
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
+    { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },
   ],
   exports: [AppJwtModule],
 })

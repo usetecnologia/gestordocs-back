@@ -26,12 +26,18 @@ export const USER_DETAIL_INCLUDE = {
   userHistories: {
     orderBy: { createdAt: 'desc' as const },
   },
+  emailLogs: {
+    orderBy: { sentAt: 'desc' as const },
+  },
 } as const;
 
 export const USER_LIST_INCLUDE = {
   ...USER_INCLUDE,
   userHistories: {
     orderBy: { createdAt: 'desc' as const },
+  },
+  emailLogs: {
+    orderBy: { sentAt: 'desc' as const },
   },
 } as const;
 
@@ -46,6 +52,19 @@ export type PrismaUserDetail = UserGetPayload<{
 export type PrismaUserList = UserGetPayload<{
   include: typeof USER_LIST_INCLUDE;
 }>;
+
+function mapEmailLogs(emailLogs: PrismaUserList['emailLogs']) {
+  return emailLogs.map((log) => ({
+    id: log.id,
+    actionCode: log.actionCode,
+    templateCode: log.templateCode,
+    subject: log.subject,
+    status: log.status as string,
+    source: log.source as string,
+    errorMessage: log.errorMessage,
+    sentAt: log.sentAt,
+  }));
+}
 
 export class UserMapper {
   static toDomain(user: PrismaUserFull, person: PersonModel | null): User {
@@ -120,6 +139,7 @@ export class UserMapper {
         createdAt: h.createdAt,
         updatedAt: h.updatedAt,
       })),
+      mapEmailLogs(user.emailLogs),
     );
   }
 
@@ -178,6 +198,7 @@ export class UserMapper {
         createdAt: h.createdAt,
         updatedAt: h.updatedAt,
       })),
+      mapEmailLogs(user.emailLogs),
     );
   }
 }

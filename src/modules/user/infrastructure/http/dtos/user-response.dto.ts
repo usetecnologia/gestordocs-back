@@ -61,6 +61,17 @@ class UserHistoryStatusItemDto {
   @ApiProperty() updatedAt!: Date;
 }
 
+class UserEmailLogItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty({ example: 'DOCUMENTO_APROBADO' }) actionCode!: string;
+  @ApiPropertyOptional({ example: 'DOCUMENTO_APROBADO_V1', nullable: true }) templateCode!: string | null;
+  @ApiPropertyOptional({ example: 'Tu documento fue aprobado', nullable: true }) subject!: string | null;
+  @ApiProperty({ example: 'ENVIADO', enum: ['ENVIADO', 'FALLIDO', 'OMITIDO'] }) status!: string;
+  @ApiProperty({ example: 'NORMAL', enum: ['NORMAL', 'PROGRAMADA'] }) source!: string;
+  @ApiPropertyOptional({ nullable: true }) errorMessage!: string | null;
+  @ApiProperty() sentAt!: Date;
+}
+
 export class UserResponseDto {
   @ApiProperty({ example: 'uuid-del-usuario' }) id!: string;
   @ApiProperty({ example: 'John' }) firstname!: string;
@@ -88,4 +99,5 @@ export class UserResponseDto {
   @ApiPropertyOptional({ type: OptionProgramRefDto }) optionProgram?: OptionProgramRefDto | null;
   @ApiPropertyOptional({ type: [UserObservationDto] }) observations?: UserObservationDto[] | null;
   @ApiPropertyOptional({ type: [UserHistoryStatusItemDto] }) historyStatus?: UserHistoryStatusItemDto[] | null;
+  @ApiPropertyOptional({ type: [UserEmailLogItemDto] }) emailHistory?: UserEmailLogItemDto[] | null;
 }

@@ -1,6 +1,5 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { AwsS3Service } from '@shared/aws/aws-s3.service';
-import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 import { MulterFile } from '../../domain/multer-file.interface';
 import { UploadFileDocumentDto } from '../../infrastructure/http/dtos/upload-file-document.dto';
 import {
@@ -17,7 +16,6 @@ export class UploadFileDocumentUseCase {
     @Inject(USER_STATUS_PORT)
     private readonly userStatusPort: IUserStatusPort,
     private readonly awsS3Service: AwsS3Service,
-    private readonly emailDispatchService: EmailDispatchService,
   ) {}
 
   async execute(file: MulterFile, dto: UploadFileDocumentDto): Promise<void> {
@@ -52,15 +50,6 @@ export class UploadFileDocumentUseCase {
     const { url } = await this.awsS3Service.uploadOne(file, 'user-documents');
 
     await this.userDocumentsRepo.addHistory(userDoc.id, 'SUBIDO', url, dto.userCreatedId);
-
-    const emailContext = await this.userDocumentsRepo.findEmailContextByUserId(userDoc.userId);
-    await this.emailDispatchService.dispatchByActionCode('DOCUMENTO_SUBIDO', {
-      email: emailContext?.email,
-      nombreParticipante: emailContext?.nombreParticipante,
-      nombrePrograma: emailContext?.nombrePrograma,
-      nombreSponsor: emailContext?.nombreSponsor,
-      nombreDocumento: userDoc.documentSponsor?.document.title || userDoc.document?.title || '',
-    });
 
     // Si un usuario que no es participante sube un documento mientras el
     // participante está EN_REVISION, no se debe alterar ese estado.
