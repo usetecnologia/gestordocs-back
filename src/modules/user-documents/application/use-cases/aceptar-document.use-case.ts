@@ -1,5 +1,4 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 import {
   IUserDocumentsRepository,
   USER_DOCUMENTS_REPOSITORY,
@@ -10,7 +9,6 @@ export class AceptarDocumentUseCase {
   constructor(
     @Inject(USER_DOCUMENTS_REPOSITORY)
     private readonly userDocumentsRepo: IUserDocumentsRepository,
-    private readonly emailDispatchService: EmailDispatchService,
   ) {}
 
   async execute(userDocumentId: string, reviewedById: string): Promise<void> {
@@ -25,16 +23,6 @@ export class AceptarDocumentUseCase {
       userDocumentId,
       reviewedById,
       url: lastSubido?.url ?? null,
-    });
-
-    const emailContext = await this.userDocumentsRepo.findEmailContextByUserId(userDoc.userId);
-    await this.emailDispatchService.dispatchByActionCode('DOCUMENTO_APROBADO', {
-      email: emailContext?.email,
-      userId: userDoc.userId,
-      nombreParticipante: emailContext?.nombreParticipante,
-      nombrePrograma: emailContext?.nombrePrograma,
-      nombreSponsor: emailContext?.nombreSponsor,
-      nombreDocumento: userDoc.documentSponsor?.document.title || userDoc.document?.title || '',
     });
   }
 }
