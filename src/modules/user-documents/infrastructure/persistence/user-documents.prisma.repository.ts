@@ -15,6 +15,7 @@ import {
   DocumentTargetResult,
   ActiveUserDocumentStatus,
   ParticipantSponsorInfo,
+  UserEmailContext,
   UserDocumentTargetHistoryItem,
   CloneDocumentForSponsorData,
   RefreshDocumentFromLatestData,
@@ -478,6 +479,35 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       lastfathername: person?.lastfathername ?? '',
       lastmothername: person?.lastmothername ?? null,
       sponsorCode: user.sponsor?.code ?? null,
+    };
+  }
+
+  async findEmailContextByUserId(userId: string): Promise<UserEmailContext | null> {
+    const [user, person] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          email: true,
+          program: { select: { name: true } },
+          sponsor: { select: { name: true } },
+        },
+      }),
+      this.prisma.person.findUnique({
+        where: { id: userId },
+        select: { firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+      }),
+    ]);
+    if (!user) return null;
+
+    return {
+      email: user.email ?? null,
+      nombreParticipante: person
+        ? [person.firstname, person.middlename, person.lastfathername, person.lastmothername]
+            .filter(Boolean)
+            .join(' ')
+        : '',
+      nombrePrograma: user.program?.name ?? '',
+      nombreSponsor: user.sponsor?.name ?? '',
     };
   }
 

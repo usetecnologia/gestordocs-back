@@ -13,8 +13,16 @@ import {
   UpdateExternalUserData,
   ExportUsersFilters,
   ExportUserRow,
+  UserStatusFunnelFilters,
+  UserStatusCount,
+  FunnelExportFilters,
+  FunnelExportRow,
+  PreviousStatusFilters,
+  isNoSponsorFilter,
+  isWithSponsorFilter,
 } from '../../domain/user.repository';
 import { User } from '../../domain/user.entity';
+import { UserStatus } from '../../domain/user.enums';
 import {
   UserMapper,
   USER_INCLUDE,
@@ -52,6 +60,22 @@ const USER_FIELD_KEYS = [
 export class UserPrismaRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  // SIN_SPONSOR / CON_SPONSOR / uuid — misma interpretación en todos los filtros por sponsor
+  // de los reportes (funnel, tabla y Excel), tanto en where de Prisma como en SQL crudo.
+  private sponsorWhereFragment(sponsorId?: string): { sponsorId?: string | null | { not: null } } {
+    if (!sponsorId) return {};
+    if (isNoSponsorFilter(sponsorId)) return { sponsorId: null };
+    if (isWithSponsorFilter(sponsorId)) return { sponsorId: { not: null } };
+    return { sponsorId };
+  }
+
+  private sponsorSqlCondition(sponsorId?: string): Prisma.Sql | undefined {
+    if (!sponsorId) return undefined;
+    if (isNoSponsorFilter(sponsorId)) return Prisma.sql`u.sponsorId IS NULL`;
+    if (isWithSponsorFilter(sponsorId)) return Prisma.sql`u.sponsorId IS NOT NULL`;
+    return Prisma.sql`u.sponsorId = ${sponsorId}`;
+  }
+
   async findAll({
     page,
     limit,
@@ -67,6 +91,9 @@ export class UserPrismaRepository implements IUserRepository {
     search,
     sortBy,
     sortOrder,
+    createdFrom,
+    createdTo,
+    ids: filterIds,
   }: UserFilters) {
     let searchIds: string[] | undefined;
     if (search) {
@@ -103,7 +130,12 @@ export class UserPrismaRepository implements IUserRepository {
       statusSolRetiroIds = rows.map((r) => r.id);
     }
 
-    const idFilters = [searchIds, statusSolRetiroIds].filter(
+    const historyDateIds =
+      status && (createdFrom || createdTo)
+        ? await this.findStatusEntryDateIds(status, createdFrom, createdTo)
+        : undefined;
+
+    const idFilters = [searchIds, statusSolRetiroIds, historyDateIds, filterIds].filter(
       (ids): ids is string[] => ids !== undefined,
     );
     const combinedIds = idFilters.length
@@ -114,7 +146,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...(status && { status }),
       ...(roleId && { roleId }),
       ...(countryId && { countryId }),
-      ...(sponsorId && { sponsorId }),
+      ...this.sponsorWhereFragment(sponsorId),
       ...(hasSponsor === true && { sponsorId: { not: null } }),
       ...(hasSponsor === false && { sponsorId: null }),
       ...(programId && { programId }),
@@ -274,6 +306,252 @@ export class UserPrismaRepository implements IUserRepository {
       data: users.map((u) => UserMapper.toDomain(u, personMap.get(u.id) ?? null)),
       total,
     };
+  }
+
+  async countByStatus(
+    statuses: UserStatus[],
+    { sponsorId, programId, countryId, createdFrom, createdTo, generalStatus }: UserStatusFunnelFilters,
+  ): Promise<UserStatusCount[]> {
+    // INACTIVO no es un status del funnel — en vez de dar 0 en todo, se reasigna cada
+    // participante inactivo al estado que tenía justo ANTES de pasar a INACTIVO.
+    if (generalStatus === 'INACTIVO') {
+      return this.countByPreviousStatusBeforeInactive(statuses, {
+        sponsorId,
+        programId,
+        countryId,
+        createdFrom,
+        createdTo,
+      });
+    }
+
+    // El rango de fecha filtra por cuándo cada participante entró a su status ACTUAL
+    // (última fila de UserHistoryStatus con ese status), no por su fecha de alta.
+    // Si nunca tuvo un cambio de estado registrado, se usa User.created_at como respaldo.
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`u.status IN (${Prisma.join(statuses.map((s) => Prisma.sql`${s}`))})`,
+    ];
+    const sponsorCondition = this.sponsorSqlCondition(sponsorId);
+    if (sponsorCondition) conditions.push(sponsorCondition);
+    if (programId) conditions.push(Prisma.sql`u.programId = ${programId}`);
+    if (countryId) conditions.push(Prisma.sql`u.countryId = ${countryId}`);
+    if (createdFrom) conditions.push(Prisma.sql`COALESCE(h.enteredAt, u.created_at) >= ${createdFrom}`);
+    if (createdTo) conditions.push(Prisma.sql`COALESCE(h.enteredAt, u.created_at) <= ${createdTo}`);
+    // Mismo criterio que /users: ACTIVO = cualquier status excepto INACTIVO (aquí es un no-op,
+    // ya que ningún status del funnel es INACTIVO).
+    if (generalStatus === 'ACTIVO') conditions.push(Prisma.sql`u.status != ${'INACTIVO'}`);
+
+    const rows = await this.prisma.$queryRaw<{ status: string; count: bigint | number }[]>(
+      Prisma.sql`
+        SELECT u.status AS status, COUNT(*) AS count
+        FROM \`User\` u
+        LEFT JOIN (
+          SELECT userId, status, MAX(created_at) AS enteredAt
+          FROM \`UserHistoryStatus\`
+          GROUP BY userId, status
+        ) h ON h.userId = u.id AND h.status = u.status
+        WHERE ${Prisma.join(conditions, ' AND ')}
+        GROUP BY u.status
+      `,
+    );
+
+    const counts = new Map(rows.map((r) => [r.status as UserStatus, Number(r.count)]));
+    return statuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
+  }
+
+  // Para cada participante ACTUALMENTE inactivo, busca la última fila de UserHistoryStatus con
+  // status = INACTIVO (cuándo se inactivó) y la fila inmediatamente anterior a esa (su estado
+  // previo). Cuenta por ese estado previo. Un participante sin ninguna fila anterior (nunca tuvo
+  // otro estado registrado) queda fuera del conteo, ya que no hay un estado previo que atribuirle.
+  private async countByPreviousStatusBeforeInactive(
+    statuses: UserStatus[],
+    {
+      sponsorId,
+      programId,
+      countryId,
+      createdFrom,
+      createdTo,
+    }: Omit<UserStatusFunnelFilters, 'generalStatus'>,
+  ): Promise<UserStatusCount[]> {
+    const conditions: Prisma.Sql[] = [
+      Prisma.sql`prev.status IN (${Prisma.join(statuses.map((s) => Prisma.sql`${s}`))})`,
+    ];
+    const sponsorCondition = this.sponsorSqlCondition(sponsorId);
+    if (sponsorCondition) conditions.push(sponsorCondition);
+    if (programId) conditions.push(Prisma.sql`u.programId = ${programId}`);
+    if (countryId) conditions.push(Prisma.sql`u.countryId = ${countryId}`);
+    // El rango de fecha filtra por cuándo el participante se volvió INACTIVO.
+    if (createdFrom) conditions.push(Prisma.sql`cur.created_at >= ${createdFrom}`);
+    if (createdTo) conditions.push(Prisma.sql`cur.created_at <= ${createdTo}`);
+
+    const rows = await this.prisma.$queryRaw<{ status: string; count: bigint | number }[]>(
+      Prisma.sql`
+        SELECT prev.status AS status, COUNT(*) AS count
+        FROM \`User\` u
+        JOIN \`UserHistoryStatus\` cur
+          ON cur.userId = u.id
+          AND cur.status = 'INACTIVO'
+          AND cur.created_at = (
+            SELECT MAX(created_at) FROM \`UserHistoryStatus\` WHERE userId = u.id AND status = 'INACTIVO'
+          )
+        JOIN \`UserHistoryStatus\` prev
+          ON prev.userId = u.id
+          AND prev.status != 'INACTIVO'
+          AND prev.created_at = (
+            SELECT MAX(created_at) FROM \`UserHistoryStatus\`
+            WHERE userId = u.id AND status != 'INACTIVO' AND created_at < cur.created_at
+          )
+        WHERE u.status = 'INACTIVO'
+          AND ${Prisma.join(conditions, ' AND ')}
+        GROUP BY prev.status
+      `,
+    );
+
+    const counts = new Map(rows.map((r) => [r.status as UserStatus, Number(r.count)]));
+    return statuses.map((status) => ({ status, count: counts.get(status) ?? 0 }));
+  }
+
+  // Ids de los participantes ACTUALMENTE inactivos cuyo estado ANTERIOR (justo antes de pasar
+  // a INACTIVO) coincide con `status`. Misma regla que countByPreviousStatusBeforeInactive, pero
+  // para un único status — usado por la tabla y el Excel del funnel.
+  async findInactiveIdsByPreviousStatus(
+    status: UserStatus,
+    { sponsorId, programId, countryId, createdFrom, createdTo }: PreviousStatusFilters,
+  ): Promise<string[]> {
+    const conditions: Prisma.Sql[] = [Prisma.sql`prev.status = ${status}`];
+    const sponsorCondition = this.sponsorSqlCondition(sponsorId);
+    if (sponsorCondition) conditions.push(sponsorCondition);
+    if (programId) conditions.push(Prisma.sql`u.programId = ${programId}`);
+    if (countryId) conditions.push(Prisma.sql`u.countryId = ${countryId}`);
+    if (createdFrom) conditions.push(Prisma.sql`cur.created_at >= ${createdFrom}`);
+    if (createdTo) conditions.push(Prisma.sql`cur.created_at <= ${createdTo}`);
+
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+      Prisma.sql`
+        SELECT u.id
+        FROM \`User\` u
+        JOIN \`UserHistoryStatus\` cur
+          ON cur.userId = u.id
+          AND cur.status = 'INACTIVO'
+          AND cur.created_at = (
+            SELECT MAX(created_at) FROM \`UserHistoryStatus\` WHERE userId = u.id AND status = 'INACTIVO'
+          )
+        JOIN \`UserHistoryStatus\` prev
+          ON prev.userId = u.id
+          AND prev.status != 'INACTIVO'
+          AND prev.created_at = (
+            SELECT MAX(created_at) FROM \`UserHistoryStatus\`
+            WHERE userId = u.id AND status != 'INACTIVO' AND created_at < cur.created_at
+          )
+        WHERE u.status = 'INACTIVO'
+          AND ${Prisma.join(conditions, ' AND ')}
+      `,
+    );
+    return rows.map((r) => r.id);
+  }
+
+  async findAllForFunnelExport({
+    status,
+    sponsorId,
+    programId,
+    countryId,
+    createdFrom,
+    createdTo,
+    generalStatus,
+  }: FunnelExportFilters): Promise<FunnelExportRow[]> {
+    if (generalStatus === 'INACTIVO') {
+      const ids = await this.findInactiveIdsByPreviousStatus(status, {
+        sponsorId,
+        programId,
+        countryId,
+        createdFrom,
+        createdTo,
+      });
+      return this.fetchFunnelExportRows({ status: 'INACTIVO' as never, id: { in: ids } });
+    }
+
+    const historyDateIds =
+      createdFrom || createdTo ? await this.findStatusEntryDateIds(status, createdFrom, createdTo) : undefined;
+
+    const where = {
+      status,
+      ...this.sponsorWhereFragment(sponsorId),
+      ...(programId && { programId }),
+      ...(countryId && { countryId }),
+      ...(historyDateIds !== undefined && { id: { in: historyDateIds } }),
+      // Mismo criterio que /users: si se envía, generalStatus prevalece sobre `status`.
+      ...(generalStatus === 'ACTIVO' && { status: { not: 'INACTIVO' as never } }),
+    };
+
+    return this.fetchFunnelExportRows(where);
+  }
+
+  private async fetchFunnelExportRows(where: Prisma.UserWhereInput): Promise<FunnelExportRow[]> {
+    const users = await this.prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        email: true,
+        statusSolRetiro: true,
+        status: true,
+        country: { select: { name: true } },
+        sponsor: { select: { name: true } },
+        program: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const userIds = users.map((u) => u.id);
+    const persons = userIds.length
+      ? await this.prisma.person.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, dni: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+        })
+      : [];
+    const personMap = new Map(persons.map((p) => [p.id, p]));
+
+    return users.map((u) => {
+      const person = personMap.get(u.id);
+      return {
+        dni: person?.dni ?? null,
+        lastname: [person?.lastfathername, person?.lastmothername].filter(Boolean).join(' '),
+        firstname: [person?.firstname, person?.middlename].filter(Boolean).join(' '),
+        program: u.program?.name ?? null,
+        country: u.country?.name ?? null,
+        sponsor: u.sponsor?.name ?? null,
+        email: u.email,
+        statusSolRetiro: u.statusSolRetiro,
+        status: u.status as unknown as UserStatus,
+      };
+    });
+  }
+
+  // El rango de fecha filtra por cuándo el participante entró al `status` dado
+  // (última fila de UserHistoryStatus con ese status), no por su fecha de alta.
+  // Si nunca tuvo un cambio de estado registrado, se usa User.created_at como respaldo.
+  private async findStatusEntryDateIds(
+    status: UserStatus,
+    createdFrom?: Date,
+    createdTo?: Date,
+  ): Promise<string[]> {
+    const dateConditions: Prisma.Sql[] = [];
+    if (createdFrom) dateConditions.push(Prisma.sql`COALESCE(h.enteredAt, u.created_at) >= ${createdFrom}`);
+    if (createdTo) dateConditions.push(Prisma.sql`COALESCE(h.enteredAt, u.created_at) <= ${createdTo}`);
+
+    const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+      Prisma.sql`
+        SELECT u.id
+        FROM \`User\` u
+        LEFT JOIN (
+          SELECT userId, MAX(created_at) AS enteredAt
+          FROM \`UserHistoryStatus\`
+          WHERE status = ${status}
+          GROUP BY userId
+        ) h ON h.userId = u.id
+        WHERE u.status = ${status}
+          AND ${Prisma.join(dateConditions, ' AND ')}
+      `,
+    );
+    return rows.map((r) => r.id);
   }
 
   async findAllForExport({

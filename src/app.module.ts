@@ -1,11 +1,14 @@
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
+import { ScheduleModule } from '@nestjs/schedule';
 import KeyvRedis from '@keyv/redis';
 import { envs } from './config/envs';
 import { AuthModule } from '@modules/auth/auth.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { CountryModule } from '@modules/country/country.module';
 import { DocumentModule } from '@modules/document/document.module';
+import { EmailActionModule } from '@modules/email-action/email-action.module';
+import { EmailTemplateModule } from '@modules/email-template/email-template.module';
 import { EtiquetaModule } from '@modules/etiqueta/etiqueta.module';
 import { MailTestModule } from '@modules/mail-test/mail-test.module';
 import { OptionProgramModule } from '@modules/option-program/option-program.module';
@@ -29,10 +32,13 @@ import { UserDocumentsModule } from '@modules/user-documents/user-documents.modu
         ],
       }),
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     CountryModule,
     DashboardModule,
     DocumentModule,
+    EmailActionModule,
+    EmailTemplateModule,
     EtiquetaModule,
     MailTestModule,
     OptionProgramModule,
