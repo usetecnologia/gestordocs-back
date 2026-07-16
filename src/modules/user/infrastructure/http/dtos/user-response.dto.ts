@@ -63,9 +63,9 @@ class UserHistoryStatusItemDto {
 
 class UserEmailLogItemDto {
   @ApiProperty() id!: string;
-  @ApiProperty({ example: 'DOCUMENTO_APROBADO' }) actionCode!: string;
-  @ApiPropertyOptional({ example: 'DOCUMENTO_APROBADO_V1', nullable: true }) templateCode!: string | null;
-  @ApiPropertyOptional({ example: 'Tu documento fue aprobado', nullable: true }) subject!: string | null;
+  @ApiProperty({ example: 'DOCUMENTO_OBSERVADO' }) actionCode!: string;
+  @ApiPropertyOptional({ example: 'DOCUMENTO_OBSERVADO_V1', nullable: true }) templateCode!: string | null;
+  @ApiPropertyOptional({ example: 'Tu documento fue observado', nullable: true }) subject!: string | null;
   @ApiProperty({ example: 'ENVIADO', enum: ['ENVIADO', 'FALLIDO', 'OMITIDO'] }) status!: string;
   @ApiProperty({ example: 'NORMAL', enum: ['NORMAL', 'PROGRAMADA'] }) source!: string;
   @ApiPropertyOptional({ nullable: true }) errorMessage!: string | null;

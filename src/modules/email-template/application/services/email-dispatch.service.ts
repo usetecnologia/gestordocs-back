@@ -37,48 +37,35 @@ export class EmailDispatchService {
 
   // Nunca lanza: un fallo de envío de correo no debe romper el flujo de negocio que lo dispara
   // (aceptar/observar documento, cambio de estado, autologin, etc.).
+  //
+  // Si la acción no existe/está inactiva o no tiene una plantilla activa, no se registra nada
+  // en el historial — no es un intento real de envío, es simplemente que no hay nada configurado
+  // para esa acción todavía. Solo se loguea cuando sí hubo un intento real: éxito (ENVIADO) o
+  // fallo real (FALLIDO) por destinatario sin correo, correo inválido o error del proveedor.
   async dispatchByActionCode(actionCode: string, context: EmailDispatchContext): Promise<void> {
     const recipientUserId = context.userId ?? null;
-
-    if (!context.email) {
-      await this.emailLogService.record({
-        actionCode,
-        recipientUserId,
-        recipientEmail: null,
-        status: EmailLogStatus.OMITIDO,
-        source: EmailTemplateType.NORMAL,
-        errorMessage: 'Sin correo electrónico registrado para el destinatario.',
-      });
-      return;
-    }
 
     let action: EmailAction | null = null;
     let template: EmailTemplate | null = null;
 
     try {
       action = await this.actionRepo.findActiveByCode(actionCode);
-      if (!action) {
-        await this.emailLogService.record({
-          actionCode,
-          recipientUserId,
-          recipientEmail: context.email,
-          status: EmailLogStatus.OMITIDO,
-          source: EmailTemplateType.NORMAL,
-          errorMessage: 'Acción de correo no encontrada o inactiva.',
-        });
-        return;
-      }
+      if (!action) return;
 
       template = await this.templateRepo.findActiveByActionId(action.id);
-      if (!template) {
+      if (!template) return;
+
+      if (!context.email) {
         await this.emailLogService.record({
           actionId: action.id,
           actionCode,
+          templateId: template.id,
+          templateCode: template.code,
           recipientUserId,
-          recipientEmail: context.email,
-          status: EmailLogStatus.OMITIDO,
+          recipientEmail: null,
+          status: EmailLogStatus.FALLIDO,
           source: EmailTemplateType.NORMAL,
-          errorMessage: 'No hay una plantilla activa para esta acción.',
+          errorMessage: 'Sin correo electrónico registrado para el destinatario.',
         });
         return;
       }
@@ -110,7 +97,7 @@ export class EmailDispatchService {
         templateId: template?.id ?? null,
         templateCode: template?.code ?? null,
         recipientUserId,
-        recipientEmail: context.email,
+        recipientEmail: context.email ?? null,
         status: EmailLogStatus.FALLIDO,
         source: EmailTemplateType.NORMAL,
         errorMessage,

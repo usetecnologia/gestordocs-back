@@ -16,13 +16,13 @@ import { EmailTemplateType } from '../../../domain/email-template.enums';
 import { EmailTemplateScheduleDto } from './email-template-schedule.dto';
 
 export class CreateEmailTemplateDto {
-  @ApiProperty({ example: 'Bienvenida al participante' })
+  @ApiProperty({ example: 'Documento observado' })
   @IsString()
   @MinLength(2)
   @MaxLength(100)
   name!: string;
 
-  @ApiProperty({ example: 'BIENVENIDA_PARTICIPANTE' })
+  @ApiProperty({ example: 'DOCUMENTO_OBSERVADO' })
   @IsString()
   @MinLength(2)
   @MaxLength(50)
