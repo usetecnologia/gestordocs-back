@@ -54,6 +54,7 @@ import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user
 import { CreateObservationUseCase } from '../../application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from '../../application/use-cases/close-observation.use-case';
 import { BulkLoadUsersUseCase } from '../../application/use-cases/bulk-load-users.use-case';
+import { BulkInfoParticipantsUseCase } from '../../application/use-cases/bulk-info-participants.use-case';
 import { ExportParticipantsDocumentsUseCase } from '../../application/use-cases/export-participants-documents.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -91,6 +92,7 @@ export class UserController {
     private readonly createObservation: CreateObservationUseCase,
     private readonly closeObservation: CloseObservationUseCase,
     private readonly bulkLoadUsers: BulkLoadUsersUseCase,
+    private readonly bulkInfoParticipants: BulkInfoParticipantsUseCase,
     private readonly exportParticipantsDocuments: ExportParticipantsDocumentsUseCase,
   ) {}
 
@@ -121,6 +123,16 @@ export class UserController {
         arrays_success: result.created,
       },
     };
+  }
+
+  @Post('bulk-info-participants')
+  @ApiOperation({
+    summary: 'Consulta información masiva de participantes desde Workuse (userinfo2) — por ahora solo registra la respuesta en consola',
+  })
+  @ApiOkResponse({ schema: { example: { message: 'Consulta ejecutada correctamente.' } } })
+  async bulkInfoParticipantsHandler(): Promise<{ message: string }> {
+    await this.bulkInfoParticipants.execute();
+    return { message: 'Consulta ejecutada correctamente.' };
   }
 
   @Get()

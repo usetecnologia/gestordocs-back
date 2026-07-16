@@ -39,6 +39,7 @@ import { ChangeUserStatusUseCase } from './application/use-cases/change-user-sta
 import { CreateObservationUseCase } from './application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from './application/use-cases/close-observation.use-case';
 import { BulkLoadUsersUseCase } from './application/use-cases/bulk-load-users.use-case';
+import { BulkInfoParticipantsUseCase } from './application/use-cases/bulk-info-participants.use-case';
 import { ExportParticipantsDocumentsUseCase } from './application/use-cases/export-participants-documents.use-case';
 
 const useCases = [
@@ -55,6 +56,7 @@ const useCases = [
   CreateObservationUseCase,
   CloseObservationUseCase,
   BulkLoadUsersUseCase,
+  BulkInfoParticipantsUseCase,
   ExportParticipantsDocumentsUseCase,
   TerminarRevisionUseCase,
 ];
