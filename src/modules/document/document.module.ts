@@ -8,6 +8,7 @@ import { DocumentController } from './infrastructure/http/document.controller';
 import { CreateDocumentUseCase } from './application/use-cases/create-document.use-case';
 import { FindAllDocumentUseCase } from './application/use-cases/find-all-document.use-case';
 import { FindOneDocumentUseCase } from './application/use-cases/find-one-document.use-case';
+import { FindDocumentCountriesUseCase } from './application/use-cases/find-document-countries.use-case';
 import { FindPendingDocumentsUseCase } from './application/use-cases/find-pending-documents.use-case';
 import { UpdateDocumentUseCase } from './application/use-cases/update-document.use-case';
 import { UpdateDocumentOrderUseCase } from './application/use-cases/update-document-order.use-case';
@@ -19,6 +20,7 @@ const useCases = [
   CreateDocumentUseCase,
   FindAllDocumentUseCase,
   FindOneDocumentUseCase,
+  FindDocumentCountriesUseCase,
   FindPendingDocumentsUseCase,
   UpdateDocumentUseCase,
   UpdateDocumentOrderUseCase,

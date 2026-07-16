@@ -16,6 +16,7 @@
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
     "cleanup:participants": "ts-node -r tsconfig-paths/register prisma/cleanup-participants.ts",
     "update:document-status": "ts-node -r tsconfig-paths/register prisma/update-document-status-by-dni.ts",
+    "backfill:document-program-country": "ts-node -r tsconfig-paths/register prisma/backfill-document-program-country.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

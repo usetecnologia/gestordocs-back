@@ -1,5 +1,10 @@
 import type { Prisma } from 'prisma/generated/prisma/client';
-import { Document, DocumentSponsorItem } from '../../domain/document.entity';
+import {
+  Document,
+  DocumentProgramDescriptionItem,
+  DocumentProgramItem,
+  DocumentSponsorItem,
+} from '../../domain/document.entity';
 import { TypeDocument, TypeHired } from '../../domain/document.enums';
 
 export const DOCUMENT_FULL_INCLUDE = {
@@ -8,6 +13,19 @@ export const DOCUMENT_FULL_INCLUDE = {
   documentSponsors: {
     include: { sponsor: { select: { id: true, name: true, code: true } } },
     orderBy: { order: 'asc' as const },
+  },
+  documentPrograms: {
+    include: {
+      program: { select: { id: true, name: true, code: true } },
+      descriptions: {
+        include: {
+          countries: {
+            include: { country: { select: { id: true, name: true, code: true } } },
+          },
+        },
+        orderBy: { order: 'asc' as const },
+      },
+    },
   },
 } satisfies Prisma.DocumentsInclude;
 
@@ -26,9 +44,31 @@ export class DocumentMapper {
       status: ds.status,
     }));
 
+    const programs: DocumentProgramItem[] = raw.documentPrograms.map((dp) => {
+      const descriptions: DocumentProgramDescriptionItem[] = dp.descriptions.map((d) => ({
+        id: d.id,
+        title: d.title,
+        description: d.description,
+        order: d.order,
+        countries: d.countries.map((c) => ({
+          id: c.id,
+          countryId: c.countryId,
+          country: c.country,
+        })),
+      }));
+
+      return {
+        id: dp.id,
+        programId: dp.programId,
+        program: dp.program,
+        status: dp.status,
+        descriptions,
+      };
+    });
+
     return new Document(
       raw.id,
-      raw.title ?? '',
+      raw.title,
       raw.name,
       raw.type as unknown as TypeDocument,
       raw.formats,
@@ -43,6 +83,7 @@ export class DocumentMapper {
       raw.createdAt,
       raw.updatedAt,
       sponsors,
+      programs,
       raw.createdBy,
       raw.updatedBy,
     );

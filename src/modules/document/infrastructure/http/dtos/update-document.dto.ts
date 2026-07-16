@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
@@ -11,16 +11,18 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { TypeDocument, TypeHired } from '../../../domain/document.enums';
-import { DocumentSponsorInputDto } from './create-document.dto';
+import { DocumentProgramInputDto, DocumentSponsorInputDto, emptyToUndefined } from './create-document.dto';
 
 export class UpdateDocumentDto {
-  @ApiProperty({ example: 'Pasaporte Vigente' })
+  @ApiPropertyOptional({ example: 'Pasaporte Vigente' })
+  @Transform(emptyToUndefined)
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(200)
-  title!: string;
+  title?: string;
 
   @ApiPropertyOptional({ example: 'Pasaporte' })
   @IsOptional()
@@ -52,6 +54,7 @@ export class UpdateDocumentDto {
   siglasCode?: string;
 
   @ApiPropertyOptional({ example: 'El documento debe estar vigente y en buen estado.' })
+  @Transform(emptyToUndefined)
   @IsOptional()
   @IsString()
   @MinLength(5)
@@ -83,4 +86,15 @@ export class UpdateDocumentDto {
   @ValidateNested({ each: true })
   @Type(() => DocumentSponsorInputDto)
   sponsors?: DocumentSponsorInputDto[];
+
+  @ApiPropertyOptional({
+    type: [DocumentProgramInputDto],
+    description:
+      'Reemplaza completamente los programas (y sus descripciones/países) asociados. Enviar array vacío para desvincular todos.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DocumentProgramInputDto)
+  programs?: DocumentProgramInputDto[];
 }
