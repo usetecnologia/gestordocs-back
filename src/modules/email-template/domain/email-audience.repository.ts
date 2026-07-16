@@ -5,6 +5,7 @@ export interface EmailAudienceRecipient {
   nombrePrograma: string;
   nombreSponsor: string;
   nombreDocumento: string;
+  observacionesUsuario: string;
 }
 
 export interface IEmailAudienceRepository {

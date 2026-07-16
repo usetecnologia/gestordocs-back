@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { $Enums } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
+import { formatObservationsList } from '@common/utils/template-variables.util';
 import {
   EmailAudienceRecipient,
   IEmailAudienceRepository,
@@ -27,6 +28,7 @@ export class EmailAudiencePrismaRepository implements IEmailAudienceRepository {
     if (users.length === 0) return [];
 
     const namesById = await this.getFullNamesByIds(users.map((u) => u.id));
+    const observationsById = await this.getActiveObservationsByIds(users.map((u) => u.id));
 
     return users
       .filter((u): u is typeof u & { email: string } => !!u.email)
@@ -37,6 +39,7 @@ export class EmailAudiencePrismaRepository implements IEmailAudienceRepository {
         nombrePrograma: u.program?.name ?? '',
         nombreSponsor: u.sponsor?.name ?? '',
         nombreDocumento: '',
+        observacionesUsuario: observationsById.get(u.id) ?? '',
       }));
   }
 
@@ -77,9 +80,31 @@ export class EmailAudiencePrismaRepository implements IEmailAudienceRepository {
         nombrePrograma: user.program?.name ?? '',
         nombreSponsor: user.sponsor?.name ?? '',
         nombreDocumento: row.documents?.name ?? row.documentSponsors?.document.name ?? '',
+        observacionesUsuario: '',
       });
     }
     return recipients;
+  }
+
+  private async getActiveObservationsByIds(userIds: string[]): Promise<Map<string, string>> {
+    const rows = await this.prisma.userObservations.findMany({
+      where: { userId: { in: userIds }, status: true, endDate: null },
+      orderBy: { createdAt: 'desc' },
+      select: { userId: true, observation: true },
+    });
+
+    const observationsByUserId = new Map<string, string[]>();
+    for (const row of rows) {
+      const list = observationsByUserId.get(row.userId) ?? [];
+      list.push(row.observation);
+      observationsByUserId.set(row.userId, list);
+    }
+
+    const result = new Map<string, string>();
+    for (const [userId, observations] of observationsByUserId) {
+      result.set(userId, formatObservationsList(observations));
+    }
+    return result;
   }
 
   private async getFullNamesByIds(ids: string[]): Promise<Map<string, string>> {

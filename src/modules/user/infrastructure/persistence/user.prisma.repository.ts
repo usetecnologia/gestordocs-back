@@ -998,4 +998,13 @@ export class UserPrismaRepository implements IUserRepository {
 
     return obs.userId;
   }
+
+  async findActiveObservationTexts(userId: string): Promise<string[]> {
+    const rows = await this.prisma.userObservations.findMany({
+      where: { userId, status: true, endDate: null },
+      orderBy: { createdAt: 'desc' },
+      select: { observation: true },
+    });
+    return rows.map((row) => row.observation);
+  }
 }

@@ -21,9 +21,9 @@ class EmailTemplateScheduleResponseDto {
 
 export class EmailTemplateResponseDto {
   @ApiProperty({ example: 'uuid' }) id!: string;
-  @ApiProperty({ example: 'Bienvenida al participante' }) name!: string;
-  @ApiProperty({ example: 'BIENVENIDA_PARTICIPANTE' }) code!: string;
-  @ApiProperty({ example: 'Bienvenido a {{nombrePrograma}}' }) subject!: string;
+  @ApiProperty({ example: 'Documento observado' }) name!: string;
+  @ApiProperty({ example: 'DOCUMENTO_OBSERVADO' }) code!: string;
+  @ApiProperty({ example: 'Tu documento fue observado' }) subject!: string;
   @ApiProperty({ example: '<p>Hola {{nombreParticipante}}...</p>' }) htmlContent!: string;
   @ApiProperty({ example: true }) status!: boolean;
   @ApiProperty({ enum: EmailTemplateType }) type!: EmailTemplateType;

@@ -33,6 +33,12 @@ export const TEMPLATE_VARIABLE_DEFINITIONS = [
       'Nombre del documento relacionado al evento que disparó el correo (vacío si la acción no es de tipo documento).',
   },
   {
+    key: 'observacionesUsuario',
+    label: 'Observaciones del usuario',
+    description:
+      'Lista (HTML) de las observaciones activas del participante — status=1 y sin fecha de cierre. Vacío si no tiene observaciones activas.',
+  },
+  {
     key: 'enlace',
     label: 'Enlace a la plataforma',
     description: 'URL base del frontend.',
@@ -65,9 +71,14 @@ export function buildTemplateVariables(
     nombrePrograma: partial.nombrePrograma ?? '',
     nombreSponsor: partial.nombreSponsor ?? '',
     nombreDocumento: partial.nombreDocumento ?? '',
+    observacionesUsuario: partial.observacionesUsuario ?? '',
     enlace: partial.enlace ?? envs.FRONTEND_URL,
     fechaActual: formatFechaActualLima(),
   };
+}
+
+export function formatObservationsList(observations: string[]): string {
+  return observations.length ? `<ul>${observations.map((o) => `<li>${o}</li>`).join('')}</ul>` : '';
 }
 
 export function substituteTemplateVariables(
