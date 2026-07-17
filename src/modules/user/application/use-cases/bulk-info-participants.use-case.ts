@@ -11,14 +11,14 @@ const WORKUSE_URL = `https://secure.workuse.com${WORKUSE_REQUEST_PATH}`;
 export class BulkInfoParticipantsUseCase {
   async execute(): Promise<void> {
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const payload = `${WORKUSE_API_KEY}|${timestamp}|POST|${WORKUSE_REQUEST_PATH}`;
+    const payload = `${WORKUSE_API_KEY}|${timestamp}|GET|${WORKUSE_REQUEST_PATH}`;
     const signature = createHmac('sha256', WORKUSE_API_SECRET)
       .update(payload)
       .digest('hex');
 
     console.log('BulkInfoParticipants — request:', {
       url: WORKUSE_URL,
-      method: 'POST',
+      method: 'GET',
       headers: {
         'X-API-Key': WORKUSE_API_KEY,
         'X-Timestamp': timestamp,
@@ -30,7 +30,7 @@ export class BulkInfoParticipantsUseCase {
     let response: Response;
     try {
       response = await fetch(WORKUSE_URL, {
-        method: 'POST',
+        method: 'GET',
         headers: {
           'X-API-Key': WORKUSE_API_KEY,
           'X-Timestamp': timestamp,
