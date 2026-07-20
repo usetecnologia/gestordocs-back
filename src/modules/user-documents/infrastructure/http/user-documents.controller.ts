@@ -48,6 +48,7 @@ import { BulkDownloadDocumentsBySponsorUseCase } from '../../application/use-cas
 import { FindInformativeDocumentsBySponsorsUseCase } from '../../application/use-cases/find-informative-documents-by-sponsors.use-case';
 import { BulkAceptarDocumentUseCase } from '../../application/use-cases/bulk-aceptar-document.use-case';
 import { BulkObservarDocumentUseCase } from '../../application/use-cases/bulk-observar-document.use-case';
+import { BulkExtractPassportDataUseCase } from '../../application/use-cases/bulk-extract-passport-data.use-case';
 import { DocumentResponseDto } from '@modules/document/infrastructure/http/dtos/document-response.dto';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { BulkDownloadBySponsorDto } from './dtos/bulk-download-by-sponsor.dto';
@@ -83,6 +84,7 @@ export class UserDocumentsController {
     private readonly findInformativeDocumentsBySponsorsUseCase: FindInformativeDocumentsBySponsorsUseCase,
     private readonly bulkAceptarDocumentUseCase: BulkAceptarDocumentUseCase,
     private readonly bulkObservarDocumentUseCase: BulkObservarDocumentUseCase,
+    private readonly bulkExtractPassportDataUseCase: BulkExtractPassportDataUseCase,
   ) {}
 
   @Get('documents-by-sponsor')
@@ -412,5 +414,27 @@ export class UserDocumentsController {
     @CurrentUser() user: JwtPayload,
   ): Promise<BulkUploadByFilenameResponseDto> {
     return this.bulkUploadByFilenameUseCase.execute(status, files ?? [], user.sub);
+  }
+
+  @Post('revision-masiva-pasaporte')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Revisión masiva de pasaporte — extrae datos vía IA',
+    description:
+      'Toma el último documento de pasaporte subido (en cualquier estado excepto PENDIENTE) de 10 ' +
+      'participantes y utiliza OpenAI para extraer sus datos, con especial atención a la fecha de emisión y ' +
+      'la fecha de nacimiento. Devuelve un Excel con DNI, nombres, apellidos, fecha de emisión, fecha de ' +
+      'nacimiento y la URL del documento analizado. Los participantes cuyo documento no se pudo analizar no ' +
+      'detienen el proceso: quedan con las fechas vacías y el motivo en la columna de observaciones.',
+  })
+  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+  @ApiOkResponse({ description: 'Archivo .xlsx con el resultado de la revisión masiva.' })
+  @ApiNotFoundResponse({ description: 'No se encontraron pasaportes disponibles para analizar.' })
+  async revisionMasivaPasaporte(@Res() res: Response): Promise<void> {
+    const buffer = await this.bulkExtractPassportDataUseCase.execute();
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename="revision-masiva-pasaporte.xlsx"');
+    res.send(buffer);
   }
 }

@@ -16,8 +16,10 @@ import { EmailDispatchService } from '@modules/email-template/application/servic
 import { EmailLogService } from '@modules/email-template/application/services/email-log.service';
 import { USER_DOCUMENTS_REPOSITORY } from './domain/user-documents.repository';
 import { USER_STATUS_PORT } from './domain/user-status.port';
+import { PASSPORT_EXTRACTOR_PORT } from './domain/passport-extractor.port';
 import { UserDocumentsPrismaRepository } from './infrastructure/persistence/user-documents.prisma.repository';
 import { UserStatusPrisma } from './infrastructure/persistence/user-status.prisma';
+import { OpenAiPassportExtractorClient } from './infrastructure/external/openai-passport-extractor.client';
 import { UserDocumentsController } from './infrastructure/http/user-documents.controller';
 import { UploadFileDocumentUseCase } from './application/use-cases/upload-file-document.use-case';
 import { FindUserDocumentsUseCase } from './application/use-cases/find-user-documents.use-case';
@@ -32,6 +34,7 @@ import { BulkDownloadDocumentsBySponsorUseCase } from './application/use-cases/b
 import { FindInformativeDocumentsBySponsorsUseCase } from './application/use-cases/find-informative-documents-by-sponsors.use-case';
 import { BulkAceptarDocumentUseCase } from './application/use-cases/bulk-aceptar-document.use-case';
 import { BulkObservarDocumentUseCase } from './application/use-cases/bulk-observar-document.use-case';
+import { BulkExtractPassportDataUseCase } from './application/use-cases/bulk-extract-passport-data.use-case';
 import { SponsorDocumentBuilder } from './application/services/sponsor-document-builder.service';
 
 @Module({
@@ -51,12 +54,14 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     FindInformativeDocumentsBySponsorsUseCase,
     BulkAceptarDocumentUseCase,
     BulkObservarDocumentUseCase,
+    BulkExtractPassportDataUseCase,
     SponsorDocumentBuilder,
     EmailDispatchService,
     EmailLogService,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
+    { provide: PASSPORT_EXTRACTOR_PORT, useClass: OpenAiPassportExtractorClient },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },

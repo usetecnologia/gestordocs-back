@@ -19,6 +19,7 @@ import {
   UserDocumentTargetHistoryItem,
   CloneDocumentForSponsorData,
   RefreshDocumentFromLatestData,
+  PassportDocumentCandidate,
 } from '../../domain/user-documents.repository';
 
 const USER_DOCS_INCLUDE = {
@@ -587,5 +588,64 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       select: { id: true },
     });
     return userDoc?.id ?? null;
+  }
+
+  async findLatestPassportDocuments(limit: number): Promise<PassportDocumentCandidate[]> {
+    const passportDoc = await this.prisma.documents.findFirst({
+      where: { siglasCode: 'PASSPORT', status: true },
+      select: {
+        id: true,
+        documentSponsors: { where: { status: true }, select: { id: true } },
+      },
+    });
+    if (!passportDoc) return [];
+
+    const documentSponsorIds = passportDoc.documentSponsors.map((ds) => ds.id);
+
+    // Se pide un lote mayor al límite final porque varias filas pueden pertenecer al mismo
+    // participante (p. ej. si cambió de sponsor) y otras pueden no tener URL aún.
+    const rows = await this.prisma.userDocuments.findMany({
+      where: {
+        statusDocument: true,
+        status: { not: $Enums.DocumentSponsorStatus.PENDIENTE },
+        OR: [
+          { documentId: passportDoc.id },
+          ...(documentSponsorIds.length ? [{ documentSponsorId: { in: documentSponsorIds } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        updatedAt: true,
+        userDocumentHistory: {
+          select: { url: true },
+          orderBy: { createdAt: 'desc' as const },
+          take: 1,
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: Math.max(limit * 5, 50),
+    });
+
+    const seenUsers = new Set<string>();
+    const candidates: PassportDocumentCandidate[] = [];
+    for (const row of rows) {
+      if (seenUsers.has(row.userId)) continue;
+      const url = row.userDocumentHistory[0]?.url;
+      if (!url) continue;
+
+      seenUsers.add(row.userId);
+      candidates.push({
+        userId: row.userId,
+        userDocumentId: row.id,
+        status: row.status as string,
+        url,
+        updatedAt: row.updatedAt,
+      });
+      if (candidates.length >= limit) break;
+    }
+
+    return candidates;
   }
 }
