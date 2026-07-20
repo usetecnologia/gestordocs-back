@@ -15,6 +15,7 @@ import {
   Query,
   ParseUUIDPipe,
   Res,
+  ConflictException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
@@ -50,10 +51,13 @@ import { DeleteUserUseCase } from '../../application/use-cases/delete-user.use-c
 import { UpdateUserProfileUseCase } from '../../application/use-cases/update-user-profile.use-case';
 import { UploadAvatarUseCase } from '../../application/use-cases/upload-avatar.use-case';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case';
+import { AdminChangePasswordUseCase } from '../../application/use-cases/admin-change-password.use-case';
 import { ChangeUserStatusUseCase } from '../../application/use-cases/change-user-status.use-case';
 import { CreateObservationUseCase } from '../../application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from '../../application/use-cases/close-observation.use-case';
 import { BulkLoadUsersUseCase } from '../../application/use-cases/bulk-load-users.use-case';
+import { BulkInfoParticipantsUseCase } from '../../application/use-cases/bulk-info-participants.use-case';
+import { InfoParticipantUseCase } from '../../application/use-cases/info-participant.use-case';
 import { ExportParticipantsDocumentsUseCase } from '../../application/use-cases/export-participants-documents.use-case';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
@@ -61,6 +65,7 @@ import { UpdateUserProfileDto } from './dtos/update-user-profile.dto';
 import { UploadAvatarDto } from './dtos/upload-avatar.dto';
 import { ChangePasswordDto } from './dtos/change-password.dto';
 import { ChangePasswordResponseDto } from './dtos/change-password-response.dto';
+import { AdminChangePasswordDto } from './dtos/admin-change-password.dto';
 import { ChangeUserStatusDto } from './dtos/change-user-status.dto';
 import { CreateObservationDto } from './dtos/create-observation.dto';
 import { ObservationResponseDto } from './dtos/observation-response.dto';
@@ -68,6 +73,9 @@ import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
 import { ExportUsersQueryDto } from './dtos/export-users-query.dto';
 import { BulkLoadResponseDto } from './dtos/bulk-load-response.dto';
+import { BulkInfoParticipantsResponseDto } from './dtos/bulk-info-participants-response.dto';
+import { InfoParticipantDto } from './dtos/info-participant.dto';
+import { InfoParticipantResponseDto } from './dtos/info-participant-response.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
 
 
@@ -87,10 +95,13 @@ export class UserController {
     private readonly updateUserProfile: UpdateUserProfileUseCase,
     private readonly uploadAvatar: UploadAvatarUseCase,
     private readonly changePassword: ChangePasswordUseCase,
+    private readonly adminChangePassword: AdminChangePasswordUseCase,
     private readonly changeUserStatus: ChangeUserStatusUseCase,
     private readonly createObservation: CreateObservationUseCase,
     private readonly closeObservation: CloseObservationUseCase,
     private readonly bulkLoadUsers: BulkLoadUsersUseCase,
+    private readonly bulkInfoParticipants: BulkInfoParticipantsUseCase,
+    private readonly infoParticipant: InfoParticipantUseCase,
     private readonly exportParticipantsDocuments: ExportParticipantsDocumentsUseCase,
   ) {}
 
@@ -98,6 +109,7 @@ export class UserController {
   @ApiOperation({ summary: 'Crear usuario' })
   @ApiCreatedResponse({ type: UserResponseDto })
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
+  @ApiConflictResponse({ description: 'El nombre de usuario o el correo electrónico ya están en uso.' })
   create(@Body() dto: CreateUserDto) {
     return this.createUser.execute(dto);
   }
@@ -121,6 +133,59 @@ export class UserController {
         arrays_success: result.created,
       },
     };
+  }
+
+  @Post('bulk-info-participants')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Sincroniza masivamente los participantes desde Workuse (userinfo2) — crea, actualiza y reactiva según corresponda, sin eliminar información existente. ' +
+      'Corre en segundo plano: la respuesta HTTP no espera a que termine (puede tardar varios minutos) para evitar timeouts de proxy/gateway. ' +
+      'El resultado final se loguea y se notifica por correo al admin.',
+  })
+  @ApiOkResponse({ type: BulkInfoParticipantsResponseDto })
+  @ApiConflictResponse({ description: 'Ya hay una sincronización de participantes en curso.' })
+  bulkInfoParticipantsHandler(): BulkInfoParticipantsResponseDto {
+    // El botón del frontend no se puede bloquear de forma confiable (varias personas pueden
+    // dispararlo a la vez) — se corta acá antes de arrancar otro batch completo en paralelo,
+    // que terminaría pisando las mismas filas que la corrida ya en curso. Se lanza como
+    // excepción (409) para que el AllExceptionsFilter arme { success: false, ... } y el
+    // frontend pueda distinguirlo de una respuesta exitosa normal.
+    if (this.bulkInfoParticipants.isSyncInProgress()) {
+      throw new ConflictException(
+        'Ya hay una sincronización de participantes en curso. Espera a que termine antes de iniciar otra.',
+      );
+    }
+
+    // No se espera esta promesa a propósito (fire-and-forget) — un batch completo puede tardar
+    // varios minutos y cualquier proxy delante del server cortaría la conexión mucho antes de que
+    // termine. El propio use case ya loguea el resultado y notifica al admin por correo al acabar.
+    this.bulkInfoParticipants.execute().catch(() => {
+      // Ya logueado y notificado dentro del use case — este catch solo evita una unhandled rejection.
+    });
+    return {
+      message: 'Sincronización de participantes iniciada en segundo plano. El resultado se notificará por correo al finalizar.',
+    };
+  }
+
+  @Post('info-participant')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Sincroniza un solo participante desde Workuse (userinfo2) por DNI — crea, actualiza o reactiva según corresponda. ' +
+      'A diferencia de bulk-info-participants, se ejecuta de forma síncrona (no es background job) y no notifica por correo al admin.',
+  })
+  @ApiOkResponse({ type: InfoParticipantResponseDto })
+  @ApiNotFoundResponse({ description: 'Participante no encontrado en Workuse o país no encontrado en la base de datos.' })
+  @ApiBadRequestResponse({ description: 'El participante no pertenece a Perú / WAT USA.' })
+  async infoParticipantHandler(@Body() dto: InfoParticipantDto): Promise<InfoParticipantResponseDto> {
+    const result = await this.infoParticipant.execute(dto.dni);
+    const messageByAction: Record<string, string> = {
+      created: 'Participante creado correctamente.',
+      updated: 'Participante actualizado correctamente.',
+      reactivated: 'Participante reactivado correctamente.',
+    };
+    return { message: messageByAction[result.action] };
   }
 
   @Get()
@@ -238,6 +303,24 @@ export class UserController {
     return { message: 'Contraseña actualizada correctamente.' };
   }
 
+  @Post('change-password-admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Cambiar la contraseña de un usuario (staff) sin validar la contraseña actual — no aplica a usuarios con rol Participante',
+  })
+  @ApiOkResponse({ type: ChangePasswordResponseDto })
+  @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
+  @ApiBadRequestResponse({
+    description: 'El usuario tiene rol Participante y no puede cambiarse por este endpoint.',
+  })
+  async adminChangeUserPassword(
+    @Body() dto: AdminChangePasswordDto,
+  ): Promise<ChangePasswordResponseDto> {
+    await this.adminChangePassword.execute(dto);
+    return { message: 'Contraseña actualizada correctamente.' };
+  }
+
   @Post('observations')
   @UseInterceptors(FilesInterceptor('files', 10))
   @ApiConsumes('multipart/form-data')
@@ -304,6 +387,7 @@ export class UserController {
   @ApiParam({ name: 'id', description: 'UUID del usuario' })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
+  @ApiConflictResponse({ description: 'El nombre de usuario o el correo electrónico ya están en uso.' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateUserDto) {
     return this.updateUser.execute(id, dto);
   }

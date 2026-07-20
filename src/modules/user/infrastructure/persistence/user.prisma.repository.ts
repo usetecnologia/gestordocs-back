@@ -76,6 +76,23 @@ export class UserPrismaRepository implements IUserRepository {
     return Prisma.sql`u.sponsorId = ${sponsorId}`;
   }
 
+  // `status` (estado exacto) y `generalStatus` (ACTIVO/INACTIVO) filtran el mismo campo de Prisma
+  // — no se pueden mezclar en un solo spread de objeto porque la clave repetida se pisa. Se
+  // combinan siempre con AND: si ambos vienen, deben cumplirse los dos a la vez.
+  private statusWhereFragment(
+    status: UserStatus | undefined,
+    generalStatus: 'ACTIVO' | 'INACTIVO' | undefined,
+  ): Prisma.UserWhereInput {
+    const conditions: Prisma.UserWhereInput[] = [];
+    if (status) conditions.push({ status });
+    if (generalStatus === 'INACTIVO') conditions.push({ status: 'INACTIVO' as never });
+    if (generalStatus === 'ACTIVO') conditions.push({ status: { not: 'INACTIVO' as never } });
+
+    if (conditions.length === 0) return {};
+    if (conditions.length === 1) return conditions[0];
+    return { AND: conditions };
+  }
+
   async findAll({
     page,
     limit,
@@ -143,7 +160,7 @@ export class UserPrismaRepository implements IUserRepository {
       : undefined;
 
     const where = {
-      ...(status && { status }),
+      ...this.statusWhereFragment(status, generalStatus),
       ...(roleId && { roleId }),
       ...(countryId && { countryId }),
       ...this.sponsorWhereFragment(sponsorId),
@@ -152,8 +169,6 @@ export class UserPrismaRepository implements IUserRepository {
       ...(programId && { programId }),
       ...(optionProgramId && { optionProgramId }),
       ...(combinedIds !== undefined && { id: { in: combinedIds } }),
-      ...(generalStatus === 'INACTIVO' && { status: 'INACTIVO' as never }),
-      ...(generalStatus === 'ACTIVO' && { status: { not: 'INACTIVO' as never } }),
     };
 
     let users: PrismaUserList[];
@@ -473,13 +488,11 @@ export class UserPrismaRepository implements IUserRepository {
       createdFrom || createdTo ? await this.findStatusEntryDateIds(status, createdFrom, createdTo) : undefined;
 
     const where = {
-      status,
+      ...this.statusWhereFragment(status, generalStatus),
       ...this.sponsorWhereFragment(sponsorId),
       ...(programId && { programId }),
       ...(countryId && { countryId }),
       ...(historyDateIds !== undefined && { id: { in: historyDateIds } }),
-      // Mismo criterio que /users: si se envía, generalStatus prevalece sobre `status`.
-      ...(generalStatus === 'ACTIVO' && { status: { not: 'INACTIVO' as never } }),
     };
 
     return this.fetchFunnelExportRows(where);
@@ -799,6 +812,22 @@ export class UserPrismaRepository implements IUserRepository {
     const person = await this.prisma.person.findFirst({ where: { dni }, select: { id: true } });
     if (!person) return false;
     const user = await this.prisma.user.findUnique({ where: { id: person.id }, select: { id: true } });
+    return !!user;
+  }
+
+  async isUsernameTaken(username: string, excludeId?: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { username, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    });
+    return !!user;
+  }
+
+  async isEmailTaken(email: string, excludeId?: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { email, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    });
     return !!user;
   }
 

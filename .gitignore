@@ -57,3 +57,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Prisma generated client
 /prisma/generated
+
+# Backups de BD (pueden contener PII) — nunca deben subirse al repo
+/backups
