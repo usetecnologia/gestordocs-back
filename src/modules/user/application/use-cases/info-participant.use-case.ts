@@ -60,6 +60,13 @@ function isRetiredStatus(status: string | undefined): boolean {
   return status?.trim().toLowerCase() === 'retired';
 }
 
+// Participantes con status "Registered" en Workuse todavía no completaron su registro real —
+// se descartan de la sincronización igual que los que no son Perú/WAT USA. Misma regla que
+// usa BulkInfoParticipantsUseCase.
+function isRegisteredStatus(status: string | undefined): boolean {
+  return status?.trim().toLowerCase() === 'registered';
+}
+
 function resolveUserStatus(data: WorkuseParticipant): string | null {
   if (isRetiredStatus(data.status)) return 'INACTIVO';
   if (data.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
@@ -86,9 +93,12 @@ export class InfoParticipantUseCase {
 
   async execute(dni: string): Promise<InfoParticipantResult> {
     const data = await this.workuseService.fetchParticipantV2(dni);
-    console.log(data)
     if (!isTargetParticipant(data)) {
       throw new BadRequestException('El participante no pertenece a Perú / WAT USA.');
+    }
+
+    if (isRegisteredStatus(data.status)) {
+      throw new BadRequestException('El participante tiene status "Registered" y no se sincroniza.');
     }
 
     const country = await this.autoLoginRepo.findCountryByName(data.country.trim().toUpperCase());

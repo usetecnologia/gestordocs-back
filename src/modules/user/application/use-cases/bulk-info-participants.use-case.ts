@@ -61,6 +61,12 @@ function isRetiredStatus(status: string | undefined): boolean {
   return status?.trim().toLowerCase() === 'retired';
 }
 
+// Participantes con status "Registered" en Workuse todavía no completaron su registro real —
+// se descartan de la sincronización igual que los que no son Perú/WAT USA.
+function isRegisteredStatus(status: string | undefined): boolean {
+  return status?.trim().toLowerCase() === 'registered';
+}
+
 function resolveUserStatus(data: WorkuseParticipant): string | null {
   // Un participante "Retired" en Workuse queda INACTIVO de forma definitiva — este estado
   // ya está en STATUSES_LOCKED_FROM_DOCUMENT_SYNC, por lo que no se reevalúa por documentos.
@@ -72,6 +78,7 @@ function resolveUserStatus(data: WorkuseParticipant): string | null {
 export interface BulkInfoParticipantsResult {
   totalReceived: number;
   filteredOut: number;
+  skippedRegistered: number;
   created: string[];
   updated: string[];
   reactivated: string[];
@@ -117,7 +124,7 @@ export class BulkInfoParticipantsUseCase {
   async execute(options: BulkInfoParticipantsOptions = {}): Promise<BulkInfoParticipantsResult> {
     if (this.isRunning) {
       this.logger.warn('BulkInfoParticipants — ya hay una sincronización en curso, se omite esta ejecución.');
-      return { totalReceived: 0, filteredOut: 0, created: [], updated: [], reactivated: [], errors: [] };
+      return { totalReceived: 0, filteredOut: 0, skippedRegistered: 0, created: [], updated: [], reactivated: [], errors: [] };
     }
     this.isRunning = true;
 
@@ -146,6 +153,7 @@ export class BulkInfoParticipantsUseCase {
     const result: BulkInfoParticipantsResult = {
       totalReceived: participants.length,
       filteredOut: 0,
+      skippedRegistered: 0,
       created: [],
       updated: [],
       reactivated: [],
@@ -163,6 +171,11 @@ export class BulkInfoParticipantsUseCase {
         continue;
       }
 
+      if (isRegisteredStatus(item.status)) {
+        result.skippedRegistered++;
+        continue;
+      }
+
       try {
         await this.syncParticipant(item, result, options.suppressParticipantEmail ?? false);
       } catch (err) {
@@ -172,8 +185,8 @@ export class BulkInfoParticipantsUseCase {
     }
 
     this.logger.log(
-      `BulkInfoParticipants — descartados (no Perú/WAT USA): ${result.filteredOut}, creados: ${result.created.length}, ` +
-        `actualizados: ${result.updated.length}, reactivados: ${result.reactivated.length}, errores: ${result.errors.length}.`,
+      `BulkInfoParticipants — descartados (no Perú/WAT USA): ${result.filteredOut}, descartados (status Registered): ${result.skippedRegistered}, ` +
+        `creados: ${result.created.length}, actualizados: ${result.updated.length}, reactivados: ${result.reactivated.length}, errores: ${result.errors.length}.`,
     );
 
     await this.notifyAdmin(
@@ -181,6 +194,7 @@ export class BulkInfoParticipantsUseCase {
       [
         `Total recibidos: ${result.totalReceived}`,
         `Descartados (no Perú/WAT USA): ${result.filteredOut}`,
+        `Descartados (status Registered): ${result.skippedRegistered}`,
         `Creados: ${result.created.length}`,
         `Actualizados: ${result.updated.length}`,
         `Reactivados: ${result.reactivated.length}${result.reactivated.length ? ` -> ${result.reactivated.join(', ')}` : ''}`,
