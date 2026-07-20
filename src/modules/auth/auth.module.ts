@@ -3,6 +3,7 @@ import { PrismaModule } from '@shared/prisma/prisma.module';
 import { AppJwtModule } from '@shared/jwt/jwt.module';
 import { BcryptModule } from '@shared/bcrypt/bcrypt.module';
 import { ResendModule } from '@shared/resend/resend.module';
+import { WorkuseModule } from '@shared/workuse/workuse.module';
 import { AUTH_REPOSITORY } from './domain/auth.repository';
 import { PASSWORD_VERIFIER } from './domain/password-verifier.port';
 import { PASSWORD_HASHER } from './domain/password-hasher.port';
@@ -40,7 +41,7 @@ const useCases = [
 ];
 
 @Module({
-  imports: [PrismaModule, AppJwtModule, BcryptModule, ResendModule],
+  imports: [PrismaModule, AppJwtModule, BcryptModule, ResendModule, WorkuseModule],
   controllers: [AuthController],
   providers: [
     ...useCases,

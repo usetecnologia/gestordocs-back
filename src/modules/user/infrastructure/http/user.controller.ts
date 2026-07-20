@@ -69,6 +69,7 @@ import { UserResponseDto } from './dtos/user-response.dto';
 import { FindUsersQueryDto } from './dtos/find-users-query.dto';
 import { ExportUsersQueryDto } from './dtos/export-users-query.dto';
 import { BulkLoadResponseDto } from './dtos/bulk-load-response.dto';
+import { BulkInfoParticipantsResponseDto } from './dtos/bulk-info-participants-response.dto';
 import type { MulterFile } from '../../domain/multer-file.interface';
 
 
@@ -126,13 +127,24 @@ export class UserController {
   }
 
   @Post('bulk-info-participants')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Consulta información masiva de participantes desde Workuse (userinfo2) — por ahora solo registra la respuesta en consola',
+    summary:
+      'Sincroniza masivamente los participantes desde Workuse (userinfo2) — crea, actualiza y reactiva según corresponda, sin eliminar información existente. ' +
+      'Corre en segundo plano: la respuesta HTTP no espera a que termine (puede tardar varios minutos) para evitar timeouts de proxy/gateway. ' +
+      'El resultado final se loguea y se notifica por correo al admin.',
   })
-  @ApiOkResponse({ schema: { example: { message: 'Consulta ejecutada correctamente.' } } })
-  async bulkInfoParticipantsHandler(): Promise<{ message: string }> {
-    await this.bulkInfoParticipants.execute();
-    return { message: 'Consulta ejecutada correctamente.' };
+  @ApiOkResponse({ type: BulkInfoParticipantsResponseDto })
+  bulkInfoParticipantsHandler(): BulkInfoParticipantsResponseDto {
+    // No se espera esta promesa a propósito (fire-and-forget) — un batch completo puede tardar
+    // varios minutos y cualquier proxy delante del server cortaría la conexión mucho antes de que
+    // termine. El propio use case ya loguea el resultado y notifica al admin por correo al acabar.
+    this.bulkInfoParticipants.execute().catch(() => {
+      // Ya logueado y notificado dentro del use case — este catch solo evita una unhandled rejection.
+    });
+    return {
+      message: 'Sincronización de participantes iniciada en segundo plano. El resultado se notificará por correo al finalizar.',
+    };
   }
 
   @Get()

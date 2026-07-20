@@ -18,7 +18,14 @@ export class TerminarRevisionUseCase {
     private readonly emailDispatchService: EmailDispatchService,
   ) {}
 
-  async execute(participantId: string, createdById?: string): Promise<void> {
+  // `suppressParticipantEmail` evita el correo de "documento observado" hacia el participante
+  // (usado por jobs automáticos de sincronización masiva) sin afectar el resto de callers, que
+  // no lo pasan y mantienen el envío normal.
+  async execute(
+    participantId: string,
+    createdById?: string,
+    suppressParticipantEmail = false,
+  ): Promise<void> {
     const docs = await this.userDocumentsRepo.findByUserIdWithHistory(
       participantId,
       UserDocumentFilter.ALL,
@@ -36,13 +43,13 @@ export class TerminarRevisionUseCase {
 
     // 0. Tiene una observación vigente (activa y sin endDate) → se mantiene/pasa a OBSERVADO
     if (await this.userStatusPort.hasActiveObservation(participantId)) {
-      await this.setObservado(participantId, createdById, observedDocs);
+      await this.setObservado(participantId, createdById, observedDocs, suppressParticipantEmail);
       return;
     }
 
     // 1. Existe algún documento OBSERVADO → participante pasa a OBSERVADO
     if (observedDocs.length > 0) {
-      await this.setObservado(participantId, createdById, observedDocs);
+      await this.setObservado(participantId, createdById, observedDocs, suppressParticipantEmail);
       return;
     }
 
@@ -78,6 +85,7 @@ export class TerminarRevisionUseCase {
     participantId: string,
     createdById: string | undefined,
     observedDocs: UserDocumentWithHistory[],
+    suppressParticipantEmail = false,
   ): Promise<void> {
     const previousStatus = await this.userStatusPort.getStatus(participantId);
     await this.userStatusPort.updateStatus(participantId, 'OBSERVADO', createdById);
@@ -86,7 +94,7 @@ export class TerminarRevisionUseCase {
     // (evita mandar uno por cada documento). Solo se envía en la transición real hacia
     // OBSERVADO — si el participante ya estaba OBSERVADO, una nueva llamada a terminar-revisión
     // no debe reenviar el mismo correo.
-    if (observedDocs.length === 0 || previousStatus === 'OBSERVADO') return;
+    if (observedDocs.length === 0 || previousStatus === 'OBSERVADO' || suppressParticipantEmail) return;
 
     const emailContext = await this.userDocumentsRepo.findEmailContextByUserId(participantId);
     const nombreDocumento = [

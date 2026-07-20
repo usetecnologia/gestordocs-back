@@ -2,7 +2,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -10,11 +9,12 @@ import { IAutoLoginRepository, AUTOLOGIN_REPOSITORY } from '../../domain/autolog
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
 import { LoginResult } from '../../domain/login-result.entity';
 import { JwtTokenService } from '@shared/jwt/jwt.service';
+import { WorkuseService } from '@shared/workuse/workuse.service';
+import type { WorkuseParticipant } from '@shared/workuse/interfaces/workuse-participant.interface';
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
 
-const WORKUSE_USER_URL = 'https://secure.workuse.com/api/user/user.php';
 const DEFAULT_PASSWORD = 'password26';
 const ADMIN_CREATED_BY_ID = 'd5165eff-2df4-4a87-a65e-3ea50cf4ad3d';
 
@@ -41,38 +41,12 @@ function isRetiredStatus(status: string | undefined): boolean {
   return status?.trim().toLowerCase() === 'retired';
 }
 
-function resolveUserStatus(data: WorkuseResponse): string | null {
+function resolveUserStatus(data: WorkuseParticipant): string | null {
   // Un participante "Retired" en Workuse queda INACTIVO de forma definitiva — este estado
   // ya está en STATUSES_LOCKED_FROM_DOCUMENT_SYNC, por lo que no se reevalúa por documentos.
   if (isRetiredStatus(data.status)) return 'INACTIVO';
   if (data.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
   return null;
-}
-
-interface WorkuseResponse {
-  valid: boolean;
-  firstname: string;
-  middlename: string;
-  lastfathername: string;
-  lastmothername: string;
-  dni: string;
-  birthdate: string;
-  country: string;
-  program: string;
-  programId?: string;
-  sponsor: string;
-  sponsorId?: string;
-  optionPrograma: string;
-  employer?: string;
-  status_hired?: number;
-  hired_date?: string;
-  jo_use_date?: string;
-  programAgreementOK?: boolean;
-  fechadeenvioalsponsor?: string;
-  fechaDSinUSE?: string;
-  statusSolRetiro?: string;
-  status?: string;
-  email?: string;
 }
 
 @Injectable()
@@ -81,13 +55,14 @@ export class AutoLoginUseCase {
     @Inject(AUTOLOGIN_REPOSITORY) private readonly autoLoginRepo: IAutoLoginRepository,
     @Inject(PASSWORD_HASHER) private readonly passwordHasher: IPasswordHasher,
     private readonly jwtTokenService: JwtTokenService,
+    private readonly workuseService: WorkuseService,
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
   ) {}
 
   async execute(dni: string): Promise<LoginResult> {
-    const data = await this.fetchFromWorkuse(dni);
+    const data = await this.workuseService.fetchParticipant(dni);
 
     const country = await this.autoLoginRepo.findCountryByName(data.country.trim().toUpperCase());
     if (!country) {
@@ -204,27 +179,5 @@ export class AutoLoginUseCase {
       sponsor: credentials.sponsor,
       optionProgram: credentials.optionProgram,
     });
-  }
-
-  private async fetchFromWorkuse(dni: string): Promise<WorkuseResponse> {
-    let response: Response;
-    try {
-      response = await fetch(WORKUSE_USER_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dni }),
-      });
-    } catch {
-      throw new ServiceUnavailableException('No se pudo conectar con el servicio externo.');
-    }
-
-    const raw = (await response.json().catch(() => null)) as WorkuseResponse | null;
-    console.log('[AutoLogin] Respuesta de Workuse:', raw);
-
-    if (!response.ok || !raw?.valid) {
-      throw new NotFoundException('Usuario no encontrado en Workuse.');
-    }
-
-    return raw;
   }
 }

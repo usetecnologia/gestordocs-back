@@ -5,6 +5,7 @@ import { BcryptModule } from '@shared/bcrypt/bcrypt.module';
 import { BcryptService } from '@shared/bcrypt/bcrypt.service';
 import { AwsS3Module } from '@shared/aws/aws-s3.module';
 import { ResendModule } from '@shared/resend/resend.module';
+import { WorkuseModule } from '@shared/workuse/workuse.module';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
@@ -13,6 +14,9 @@ import { UserDocumentsPrismaRepository } from '@modules/user-documents/infrastru
 import { USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
 import { UserStatusPrisma } from '@modules/user-documents/infrastructure/persistence/user-status.prisma';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
+import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
+import { AUTOLOGIN_REPOSITORY } from '@modules/auth/domain/autologin.repository';
+import { AutoLoginPrismaRepository } from '@modules/auth/infrastructure/persistence/autologin.prisma.repository';
 import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-action.repository';
 import { EmailActionPrismaRepository } from '@modules/email-action/infrastructure/persistence/email-action.prisma.repository';
 import { EMAIL_TEMPLATE_REPOSITORY } from '@modules/email-template/domain/email-template.repository';
@@ -41,6 +45,7 @@ import { CloseObservationUseCase } from './application/use-cases/close-observati
 import { BulkLoadUsersUseCase } from './application/use-cases/bulk-load-users.use-case';
 import { BulkInfoParticipantsUseCase } from './application/use-cases/bulk-info-participants.use-case';
 import { ExportParticipantsDocumentsUseCase } from './application/use-cases/export-participants-documents.use-case';
+import { BulkInfoParticipantsSchedulerService } from './application/services/bulk-info-participants.scheduler.service';
 
 const useCases = [
   CreateUserUseCase,
@@ -59,13 +64,15 @@ const useCases = [
   BulkInfoParticipantsUseCase,
   ExportParticipantsDocumentsUseCase,
   TerminarRevisionUseCase,
+  SyncUserDocumentsUseCase,
 ];
 
 @Module({
-  imports: [PrismaModule, AppJwtModule, BcryptModule, AwsS3Module, ResendModule],
+  imports: [PrismaModule, AppJwtModule, BcryptModule, AwsS3Module, ResendModule, WorkuseModule],
   controllers: [UserController],
   providers: [
     ...useCases,
+    BulkInfoParticipantsSchedulerService,
     EmailDispatchService,
     EmailLogService,
     { provide: USER_REPOSITORY, useClass: UserPrismaRepository },
@@ -74,6 +81,7 @@ const useCases = [
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
+    { provide: AUTOLOGIN_REPOSITORY, useClass: AutoLoginPrismaRepository },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },
