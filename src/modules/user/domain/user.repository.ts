@@ -127,8 +127,8 @@ export interface UpdateUserData {
   birthdate?: string;
   phone?: string;
   avatar?: string;
-  username?: string;
-  email?: string;
+  username?: string | null;
+  email?: string | null;
   password?: string;
   roleId?: string;
   countryId?: string;
@@ -217,6 +217,8 @@ export interface IUserRepository {
   create(data: CreateUserData): Promise<User>;
   update(id: string, data: UpdateUserData): Promise<User>;
   delete(id: string): Promise<void>;
+  isUsernameTaken(username: string, excludeId?: string): Promise<boolean>;
+  isEmailTaken(email: string, excludeId?: string): Promise<boolean>;
   addStatusHistory(userId: string, status: UserStatus, createdById?: string): Promise<void>;
   createObservation(data: CreateObservationData): Promise<ObservationResult>;
   closeObservation(observationId: string): Promise<string>;

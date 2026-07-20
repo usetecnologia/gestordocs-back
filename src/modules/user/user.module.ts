@@ -39,11 +39,13 @@ import { DeleteUserUseCase } from './application/use-cases/delete-user.use-case'
 import { UpdateUserProfileUseCase } from './application/use-cases/update-user-profile.use-case';
 import { UploadAvatarUseCase } from './application/use-cases/upload-avatar.use-case';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.use-case';
+import { AdminChangePasswordUseCase } from './application/use-cases/admin-change-password.use-case';
 import { ChangeUserStatusUseCase } from './application/use-cases/change-user-status.use-case';
 import { CreateObservationUseCase } from './application/use-cases/create-observation.use-case';
 import { CloseObservationUseCase } from './application/use-cases/close-observation.use-case';
 import { BulkLoadUsersUseCase } from './application/use-cases/bulk-load-users.use-case';
 import { BulkInfoParticipantsUseCase } from './application/use-cases/bulk-info-participants.use-case';
+import { InfoParticipantUseCase } from './application/use-cases/info-participant.use-case';
 import { ExportParticipantsDocumentsUseCase } from './application/use-cases/export-participants-documents.use-case';
 import { BulkInfoParticipantsSchedulerService } from './application/services/bulk-info-participants.scheduler.service';
 
@@ -57,11 +59,13 @@ const useCases = [
   UpdateUserProfileUseCase,
   UploadAvatarUseCase,
   ChangePasswordUseCase,
+  AdminChangePasswordUseCase,
   ChangeUserStatusUseCase,
   CreateObservationUseCase,
   CloseObservationUseCase,
   BulkLoadUsersUseCase,
   BulkInfoParticipantsUseCase,
+  InfoParticipantUseCase,
   ExportParticipantsDocumentsUseCase,
   TerminarRevisionUseCase,
   SyncUserDocumentsUseCase,

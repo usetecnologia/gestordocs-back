@@ -802,6 +802,22 @@ export class UserPrismaRepository implements IUserRepository {
     return !!user;
   }
 
+  async isUsernameTaken(username: string, excludeId?: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { username, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    });
+    return !!user;
+  }
+
+  async isEmailTaken(email: string, excludeId?: string): Promise<boolean> {
+    const user = await this.prisma.user.findFirst({
+      where: { email, ...(excludeId && { id: { not: excludeId } }) },
+      select: { id: true },
+    });
+    return !!user;
+  }
+
   async findCountryByName(name: string): Promise<{ id: string } | null> {
     return this.prisma.country.findFirst({ where: { name }, select: { id: true } });
   }

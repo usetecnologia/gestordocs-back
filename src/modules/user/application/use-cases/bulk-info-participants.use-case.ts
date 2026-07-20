@@ -88,6 +88,13 @@ export interface BulkInfoParticipantsOptions {
 export class BulkInfoParticipantsUseCase {
   private readonly logger = new Logger(BulkInfoParticipantsUseCase.name);
 
+  // Lock en memoria — evita que dos corridas del batch se pisen sobre las mismas filas
+  // (upsertByDni no es atómico: hace findFirst y luego create/update en transacciones separadas).
+  // Solo funciona porque la app corre como un único proceso Node; si en el futuro se escala a
+  // varias instancias, este flag deja de servir y hay que mover el lock a la base de datos
+  // (p. ej. GET_LOCK/RELEASE_LOCK de MariaDB) o a un store compartido.
+  private isRunning = false;
+
   constructor(
     private readonly workuseService: WorkuseService,
     @Inject(AUTOLOGIN_REPOSITORY) private readonly autoLoginRepo: IAutoLoginRepository,
@@ -98,10 +105,30 @@ export class BulkInfoParticipantsUseCase {
     private readonly resendService: ResendService,
   ) {}
 
+  // Expuesto para que el controller pueda responder de inmediato "ya hay una sincronización en
+  // curso" sin tener que lanzar (y luego descartar) otra ejecución del batch.
+  isSyncInProgress(): boolean {
+    return this.isRunning;
+  }
+
   // Corre en background (el controller no espera esta promesa) — un batch completo puede tardar
   // varios minutos y cualquier proxy/gateway delante del server cortaría la conexión mucho antes.
   // Por eso el resultado final no vuelve por HTTP: se loguea y se notifica al admin por correo.
   async execute(options: BulkInfoParticipantsOptions = {}): Promise<BulkInfoParticipantsResult> {
+    if (this.isRunning) {
+      this.logger.warn('BulkInfoParticipants — ya hay una sincronización en curso, se omite esta ejecución.');
+      return { totalReceived: 0, filteredOut: 0, created: [], updated: [], reactivated: [], errors: [] };
+    }
+    this.isRunning = true;
+
+    try {
+      return await this.runSync(options);
+    } finally {
+      this.isRunning = false;
+    }
+  }
+
+  private async runSync(options: BulkInfoParticipantsOptions): Promise<BulkInfoParticipantsResult> {
     let participants: WorkuseParticipant[];
     try {
       participants = await this.workuseService.fetchParticipantsBulkV2();

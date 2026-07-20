@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/user.repository';
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
 import type { CreateUserDto } from '../../infrastructure/http/dtos/create-user.dto';
@@ -12,6 +12,13 @@ export class CreateUserUseCase {
   ) {}
 
   async execute(dto: CreateUserDto): Promise<User> {
+    if (dto.username && (await this.repo.isUsernameTaken(dto.username))) {
+      throw new ConflictException('El nombre de usuario ya está en uso.');
+    }
+    if (dto.email && (await this.repo.isEmailTaken(dto.email))) {
+      throw new ConflictException('El correo electrónico ya está en uso.');
+    }
+
     const password = dto.password ? await this.hasher.hash(dto.password) : undefined;
     return this.repo.create({ ...dto, password });
   }

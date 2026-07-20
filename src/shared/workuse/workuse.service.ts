@@ -54,6 +54,38 @@ export class WorkuseService {
     return raw;
   }
 
+  async fetchParticipantV2(dni: string): Promise<WorkuseParticipant> {
+    const timestamp = Math.floor(Date.now() / 1000).toString();
+    const payload = `${WORKUSE_API_KEY}|${timestamp}|POST|${WORKUSE_BULK_V2_PATH}`;
+    const signature = createHmac('sha256', WORKUSE_API_SECRET).update(payload).digest('hex');
+
+    let response: Response;
+    try {
+      response = await fetch(`${WORKUSE_BASE_URL}${WORKUSE_BULK_V2_PATH}`, {
+        method: 'POST',
+        headers: {
+          'X-API-Key': WORKUSE_API_KEY,
+          'X-Timestamp': timestamp,
+          'X-Signature': signature,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ dni }),
+      });
+    } catch (err) {
+      this.logger.error('Error al conectar con Workuse (userinfo2.php)', err as Error);
+      throw new ServiceUnavailableException('No se pudo conectar con el servicio externo.');
+    }
+
+    const raw = (await response.json().catch(() => null)) as WorkuseParticipant[] | null;
+    const participant = Array.isArray(raw) ? raw[0] : null;
+
+    if (!response.ok || !participant?.valid) {
+      throw new NotFoundException('Usuario no encontrado en Workuse.');
+    }
+
+    return participant;
+  }
+
   async fetchParticipantsBulkV2(): Promise<WorkuseParticipant[]> {
     const timestamp = Math.floor(Date.now() / 1000).toString();
     const payload = `${WORKUSE_API_KEY}|${timestamp}|GET|${WORKUSE_BULK_V2_PATH}`;
