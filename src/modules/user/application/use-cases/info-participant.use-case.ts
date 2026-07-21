@@ -67,9 +67,12 @@ function isRegisteredStatus(status: string | undefined): boolean {
   return status?.trim().toLowerCase() === 'registered';
 }
 
-function resolveUserStatus(data: WorkuseParticipant): string | null {
+function resolveUserStatus(data: WorkuseParticipant, currentStatus: string | undefined): string | null {
   if (isRetiredStatus(data.status)) return 'INACTIVO';
-  if (data.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
+  // Solo avanza a ENVIADO_SPONSOR si viene justo de PREPARACION (el paso previo del flujo). Si
+  // ya está en cualquier otro estado no se toca el status — la fecha igual queda guardada en el
+  // upsert, solo se omite el cambio de estado.
+  if (data.fechadeenvioalsponsor && currentStatus === 'PREPARACION') return 'ENVIADO_SPONSOR';
   return null;
 }
 
@@ -138,7 +141,7 @@ export class InfoParticipantUseCase {
 
     const userStatus = isReactivation
       ? await this.userStatusPort.findLastStatusBeforeInactive(existing!.id)
-      : resolveUserStatus(data);
+      : resolveUserStatus(data, existing?.status);
 
     // Solo un participante contratado (status_hired = 1) conserva su sponsor asignado.
     const userSponsorId = data.status_hired === 1 ? sponsorId : null;

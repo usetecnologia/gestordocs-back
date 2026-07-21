@@ -2,7 +2,7 @@ import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common
 import { Resend } from 'resend';
 import type { CreateEmailOptions } from 'resend';
 import { envs } from '@config/envs';
-import type { SendMailOptions } from './interfaces/send-mail.interface';
+import type { SendMailAttachment, SendMailOptions } from './interfaces/send-mail.interface';
 
 @Injectable()
 export class ResendService {
@@ -13,11 +13,14 @@ export class ResendService {
     this.client = new Resend(envs.RESEND_API_KEY);
   }
 
-  async sendMail({ to, subject, html, text }: SendMailOptions): Promise<void> {
+  async sendMail({ to, subject, html, text, attachments }: SendMailOptions): Promise<void> {
     const base = {
       from: envs.MAIL_FROM,
       to: Array.isArray(to) ? to : [to],
       subject,
+      ...(attachments?.length && {
+        attachments: attachments.map((a) => ({ filename: a.filename, content: a.content })),
+      }),
     };
 
     const payload: CreateEmailOptions = html
@@ -32,7 +35,7 @@ export class ResendService {
     }
   }
 
-  async notifyAdmin(subject: string, text: string): Promise<void> {
-    await this.sendMail({ to: envs.ADMIN_EMAIL, subject, text });
+  async notifyAdmin(subject: string, text: string, attachments?: SendMailAttachment[]): Promise<void> {
+    await this.sendMail({ to: envs.ADMIN_EMAIL, subject, text, attachments });
   }
 }

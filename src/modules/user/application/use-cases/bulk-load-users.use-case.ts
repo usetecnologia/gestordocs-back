@@ -88,6 +88,7 @@ export class BulkLoadUsersUseCase {
           optionProgramId: optionProgram.id,
           status: resolveUserStatus(item),
           employer: item.employer || null,
+          email: item.email ?? null,
           status_hired: item.status_hired ?? null,
           hired_date: item.hired_date || null,
           jo_use_date: item.jo_use_date || null,

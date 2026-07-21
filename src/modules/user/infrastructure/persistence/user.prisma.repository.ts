@@ -767,13 +767,21 @@ export class UserPrismaRepository implements IUserRepository {
         },
       });
 
+      // Si el participante ya fue enviado al sponsor alguna vez (fechadeenvioalsponsor con algún
+      // valor), la observación manual lo deja en OBSERVADO_SPONSOR en vez de OBSERVADO.
+      const participant = await tx.user.findUnique({
+        where: { id: participantId },
+        select: { fechadeenvioalsponsor: true },
+      });
+      const nuevoEstado = participant?.fechadeenvioalsponsor?.trim() ? 'OBSERVADO_SPONSOR' : 'OBSERVADO';
+
       await tx.user.update({
         where: { id: participantId },
-        data: { status: 'OBSERVADO' as never },
+        data: { status: nuevoEstado as never },
       });
 
       await tx.userHistoryStatus.create({
-        data: { userId: participantId, status: 'OBSERVADO' as never, createdById },
+        data: { userId: participantId, status: nuevoEstado as never, createdById },
       });
 
       const creatorPerson = createdById
@@ -997,6 +1005,7 @@ export class UserPrismaRepository implements IUserRepository {
           optionProgramId: data.optionProgramId,
           status: data.status as never,
           employer: data.employer ?? null,
+          email: data.email ?? null,
           status_hired: data.status_hired ?? null,
           hired_date: data.hired_date ?? null,
           jo_use_date: data.jo_use_date ?? null,

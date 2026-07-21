@@ -41,11 +41,14 @@ function isRetiredStatus(status: string | undefined): boolean {
   return status?.trim().toLowerCase() === 'retired';
 }
 
-function resolveUserStatus(data: WorkuseParticipant): string | null {
+function resolveUserStatus(data: WorkuseParticipant, currentStatus: string | undefined): string | null {
   // Un participante "Retired" en Workuse queda INACTIVO de forma definitiva — este estado
   // ya está en STATUSES_LOCKED_FROM_DOCUMENT_SYNC, por lo que no se reevalúa por documentos.
   if (isRetiredStatus(data.status)) return 'INACTIVO';
-  if (data.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
+  // Solo avanza a ENVIADO_SPONSOR si viene justo de PREPARACION (el paso previo del flujo). Si
+  // ya está en cualquier otro estado (OBSERVADO, APROBADO_SPONSOR, etc.) no se toca el status —
+  // la fecha igual queda guardada en el upsert, solo se omite el cambio de estado.
+  if (data.fechadeenvioalsponsor && currentStatus === 'PREPARACION') return 'ENVIADO_SPONSOR';
   return null;
 }
 
@@ -102,7 +105,7 @@ export class AutoLoginUseCase {
 
     const userStatus = isReactivation
       ? await this.userStatusPort.findLastStatusBeforeInactive(existing!.id)
-      : resolveUserStatus(data);
+      : resolveUserStatus(data, existing?.status);
 
     // Solo un participante contratado (status_hired = 1) conserva su sponsor asignado.
     // Si status_hired no es 1 (null, undefined o cualquier otro valor), queda sin sponsor —

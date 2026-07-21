@@ -331,7 +331,7 @@ model UserDocumentHistory {
   userDocumentsId     String
   status              DocumentSponsorStatus
   url                 String? @db.Text
-  observation         String?
+  observation         String? @db.Text
   createdById         String?  @map("created_by_id") @db.VarChar(36)
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
