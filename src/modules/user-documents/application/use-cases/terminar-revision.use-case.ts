@@ -61,9 +61,12 @@ export class TerminarRevisionUseCase {
       return;
     }
 
-    // 3. Todos los obligatorios están REVISADO → PREPARACION
+    // 3. Todos los obligatorios están REVISADO → ENVIADO_SPONSOR si ya fue enviado al sponsor
+    // (fechadeenvioalsponsor con valor), o PREPARACION si aún no.
     if (requiredDocs.length > 0 && requiredDocs.every((d) => d.status === 'REVISADO')) {
-      await this.userStatusPort.updateStatus(participantId, 'PREPARACION', createdById);
+      const wasSentToSponsor = await this.userStatusPort.hasBeenSentToSponsor(participantId);
+      const nuevoEstado = wasSentToSponsor ? 'ENVIADO_SPONSOR' : 'PREPARACION';
+      await this.userStatusPort.updateStatus(participantId, nuevoEstado, createdById);
       return;
     }
 
