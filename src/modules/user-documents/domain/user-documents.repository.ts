@@ -184,7 +184,7 @@ export interface IUserDocumentsRepository {
     documentId: string,
     sponsorId: string | null,
   ): Promise<string | null>;
-  findLatestPassportDocuments(limit: number): Promise<PassportDocumentCandidate[]>;
+  findAllPassportDocuments(): Promise<PassportDocumentCandidate[]>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

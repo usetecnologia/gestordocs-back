@@ -997,6 +997,7 @@ export class UserPrismaRepository implements IUserRepository {
           optionProgramId: data.optionProgramId,
           status: data.status as never,
           employer: data.employer ?? null,
+          email: data.email ?? null,
           status_hired: data.status_hired ?? null,
           hired_date: data.hired_date ?? null,
           jo_use_date: data.jo_use_date ?? null,

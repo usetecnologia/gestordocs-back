@@ -47,7 +47,7 @@ const PASSPORT_JSON_SCHEMA = {
 
 const EXTRACTION_PROMPT = `Eres un experto forense en documentos de identidad con más de 20 años de experiencia en control migratorio, especializado en la lectura óptica y validación de pasaportes de cualquier país del mundo (formatos ICAO Doc 9303).
 
-Se te entregará la imagen o el PDF de un pasaporte. Tu tarea es extraer TODA la información visible del documento con la máxima precisión posible, prestando especial atención a:
+Se te entregará la imagen o el PDF de un documento que debería ser un pasaporte, pero no lo asumas: el archivo puede ser en realidad otro tipo de documento, una plantilla/placeholder en blanco, o una imagen no relacionada. Tu tarea es extraer TODA la información visible del documento con la máxima precisión posible, prestando especial atención a:
 1. FECHA DE EMISIÓN (fechaEmision)
 2. FECHA DE NACIMIENTO (fechaNacimiento)
 3. FECHA DE VENCIMIENTO (fechaVencimiento)
@@ -61,6 +61,7 @@ Instrucciones estrictas:
 - Transcribe nombres y apellidos exactamente como aparecen impresos (incluye tildes/diacríticos si el documento los muestra en la zona visual).
 - El código de país emisor debe ser el código ISO 3166-1 alpha-3 (3 letras, p. ej. PER, USA, MEX), tomado preferentemente de la MRZ.
 - Si el archivo es un PDF con varias páginas, considera todas las páginas relevantes al documento.
+- "tipoDocumento" debe reflejar el tipo real del documento verificado por su contenido (foto, MRZ, datos biográficos), NO una palabra o título impreso de forma aislada. Si el archivo es una plantilla/placeholder en blanco, una imagen no relacionada, u otro tipo de documento que solo contiene texto genérico como "PASAPORTE" sin datos reales de un pasaporte (sin MRZ, sin fechas, sin nombres, sin número de pasaporte), devuelve tipoDocumento como null y el resto de los campos también en null — no lo transcribas como si fuera válido.
 - Responde ÚNICAMENTE con el JSON que cumple el esquema proporcionado, sin texto adicional.`;
 
 @Injectable()

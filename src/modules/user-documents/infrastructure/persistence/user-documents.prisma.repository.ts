@@ -590,7 +590,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     return userDoc?.id ?? null;
   }
 
-  async findLatestPassportDocuments(limit: number): Promise<PassportDocumentCandidate[]> {
+  async findAllPassportDocuments(): Promise<PassportDocumentCandidate[]> {
     const passportDoc = await this.prisma.documents.findFirst({
       where: { siglasCode: 'PASSPORT', status: true },
       select: {
@@ -602,8 +602,9 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
 
     const documentSponsorIds = passportDoc.documentSponsors.map((ds) => ds.id);
 
-    // Se pide un lote mayor al límite final porque varias filas pueden pertenecer al mismo
-    // participante (p. ej. si cambió de sponsor) y otras pueden no tener URL aún.
+    // Sin "take": se recorren todos los participantes con pasaporte pendiente de analizar.
+    // Varias filas pueden pertenecer al mismo participante (p. ej. si cambió de sponsor) y
+    // otras pueden no tener URL aún — se dedupean abajo, quedándose con la más reciente por usuario.
     const rows = await this.prisma.userDocuments.findMany({
       where: {
         statusDocument: true,
@@ -625,7 +626,6 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         },
       },
       orderBy: { updatedAt: 'desc' },
-      take: Math.max(limit * 5, 50),
     });
 
     const seenUsers = new Set<string>();
@@ -643,7 +643,6 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         url,
         updatedAt: row.updatedAt,
       });
-      if (candidates.length >= limit) break;
     }
 
     return candidates;

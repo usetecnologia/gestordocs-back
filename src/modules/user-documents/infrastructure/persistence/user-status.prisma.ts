@@ -50,4 +50,12 @@ export class UserStatusPrisma implements IUserStatusPort {
     });
     return record?.status ?? null;
   }
+
+  async hasBeenSentToSponsor(userId: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { fechadeenvioalsponsor: true },
+    });
+    return !!user?.fechadeenvioalsponsor?.trim();
+  }
 }

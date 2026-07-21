@@ -175,6 +175,7 @@ export interface UpdateExternalUserData {
   optionProgramId?: string | null;
   status: string;
   employer?: string | null;
+  email?: string | null;
   status_hired?: number | null;
   hired_date?: string | null;
   jo_use_date?: string | null;

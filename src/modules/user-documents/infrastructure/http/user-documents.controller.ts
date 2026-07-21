@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   Get,
   HttpCode,
@@ -62,6 +63,7 @@ import { TerminarRevisionMasivoResponseDto } from './dtos/terminar-revision-masi
 import { BulkAceptarDocumentDto } from './dtos/bulk-aceptar-document.dto';
 import { BulkObservarDocumentDto } from './dtos/bulk-observar-document.dto';
 import { BulkReviewDocumentResponseDto } from './dtos/bulk-review-document-response.dto';
+import { RevisionMasivaPasaporteResponseDto } from './dtos/revision-masiva-pasaporte-response.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
 import { ParseOptionalPdfPipe } from './pipes/parse-optional-pdf.pipe';
 
@@ -421,20 +423,42 @@ export class UserDocumentsController {
   @ApiOperation({
     summary: 'Revisión masiva de pasaporte — extrae datos vía IA',
     description:
-      'Toma el último documento de pasaporte subido (en cualquier estado excepto PENDIENTE) de 10 ' +
+      'Toma el último documento de pasaporte (en cualquier estado excepto PENDIENTE) de TODOS los ' +
       'participantes y utiliza OpenAI para extraer sus datos, con especial atención a la fecha de emisión y ' +
-      'la fecha de nacimiento. Devuelve un Excel con DNI, nombres, apellidos, fecha de emisión, fecha de ' +
-      'nacimiento y la URL del documento analizado. Los participantes cuyo documento no se pudo analizar no ' +
-      'detienen el proceso: quedan con las fechas vacías y el motivo en la columna de observaciones.',
+      'la fecha de nacimiento. Evalúa cada pasaporte: si el documento no corresponde a un pasaporte, si el ' +
+      'participante no era mayor de edad al momento de la emisión (debe ser mayor a 18 años, no cumplirlos ' +
+      'justo ese día), o si el Content-Type declarado por el almacenamiento no corresponde al contenido real ' +
+      'del archivo (lo que suele impedir su visualización), se observa automáticamente (nuevo historial con la ' +
+      'etiqueta "Observado por IA") y se reevalúa el estado del participante (ver TerminarRevisionUseCase). ' +
+      'Corre en segundo plano: la respuesta HTTP no espera a que termine (puede tardar varios minutos, ya que ' +
+      'analiza a todos los participantes) para evitar timeouts de proxy/gateway. Al finalizar, se notifica por ' +
+      'correo al admin con un resumen y el Excel adjunto (DNI, si fue observado SI/NO, el motivo y la URL del ' +
+      'documento). Los participantes cuyo documento no se pudo analizar no detienen el proceso: quedan como no ' +
+      'observados con el motivo del error.',
   })
-  @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-  @ApiOkResponse({ description: 'Archivo .xlsx con el resultado de la revisión masiva.' })
-  @ApiNotFoundResponse({ description: 'No se encontraron pasaportes disponibles para analizar.' })
-  async revisionMasivaPasaporte(@Res() res: Response): Promise<void> {
-    const buffer = await this.bulkExtractPassportDataUseCase.execute();
+  @ApiOkResponse({ type: RevisionMasivaPasaporteResponseDto })
+  @ApiConflictResponse({ description: 'Ya hay una revisión masiva de pasaportes en curso.' })
+  revisionMasivaPasaporte(@CurrentUser() user: JwtPayload): RevisionMasivaPasaporteResponseDto {
+    // Mismo patrón que bulkInfoParticipantsHandler: el botón del frontend no se puede bloquear de
+    // forma confiable (varias personas pueden dispararlo a la vez) — se corta acá antes de arrancar
+    // otro batch completo en paralelo, que terminaría pisando las mismas filas que la corrida ya en
+    // curso. Se lanza como excepción (409) para que el AllExceptionsFilter arme
+    // { success: false, ... } y el frontend pueda distinguirlo de una respuesta exitosa normal.
+    if (this.bulkExtractPassportDataUseCase.isSyncInProgress()) {
+      throw new ConflictException(
+        'Ya hay una revisión masiva de pasaportes en curso. Espera a que termine antes de iniciar otra.',
+      );
+    }
 
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    res.setHeader('Content-Disposition', 'attachment; filename="revision-masiva-pasaporte.xlsx"');
-    res.send(buffer);
+    // No se espera esta promesa a propósito (fire-and-forget) — un batch completo puede tardar
+    // varios minutos y cualquier proxy delante del server cortaría la conexión mucho antes de que
+    // termine. El propio use case ya loguea el resultado y notifica al admin por correo al acabar.
+    this.bulkExtractPassportDataUseCase.execute(user.sub).catch(() => {
+      // Ya logueado y notificado dentro del use case — este catch solo evita una unhandled rejection.
+    });
+    return {
+      message:
+        'Revisión masiva de pasaportes iniciada en segundo plano. El resultado (Excel) se enviará por correo al finalizar.',
+    };
   }
 }
