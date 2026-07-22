@@ -53,6 +53,7 @@ export class User {
     public optionProgramId: string | null,
     public status: UserStatus,
     public statusSolRetiro: string | null,
+    public fechadeenvioalsponsor: string | null,
     public readonly createdAt: Date,
     public readonly updatedAt: Date,
     public readonly role?: { id: string; name: string; code: string | null } | null,

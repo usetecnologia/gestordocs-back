@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import ExcelJS from 'exceljs';
 import * as mime from 'mime-types';
+import { Jimp, JimpMime } from 'jimp';
 import {
   IUserDocumentsRepository,
   PassportDocumentCandidate,
@@ -13,7 +14,10 @@ import type { SendMailAttachment } from '@shared/resend/interfaces/send-mail.int
 import { TerminarRevisionUseCase } from './terminar-revision.use-case';
 
 const EXTRACTION_CONCURRENCY = 3;
-const SUPPORTED_CONTENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+// Únicos formatos que OpenAI puede leer directamente como "input_image" (más el PDF, que se
+// envía como "input_file"). Cualquier otro tipo de imagen (bmp, tiff, gif, etc.) se reconvierte
+// a JPEG con Jimp antes de enviarla — ver convertToNativelySupportedImage().
+const NATIVELY_SUPPORTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 const MINIMUM_ADULT_AGE = 18;
 const REPORT_FILENAME = 'revision-masiva-pasaporte.xlsx';
 // Cada cuántos participantes procesados se envía un correo de avance al admin, con el Excel
@@ -291,15 +295,23 @@ export class BulkExtractPassportDataUseCase {
     const dni = participant?.dni ?? '';
 
     try {
-      const { buffer, contentType, filename, contentTypeMismatch } = await this.downloadFile(candidate.url);
+      const downloaded = await this.downloadFile(candidate.url);
+      let { buffer, contentType, filename } = downloaded;
+      const { contentTypeMismatch } = downloaded;
 
-      if (!SUPPORTED_CONTENT_TYPES.includes(contentType)) {
-        return {
-          dni,
-          observado: 'NO',
-          motivo: `No se pudo evaluar: tipo de archivo no soportado "${contentType}".`,
-          url: candidate.url,
-        };
+      if (!NATIVELY_SUPPORTED_TYPES.includes(contentType)) {
+        try {
+          ({ buffer, contentType, filename } = await this.convertToNativelySupportedImage(buffer, filename));
+        } catch (err) {
+          return {
+            dni,
+            observado: 'NO',
+            motivo:
+              `No se pudo evaluar: el archivo ("${contentType}") no es una imagen reconocible ni un PDF ` +
+              `(${(err as Error).message}).`,
+            url: candidate.url,
+          };
+        }
       }
 
       const passportData = await this.passportExtractor.extract({ buffer, contentType, filename });
@@ -366,6 +378,24 @@ export class BulkExtractPassportDataUseCase {
       url: candidate.url,
     });
     await this.terminarRevisionUseCase.execute(candidate.userId, reviewedById);
+  }
+
+  /**
+   * OpenAI solo acepta como "input_image" los formatos jpeg/png/webp (además de PDF vía
+   * "input_file"). Cualquier otra imagen real (bmp, tiff, gif, o cualquier variante que S3/la
+   * extensión no etiquete como uno de esos tres) se reconvierte a JPEG con Jimp — mismo enfoque
+   * que SponsorDocumentBuilderService para embeber imágenes "raras" en el PDF de sponsor. Si Jimp
+   * no logra decodificar el buffer, es porque el archivo no es una imagen procesable (p. ej. un
+   * HTML de error, un archivo corrupto o un video), y ahí sí se reporta como no evaluable.
+   */
+  private async convertToNativelySupportedImage(
+    buffer: Buffer,
+    filename: string,
+  ): Promise<{ buffer: Buffer; contentType: string; filename: string }> {
+    const image = await Jimp.read(buffer);
+    const jpegBuffer = await image.getBuffer(JimpMime.jpeg, { quality: 90 });
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    return { buffer: jpegBuffer, contentType: 'image/jpeg', filename: `${baseName}.jpg` };
   }
 
   private async downloadFile(fileUrl: string): Promise<{

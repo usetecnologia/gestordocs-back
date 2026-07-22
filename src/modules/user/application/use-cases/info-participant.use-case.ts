@@ -96,6 +96,9 @@ export class InfoParticipantUseCase {
 
   async execute(dni: string): Promise<InfoParticipantResult> {
     const data = await this.workuseService.fetchParticipantV2(dni);
+
+    console.log(data)
+
     if (!isTargetParticipant(data)) {
       throw new BadRequestException('El participante no pertenece a Perú / WAT USA.');
     }

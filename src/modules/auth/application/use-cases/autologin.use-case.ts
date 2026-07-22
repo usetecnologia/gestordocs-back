@@ -66,7 +66,7 @@ export class AutoLoginUseCase {
 
   async execute(dni: string): Promise<LoginResult> {
     const data = await this.workuseService.fetchParticipant(dni);
-
+    console.log(data)
     const country = await this.autoLoginRepo.findCountryByName(data.country.trim().toUpperCase());
     if (!country) {
       throw new NotFoundException(`País "${data.country}" no encontrado en la base de datos.`);
