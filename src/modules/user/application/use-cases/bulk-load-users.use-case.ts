@@ -70,12 +70,8 @@ export class BulkLoadUsersUseCase {
           ? await this.userRepo.findOrCreateSponsor(sponsorName, item.sponsorId?.trim() || null)
           : null;
         const optionProgram = await this.userRepo.findOrCreateOptionProgram(
-          item.optionPrograma.trim(),
-          item.optionProgramBD?.trim().toUpperCase() || null,
-          item.optionProgramId?.trim() || null,
-          country.id,
+          item.optionProgramBD?.trim().toUpperCase() || item.optionPrograma.trim().toUpperCase(),
           program.id,
-          sponsor?.id ?? null,
         );
 
         const commonData = {

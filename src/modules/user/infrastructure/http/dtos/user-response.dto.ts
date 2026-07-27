@@ -15,8 +15,7 @@ class SimpleRefDto {
 
 class OptionProgramRefDto {
   @ApiProperty() id!: string;
-  @ApiProperty() name!: string;
-  @ApiProperty() shortName!: string;
+  @ApiProperty() shortDatabase!: string;
 }
 
 class EtiquetaRefDto {

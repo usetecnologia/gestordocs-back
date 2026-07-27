@@ -74,9 +74,10 @@ export class AutoLoginUseCase {
 
     const program = data.program.trim().toUpperCase();
     const sponsor = normalizeSponsor(data.sponsor);
-    const optionPrograma = data.optionPrograma.trim().toUpperCase();
-    const optionProgramCode = data.optionProgramBD?.trim().toUpperCase() || null;
-    const optionProgramExternalId = data.optionProgramId?.trim() || null;
+    // El option program se identifica por (programId, shortDatabase). El shortDatabase viene de
+    // optionProgramBD; si Workuse no lo envía, se usa el nombre como respaldo.
+    const optionProgramShortDatabase =
+      data.optionProgramBD?.trim().toUpperCase() || data.optionPrograma.trim().toUpperCase();
 
     const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(
       program,
@@ -86,12 +87,8 @@ export class AutoLoginUseCase {
       ? (await this.autoLoginRepo.findOrCreateSponsor(sponsor, data.sponsorId?.trim() || null)).id
       : null;
     const { id: optionProgramId } = await this.autoLoginRepo.findOrCreateOptionProgram(
-      optionPrograma,
-      optionProgramCode,
-      optionProgramExternalId,
-      country.id,
+      optionProgramShortDatabase,
       programId,
-      sponsorId,
     );
 
     const existing = await this.autoLoginRepo.findByDni(dni);

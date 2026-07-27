@@ -114,7 +114,8 @@ export class InfoParticipantUseCase {
 
     const program = data.program.trim().toUpperCase();
     const sponsor = normalizeSponsor(data.sponsor);
-    const optionPrograma = data.optionPrograma.trim().toUpperCase();
+    const optionProgramShortDatabase =
+      data.optionProgramBD?.trim().toUpperCase() || data.optionPrograma.trim().toUpperCase();
 
     const { id: programId } = await this.autoLoginRepo.findOrCreateProgram(
       program,
@@ -124,12 +125,8 @@ export class InfoParticipantUseCase {
       ? (await this.autoLoginRepo.findOrCreateSponsor(sponsor, data.sponsorId?.trim() || null)).id
       : null;
     const { id: optionProgramId } = await this.autoLoginRepo.findOrCreateOptionProgram(
-      optionPrograma,
-      data.optionProgramBD?.trim() || null,
-      data.optionProgramId?.trim() || null,
-      country.id,
+      optionProgramShortDatabase,
       programId,
-      sponsorId,
     );
 
     const existing = await this.autoLoginRepo.findByDni(data.dni);

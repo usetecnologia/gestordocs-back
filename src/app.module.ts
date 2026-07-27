@@ -15,6 +15,7 @@ import { OptionProgramModule } from '@modules/option-program/option-program.modu
 import { ProgramModule } from '@modules/program/program.module';
 import { RoleModule } from '@modules/role/role.module';
 import { SponsorModule } from '@modules/sponsor/sponsor.module';
+import { TemporadaModule } from '@modules/temporada/temporada.module';
 import { UserModule } from '@modules/user/user.module';
 import { UserDocumentsModule } from '@modules/user-documents/user-documents.module';
 
@@ -45,6 +46,7 @@ import { UserDocumentsModule } from '@modules/user-documents/user-documents.modu
     ProgramModule,
     RoleModule,
     SponsorModule,
+    TemporadaModule,
     UserModule,
     UserDocumentsModule,
   ],

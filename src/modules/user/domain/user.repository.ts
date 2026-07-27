@@ -229,7 +229,7 @@ export interface IUserRepository {
   findCountryByName(name: string): Promise<{ id: string } | null>;
   findOrCreateProgram(code: string, externalId: string | null): Promise<{ id: string }>;
   findOrCreateSponsor(code: string, externalId: string | null): Promise<{ id: string }>;
-  findOrCreateOptionProgram(name: string, code: string | null, externalId: string | null, countryId: string, programId: string, sponsorId: string | null): Promise<{ id: string }>;
+  findOrCreateOptionProgram(shortDatabase: string, programId: string): Promise<{ id: string }>;
   findDefaultRole(): Promise<{ id: string }>;
   createWithHistory(data: CreateExternalUserData): Promise<void>;
   updateByDni(dni: string, data: UpdateExternalUserData): Promise<void>;

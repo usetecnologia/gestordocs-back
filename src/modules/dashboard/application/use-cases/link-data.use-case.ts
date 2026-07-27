@@ -228,74 +228,52 @@ export class LinkDataUseCase {
   }
 
   private async syncOptionPrograms(external: WorkuseOptionProgram[]): Promise<SyncEntityResult> {
-    // Los option programs SOLO se identifican de forma única por su idExterno: el code
-    // (short_Database) y la descripción se repiten entre muchos registros. Por eso se
-    // matchea únicamente por idExterno — no hay fallback seguro por code ni por nombre.
-    const [countries, programs, local] = await Promise.all([
-      this.countryRepository.findAllForSync(),
+    // Los option programs se consolidan por la combinación (programId, shortDatabase).
+    // El catálogo externo trae una fila por (país, programa, shortDatabase); al colapsar
+    // los países, varias filas externas caen en el mismo consolidado. La primera lo crea y
+    // el resto se ignora (ya existe). Ya no se usa idExterno, name ni país/sponsor.
+    const [programs, local] = await Promise.all([
       this.programRepository.findAllForSync(),
       this.optionProgramRepository.findAllForSync(),
     ]);
 
-    // Mapas idExterno -> id local para resolver los FK country/program.
-    const countryByExt = new Map(
-      countries.filter((c) => c.idExterno?.trim()).map((c) => [c.idExterno!.trim(), c.id]),
-    );
+    // Mapa idExterno -> id local del programa (el shortDatabase se toma tal cual del catálogo).
     const programByExt = new Map(
       programs.filter((p) => p.idExterno?.trim()).map((p) => [p.idExterno!.trim(), p.id]),
     );
-    const byIdExterno = new Map(
-      local.filter((o) => o.idExterno?.trim()).map((o) => [o.idExterno!.trim(), o]),
-    );
+    // Clave consolidada (programId::shortDatabase) -> ya existe localmente.
+    const key = (programId: string, shortDatabase: string) => `${programId}::${shortDatabase}`;
+    const seen = new Set(local.map((o) => key(o.programId, o.shortDatabase)));
 
     let created = 0;
     let updated = 0;
     let failed = 0;
 
     for (const ext of external) {
-      const idExternoStr = String(ext.id);
-      const countryId = countryByExt.get(String(ext.countryId));
       const programId = programByExt.get(String(ext.programId));
 
-      // Sin país o programa local no se puede crear/actualizar (FK obligatorio).
-      if (!countryId || !programId) {
+      // Sin programa local no se puede crear (FK obligatorio).
+      if (!programId) {
         failed++;
         this.logger.warn(
-          `Skipped option program id=${ext.id} "${ext.description}": country/program externo no existe localmente (countryId=${ext.countryId}, programId=${ext.programId}).`,
+          `Skipped option program id=${ext.id} "${ext.description}": program externo no existe localmente (programId=${ext.programId}).`,
         );
         continue;
       }
 
-      const name = ext.description.trim();
-      const shortName = (name.split(/[\s(]/)[0] || name).slice(0, 50);
       const shortDatabase = String(ext.short_Database).trim().toUpperCase();
-      const existing = byIdExterno.get(idExternoStr);
+      const consolidatedKey = key(programId, shortDatabase);
+
+      // Ya consolidado (por otra fila externa del mismo programa+shortDatabase, o ya en BD).
+      if (seen.has(consolidatedKey)) {
+        updated++;
+        continue;
+      }
 
       try {
-        if (existing) {
-          // No se toca sponsorId ni status: el catálogo externo no los provee.
-          await this.optionProgramRepository.update(existing.id, {
-            name,
-            shortName,
-            shortDatabase,
-            countryId,
-            programId,
-          });
-          updated++;
-        } else {
-          const row = await this.optionProgramRepository.create({
-            idExterno: idExternoStr,
-            name,
-            shortName,
-            shortDatabase,
-            countryId,
-            programId,
-            sponsorId: null,
-            hideJobFair: false,
-          });
-          byIdExterno.set(idExternoStr, { id: row.id, idExterno: idExternoStr });
-          created++;
-        }
+        await this.optionProgramRepository.create({ shortDatabase, programId });
+        seen.add(consolidatedKey);
+        created++;
       } catch (err) {
         failed++;
         this.logger.error(

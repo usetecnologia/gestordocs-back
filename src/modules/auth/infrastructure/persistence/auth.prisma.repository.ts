@@ -9,7 +9,7 @@ const AUTH_USER_INCLUDE = {
   country: { select: { id: true, name: true, code: true } },
   sponsor: { select: { id: true, name: true, code: true } },
   program: { select: { id: true, name: true, code: true } },
-  optionProgram: { select: { id: true, name: true, shortName: true } },
+  optionProgram: { select: { id: true, shortDatabase: true } },
 } as const;
 
 type PrismaAuthUser = {
@@ -22,7 +22,7 @@ type PrismaAuthUser = {
   country: { id: string; name: string; code: string } | null;
   sponsor: { id: string; name: string; code: string } | null;
   program: { id: string; name: string; code: string } | null;
-  optionProgram: { id: string; name: string; shortName: string } | null;
+  optionProgram: { id: string; shortDatabase: string } | null;
 };
 
 function toCredentials(user: PrismaAuthUser, person: PersonModel | null): AuthCredentials {

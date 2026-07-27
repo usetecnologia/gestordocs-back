@@ -7,7 +7,7 @@ export const USER_INCLUDE = {
   country: { select: { id: true, name: true, code: true } },
   sponsor: { select: { id: true, name: true, code: true } },
   program: { select: { id: true, name: true, code: true } },
-  optionProgram: { select: { id: true, name: true, shortName: true } },
+  optionProgram: { select: { id: true, shortDatabase: true } },
 } as const;
 
 export const USER_DETAIL_INCLUDE = {

@@ -15,9 +15,7 @@ export class FindAllOptionProgramUseCase {
       page: query.page ?? 1,
       limit: query.limit ?? 20,
       status: query.status,
-      countryId: query.countryId,
       programId: query.programId,
-      sponsorId: query.sponsorId,
       search: query.search,
     });
   }

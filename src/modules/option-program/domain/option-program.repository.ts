@@ -4,39 +4,27 @@ export interface OptionProgramFilters {
   page: number;
   limit: number;
   status?: boolean;
-  countryId?: string;
   programId?: string;
-  sponsorId?: string;
   search?: string;
 }
 
 export interface CreateOptionProgramData {
-  idExterno?: string;
-  name: string;
-  shortName: string;
   shortDatabase: string;
-  countryId: string;
   programId: string;
-  sponsorId?: string | null;
-  hideJobFair: boolean;
+  status?: boolean;
 }
 
-// Fila liviana para el sync masivo (link-data): solo lo necesario para matchear por idExterno.
+// Fila liviana para el sync masivo (link-data): lo necesario para matchear por (programId, shortDatabase).
 export interface OptionProgramSyncRow {
   id: string;
-  idExterno: string | null;
+  programId: string;
+  shortDatabase: string;
 }
 
 export interface UpdateOptionProgramData {
-  idExterno?: string;
-  name?: string;
-  shortName?: string;
   shortDatabase?: string;
-  countryId?: string;
   programId?: string;
-  sponsorId?: string;
   status?: boolean;
-  hideJobFair?: boolean;
 }
 
 export interface IOptionProgramRepository {

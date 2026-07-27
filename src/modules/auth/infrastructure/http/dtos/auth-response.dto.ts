@@ -24,8 +24,7 @@ export class EntitySnapshotDto {
 
 export class OptionProgramSnapshotDto {
   @ApiProperty({ example: 'uuid' }) id!: string;
-  @ApiProperty({ example: 'Connect (3250-Mar20-3+)' }) name!: string;
-  @ApiProperty({ example: 'Connect' }) shortName!: string;
+  @ApiProperty({ example: 'CON' }) shortDatabase!: string;
 }
 
 export class AuthUserSnapshotDto {

@@ -26,22 +26,12 @@ export class FindOptionProgramsQueryDto {
   })
   status?: boolean;
 
-  @ApiPropertyOptional({ example: 'uuid-del-pais' })
-  @IsOptional()
-  @IsUUID()
-  countryId?: string;
-
   @ApiPropertyOptional({ example: 'uuid-del-programa' })
   @IsOptional()
   @IsUUID()
   programId?: string;
 
-  @ApiPropertyOptional({ example: 'uuid-del-sponsor' })
-  @IsOptional()
-  @IsUUID()
-  sponsorId?: string;
-
-  @ApiPropertyOptional({ example: 'nombre' })
+  @ApiPropertyOptional({ example: 'CON' })
   @IsOptional()
   @IsString()
   search?: string;

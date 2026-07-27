@@ -7,7 +7,7 @@ import {
   UpdateProgramData,
 } from '../../domain/program.repository';
 import { Program } from '../../domain/program.entity';
-import { ProgramMapper } from './program.mapper';
+import { ProgramMapper, PROGRAM_TEMPORADAS_INCLUDE } from './program.mapper';
 
 @Injectable()
 export class ProgramPrismaRepository implements IProgramRepository {
@@ -27,6 +27,7 @@ export class ProgramPrismaRepository implements IProgramRepository {
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createAt: 'desc' },
+        include: PROGRAM_TEMPORADAS_INCLUDE,
       }),
       this.prisma.program.count({ where }),
     ]);

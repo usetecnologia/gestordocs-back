@@ -30,14 +30,7 @@ export interface IAutoLoginRepository {
   findCountryByName(name: string): Promise<{ id: string } | null>;
   findOrCreateProgram(code: string, externalId: string | null): Promise<{ id: string }>;
   findOrCreateSponsor(code: string, externalId: string | null): Promise<{ id: string }>;
-  findOrCreateOptionProgram(
-    name: string,
-    code: string | null,
-    externalId: string | null,
-    countryId: string,
-    programId: string,
-    sponsorId: string | null,
-  ): Promise<{ id: string }>;
+  findOrCreateOptionProgram(shortDatabase: string, programId: string): Promise<{ id: string }>;
   upsertByDni(data: UpsertByDniData): Promise<AuthCredentials>;
   findDefaultRole(): Promise<{ id: string; name: string; code: string | null }>;
 }

@@ -60,7 +60,7 @@ export class User {
     public readonly country?: { id: string; name: string; code: string } | null,
     public readonly sponsor?: { id: string; name: string; code: string } | null,
     public readonly program?: { id: string; name: string; code: string } | null,
-    public readonly optionProgram?: { id: string; name: string; shortName: string } | null,
+    public readonly optionProgram?: { id: string; shortDatabase: string } | null,
     public readonly observations?: UserObservation[] | null,
     public readonly historyStatus?: UserHistoryStatusItem[] | null,
     public readonly emailHistory?: UserEmailLogItem[] | null,

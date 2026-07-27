@@ -15,7 +15,7 @@ type PrismaAuthUser = {
   country: { id: string; name: string; code: string } | null;
   sponsor: { id: string; name: string; code: string } | null;
   program: { id: string; name: string; code: string } | null;
-  optionProgram: { id: string; name: string; shortName: string } | null;
+  optionProgram: { id: string; shortDatabase: string } | null;
 };
 
 const AUTH_INCLUDE = {
@@ -23,7 +23,7 @@ const AUTH_INCLUDE = {
   country: { select: { id: true, name: true, code: true } },
   sponsor: { select: { id: true, name: true, code: true } },
   program: { select: { id: true, name: true, code: true } },
-  optionProgram: { select: { id: true, name: true, shortName: true } },
+  optionProgram: { select: { id: true, shortDatabase: true } },
 } as const;
 
 function toCredentials(user: PrismaAuthUser, person: PersonModel): AuthCredentials {
@@ -165,77 +165,22 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
     });
   }
 
-  async findOrCreateOptionProgram(
-    name: string,
-    code: string | null,
-    externalId: string | null,
-    countryId: string,
-    programId: string,
-    sponsorId: string | null,
-  ): Promise<{ id: string }> {
-    const normalizedCode = code?.trim().toUpperCase() || null;
-    const normalizedExternalId = externalId?.trim() || null;
+  async findOrCreateOptionProgram(shortDatabase: string, programId: string): Promise<{ id: string }> {
+    // La identidad de un option program es la combinación (programId, shortDatabase).
+    // Ya no se usa idExterno, name ni país/sponsor.
+    const normalizedShortDatabase = shortDatabase.trim().toUpperCase();
 
-    const optionPrograms = await this.prisma.optionProgram.findMany({
-      select: { id: true, name: true, shortDatabase: true, idExterno: true },
+    const existing = await this.prisma.optionProgram.findUnique({
+      where: { programId_shortDatabase: { programId, shortDatabase: normalizedShortDatabase } },
+      select: { id: true },
     });
+    if (existing) return existing;
 
-    // 1. Primero por ID externo (comparando como string y como número).
-    const byExternalId = normalizedExternalId
-      ? optionPrograms.find((o) => {
-          if (!o.idExterno) return false;
-          const dbExternalId = o.idExterno.trim();
-          return (
-            dbExternalId === normalizedExternalId ||
-            Number(dbExternalId) === Number(normalizedExternalId)
-          );
-        })
-      : undefined;
-
-    // 2. Luego por code (shortDatabase).
-    const byCode =
-      !byExternalId && normalizedCode
-        ? optionPrograms.find((o) => o.shortDatabase?.trim().toUpperCase() === normalizedCode)
-        : undefined;
-
-    // 3. Fallback por nombre — preserva el comportamiento anterior para registros ya existentes.
-    const byName =
-      !byExternalId && !byCode
-        ? optionPrograms.find(
-            (o) => o.name.trim().toUpperCase() === name.trim().toUpperCase(),
-          )
-        : undefined;
-
-    const matched = byExternalId ?? byCode ?? byName;
-
-    // Si ya existe, rellena el idExterno y el code faltantes o desactualizados (backfill),
-    // igual que el sync masivo de link-data. Así el registro queda enlazado a Workuse.
-    if (matched) {
-      const updates: { idExterno?: string; shortDatabase?: string } = {};
-      if (normalizedExternalId && matched.idExterno?.trim() !== normalizedExternalId) {
-        updates.idExterno = normalizedExternalId;
-      }
-      if (normalizedCode && matched.shortDatabase?.trim().toUpperCase() !== normalizedCode) {
-        updates.shortDatabase = normalizedCode;
-      }
-      if (Object.keys(updates).length > 0) {
-        await this.prisma.optionProgram.update({ where: { id: matched.id }, data: updates });
-      }
-      return { id: matched.id };
-    }
-
-    const shortName = name.split(/[\s(]/)[0].slice(0, 50) || name.slice(0, 50);
     return this.prisma.optionProgram.create({
       data: {
-        idExterno: normalizedExternalId,
-        name,
-        shortName,
-        shortDatabase: normalizedCode ?? shortName,
-        countryId,
+        shortDatabase: normalizedShortDatabase,
         programId,
-        sponsorId: sponsorId ?? undefined,
         status: true,
-        hideJobFair: false,
       },
       select: { id: true },
     });

@@ -11,6 +11,6 @@ export class CreateOptionProgramUseCase {
   ) {}
 
   execute(dto: CreateOptionProgramDto): Promise<OptionProgram> {
-    return this.repo.create({ ...dto, hideJobFair: dto.hideJobFair ?? false });
+    return this.repo.create({ ...dto });
   }
 }

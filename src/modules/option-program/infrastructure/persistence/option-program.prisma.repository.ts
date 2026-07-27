@@ -13,13 +13,11 @@ import { OptionProgramMapper, OPTION_PROGRAM_INCLUDE } from './option-program.ma
 export class OptionProgramPrismaRepository implements IOptionProgramRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll({ page, limit, status, countryId, programId, sponsorId, search }: OptionProgramFilters) {
+  async findAll({ page, limit, status, programId, search }: OptionProgramFilters) {
     const where = {
       ...(status !== undefined && { status }),
-      ...(countryId && { countryId }),
       ...(programId && { programId }),
-      ...(sponsorId && { sponsorId }),
-      ...(search && { name: { contains: search } }),
+      ...(search && { shortDatabase: { contains: search } }),
     };
 
     const [data, total] = await this.prisma.$transaction([
@@ -37,7 +35,9 @@ export class OptionProgramPrismaRepository implements IOptionProgramRepository {
   }
 
   async findAllForSync() {
-    return this.prisma.optionProgram.findMany({ select: { id: true, idExterno: true } });
+    return this.prisma.optionProgram.findMany({
+      select: { id: true, programId: true, shortDatabase: true },
+    });
   }
 
   async findById(id: string): Promise<OptionProgram | null> {

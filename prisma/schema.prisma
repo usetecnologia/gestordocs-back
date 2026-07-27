@@ -67,7 +67,6 @@ model Country {
   updateAt    DateTime @updatedAt
 
   users                               User[]
-  optionPrograms                      OptionProgram[]
   documentProgramDescriptionCountries DocumentProgramDescriptionCountry[]
 }
 
@@ -83,6 +82,7 @@ model Program {
   users            User[]
   optionPrograms   OptionProgram[]
   documentPrograms DocumentProgram[]
+  temporadas       Temporada[]
 }
 
 model Sponsor {
@@ -95,29 +95,35 @@ model Sponsor {
   updateAt  DateTime @updatedAt
 
   users            User[]
-  optionPrograms   OptionProgram[]
   documentSponsors DocumentSponsor[]
 }
 
 model OptionProgram {
   id            String   @id @default(uuid())
-  idExterno     String?
-  name          String
-  shortName     String
   shortDatabase String
-  countryId     String
   programId     String
-  sponsorId     String?
   status        Boolean  @default(true)
-  hideJobFair   Boolean
   createAt      DateTime @default(now())
   updateAt      DateTime @updatedAt
 
-  country Country? @relation(fields: [countryId], references: [id])
-  sponsor Sponsor? @relation(fields: [sponsorId], references: [id])
   program Program? @relation(fields: [programId], references: [id])
 
   users User[]
+
+  @@unique([programId, shortDatabase])
+}
+
+model Temporada {
+  id        String   @id @default(uuid())
+  programId String
+  name      String
+  status    Boolean  @default(true)
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
+
+  program Program @relation(fields: [programId], references: [id])
+
+  @@index([programId])
 }
 
 model Role {

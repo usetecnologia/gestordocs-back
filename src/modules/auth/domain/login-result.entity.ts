@@ -10,7 +10,7 @@ export interface AuthUserSnapshot {
   country?: { id: string; name: string; code: string } | null;
   program?: { id: string; name: string; code: string } | null;
   sponsor?: { id: string; name: string; code: string } | null;
-  optionProgram?: { id: string; name: string; shortName: string } | null;
+  optionProgram?: { id: string; shortDatabase: string } | null;
 }
 
 export class LoginResult {

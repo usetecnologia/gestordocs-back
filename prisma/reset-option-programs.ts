@@ -3,11 +3,14 @@ import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import { PrismaClient } from './generated/prisma/client';
 
 // Reconstruye por completo la tabla OptionProgram desde el catálogo de Workuse.
+// - Los option programs se consolidan por la combinación (programId, shortDatabase).
+//   El catálogo externo trae una fila por (país, programa, shortDatabase); al colapsar los
+//   países queda una sola fila por (programa, shortDatabase) — ej. un único "CON" por programa.
+// - programId del catálogo es un ID EXTERNO: se resuelve contra la BD por idExterno.
+// - Los option programs cuyo programa no exista localmente se OMITEN (no se pueden crear sin su FK).
 // - Solo toca la tabla OptionProgram. NO borra usuarios, historiales ni ninguna otra tabla.
-//   (Al borrar OptionProgram, la FK User.optionProgramId queda en NULL por regla ON DELETE SET NULL:
-//    es una actualización de columna en User, no un borrado de filas de usuario ni de historial.)
-// - countryId / programId del catálogo son IDs EXTERNOS: se resuelven contra la BD por idExterno.
-// - Los option programs cuyo país o programa no exista localmente se OMITEN (no se pueden crear sin su FK).
+//   (Al borrar OptionProgram, la FK User.optionProgramId queda en NULL por ON DELETE SET NULL:
+//    es una actualización de columna en User, no un borrado de filas.)
 
 const GENERICS_URL = 'https://secure.workuse.com/api/util/genericos.php';
 const APPLY = process.argv.includes('--apply');
@@ -45,53 +48,30 @@ async function main() {
   const catalog = generics.optionPrograms ?? [];
   console.log(`Option programs en el catálogo externo: ${catalog.length}`);
 
-  // 2. Mapas idExterno -> id local (para resolver los FKs country/program).
-  const [countries, programs] = await Promise.all([
-    prisma.country.findMany({ select: { id: true, idExterno: true } }),
-    prisma.program.findMany({ select: { id: true, idExterno: true } }),
-  ]);
-  const countryByExt = new Map(
-    countries.filter((c) => c.idExterno?.trim()).map((c) => [c.idExterno!.trim(), c.id]),
-  );
+  // 2. Mapa idExterno -> id local del programa (para resolver el FK program).
+  const programs = await prisma.program.findMany({ select: { id: true, idExterno: true } });
   const programByExt = new Map(
     programs.filter((p) => p.idExterno?.trim()).map((p) => [p.idExterno!.trim(), p.id]),
   );
 
-  // 3. Construir las filas válidas y registrar las que se omiten.
-  const rows: {
-    idExterno: string;
-    name: string;
-    shortName: string;
-    shortDatabase: string;
-    countryId: string;
-    programId: string;
-    sponsorId: null;
-    status: boolean;
-    hideJobFair: boolean;
-  }[] = [];
-  const skipped: { id: number; description: string; countryId: number; programId: number }[] = [];
+  // 3. Consolidar por (programId, shortDatabase). Se deduplica: varias filas externas de
+  //    distintos países caen en la misma fila consolidada.
+  const rowByKey = new Map<string, { shortDatabase: string; programId: string; status: boolean }>();
+  const skipped: { id: number; description: string; programId: number }[] = [];
 
   for (const op of catalog) {
-    const countryId = countryByExt.get(String(op.countryId));
     const programId = programByExt.get(String(op.programId));
-    if (!countryId || !programId) {
-      skipped.push({ id: op.id, description: op.description, countryId: op.countryId, programId: op.programId });
+    if (!programId) {
+      skipped.push({ id: op.id, description: op.description, programId: op.programId });
       continue;
     }
-    const name = op.description.trim();
-    const shortName = (name.split(/[\s(]/)[0] || name).slice(0, 50);
-    rows.push({
-      idExterno: String(op.id),
-      name,
-      shortName,
-      shortDatabase: String(op.short_Database).trim().toUpperCase(),
-      countryId,
-      programId,
-      sponsorId: null,
-      status: true,
-      hideJobFair: false,
-    });
+    const shortDatabase = String(op.short_Database).trim().toUpperCase();
+    const key = `${programId}::${shortDatabase}`;
+    if (!rowByKey.has(key)) {
+      rowByKey.set(key, { shortDatabase, programId, status: true });
+    }
   }
+  const rows = [...rowByKey.values()];
 
   // 4. Estado actual (solo informativo).
   const currentCount = await prisma.optionProgram.count();
@@ -100,12 +80,13 @@ async function main() {
   console.log(`\nEstado actual en BD:`);
   console.log(`  OptionProgram existentes (se ${APPLY ? 'BORRARÁN' : 'borrarían'}): ${currentCount}`);
   console.log(`  Usuarios con optionProgramId (quedarán en NULL hasta su próximo login): ${usersLinked}`);
-  console.log(`\nReconstrucción:`);
-  console.log(`  A crear: ${rows.length}`);
-  console.log(`  Omitidos (país/programa inexistente localmente): ${skipped.length}`);
+  console.log(`\nReconstrucción consolidada:`);
+  console.log(`  Filas del catálogo procesadas: ${catalog.length}`);
+  console.log(`  A crear (consolidadas por programa + shortDatabase): ${rows.length}`);
+  console.log(`  Omitidas (programa inexistente localmente): ${skipped.length}`);
   if (skipped.length) {
     for (const s of skipped) {
-      console.log(`    - id ${s.id} "${s.description}" (countryId ext=${s.countryId}, programId ext=${s.programId})`);
+      console.log(`    - id ${s.id} "${s.description}" (programId ext=${s.programId})`);
     }
   }
 
@@ -114,7 +95,7 @@ async function main() {
     return;
   }
 
-  // 5. Aplicar: borrar TODO OptionProgram y recrear, en una sola transacción.
+  // 5. Aplicar: borrar TODO OptionProgram y recrear consolidado, en una sola transacción.
   //    createMany genera los UUID (@default(uuid)) y las fechas por defecto automáticamente.
   const result = await prisma.$transaction(async (tx) => {
     const deleted = await tx.optionProgram.deleteMany({});

@@ -123,7 +123,7 @@ function makeWorkusePort(response: WorkuseGenericsResponse): IWorkuseGenericPort
 // se ejerce findAllForSync (retorna vacío). Se pasa como 5º dependencia del use case.
 function makeOptionProgramRepo() {
   return {
-    findAllForSync: jest.fn(async () => [] as { id: string; idExterno: string | null }[]),
+    findAllForSync: jest.fn(async () => [] as { id: string; programId: string; shortDatabase: string }[]),
     create: jest.fn(),
     update: jest.fn(),
     findAll: jest.fn(),

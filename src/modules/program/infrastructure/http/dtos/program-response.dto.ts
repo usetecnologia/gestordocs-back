@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class ProgramTemporadaDto {
+  @ApiProperty({ example: 'uuid' }) id!: string;
+  @ApiProperty({ example: 'Temporada Verano 2026' }) name!: string;
+  @ApiProperty({ example: true }) status!: boolean;
+}
+
 export class ProgramResponseDto {
   @ApiProperty({ example: 'uuid' }) id!: string;
   @ApiPropertyOptional({ example: 'EXT-001' }) idExterno!: string | null;
@@ -8,4 +14,5 @@ export class ProgramResponseDto {
   @ApiProperty({ example: true }) status!: boolean;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
+  @ApiProperty({ type: [ProgramTemporadaDto] }) temporadas!: ProgramTemporadaDto[];
 }
