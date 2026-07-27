@@ -36,6 +36,10 @@ export class OptionProgramPrismaRepository implements IOptionProgramRepository {
     return { data: data.map(OptionProgramMapper.toDomain), total };
   }
 
+  async findAllForSync() {
+    return this.prisma.optionProgram.findMany({ select: { id: true, idExterno: true } });
+  }
+
   async findById(id: string): Promise<OptionProgram | null> {
     const row = await this.prisma.optionProgram.findUnique({
       where: { id },

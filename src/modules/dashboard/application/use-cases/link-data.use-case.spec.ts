@@ -14,6 +14,7 @@ import type {
   CreateSponsorData,
   UpdateSponsorData,
 } from '@modules/sponsor/domain/sponsor.repository';
+import type { IOptionProgramRepository } from '@modules/option-program/domain/option-program.repository';
 import { Country } from '@modules/country/domain/country.entity';
 import { Program } from '@modules/program/domain/program.entity';
 import { Sponsor } from '@modules/sponsor/domain/sponsor.entity';
@@ -118,6 +119,19 @@ function makeWorkusePort(response: WorkuseGenericsResponse): IWorkuseGenericPort
   return { fetchGenerics: jest.fn().mockResolvedValue(response) };
 }
 
+// Fake mínimo de option-program repo — los tests no envían optionPrograms, así que solo
+// se ejerce findAllForSync (retorna vacío). Se pasa como 5º dependencia del use case.
+function makeOptionProgramRepo() {
+  return {
+    findAllForSync: jest.fn(async () => [] as { id: string; idExterno: string | null }[]),
+    create: jest.fn(),
+    update: jest.fn(),
+    findAll: jest.fn(),
+    findById: jest.fn(),
+    delete: jest.fn(),
+  };
+}
+
 function emptyResponse(overrides: Partial<WorkuseGenericsResponse> = {}): WorkuseGenericsResponse {
   return {
     countries: [],
@@ -143,7 +157,7 @@ describe('LinkDataUseCase', () => {
       }),
     );
 
-    const useCase = new LinkDataUseCase(port, countryRepo as unknown as ICountryRepository, programRepo as unknown as IProgramRepository, sponsorRepo as unknown as ISponsorRepository);
+    const useCase = new LinkDataUseCase(port, countryRepo as unknown as ICountryRepository, programRepo as unknown as IProgramRepository, sponsorRepo as unknown as ISponsorRepository, makeOptionProgramRepo() as unknown as IOptionProgramRepository);
     await useCase.execute();
 
     expect(countryRepo.deleteCalls).toHaveLength(0);
@@ -163,6 +177,7 @@ describe('LinkDataUseCase', () => {
       countryRepo as unknown as ICountryRepository,
       makeProgramRepo([]) as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute();
@@ -181,6 +196,7 @@ describe('LinkDataUseCase', () => {
       countryRepo as unknown as ICountryRepository,
       makeProgramRepo([]) as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute();
@@ -200,6 +216,7 @@ describe('LinkDataUseCase', () => {
       countryRepo as unknown as ICountryRepository,
       makeProgramRepo([]) as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute();
@@ -226,6 +243,7 @@ describe('LinkDataUseCase', () => {
       makeCountryRepo([]) as unknown as ICountryRepository,
       programRepo as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute();
@@ -261,6 +279,7 @@ describe('LinkDataUseCase', () => {
       countryRepo as unknown as ICountryRepository,
       programRepo as unknown as IProgramRepository,
       sponsorRepo as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute(); // no longer throws
@@ -284,6 +303,7 @@ describe('LinkDataUseCase', () => {
       makeCountryRepo([]) as unknown as ICountryRepository,
       programRepo as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     await useCase.execute();
@@ -302,6 +322,7 @@ describe('LinkDataUseCase', () => {
       makeCountryRepo([]) as unknown as ICountryRepository,
       makeProgramRepo([]) as unknown as IProgramRepository,
       sponsorRepo as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     await useCase.execute();
@@ -326,6 +347,7 @@ describe('LinkDataUseCase', () => {
       countryRepo as unknown as ICountryRepository,
       makeProgramRepo([]) as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute();
@@ -342,6 +364,7 @@ describe('LinkDataUseCase', () => {
       makeCountryRepo([]) as unknown as ICountryRepository,
       programRepo as unknown as IProgramRepository,
       makeSponsorRepo([]) as unknown as ISponsorRepository,
+      makeOptionProgramRepo() as unknown as IOptionProgramRepository,
     );
 
     const result = await useCase.execute();

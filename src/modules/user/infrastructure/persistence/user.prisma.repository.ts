@@ -814,20 +814,32 @@ export class UserPrismaRepository implements IUserRepository {
       select: { id: true, code: true, idExterno: true },
     });
 
-    if (normalizedExternalId) {
-      const byExternalId = programs.find((p) => {
-        if (!p.idExterno) return false;
-        const dbExternalId = p.idExterno.trim();
-        return (
-          dbExternalId === normalizedExternalId ||
-          Number(dbExternalId) === Number(normalizedExternalId)
-        );
-      });
-      if (byExternalId) return { id: byExternalId.id };
-    }
+    const byExternalId = normalizedExternalId
+      ? programs.find((p) => {
+          if (!p.idExterno) return false;
+          const dbExternalId = p.idExterno.trim();
+          return (
+            dbExternalId === normalizedExternalId ||
+            Number(dbExternalId) === Number(normalizedExternalId)
+          );
+        })
+      : undefined;
 
-    const byCode = programs.find((p) => p.code.trim().toUpperCase() === normalizedCode);
-    if (byCode) return { id: byCode.id };
+    const byCode = !byExternalId
+      ? programs.find((p) => p.code.trim().toUpperCase() === normalizedCode)
+      : undefined;
+
+    const matched = byExternalId ?? byCode;
+    if (matched) {
+      // Backfill: enlaza el idExterno si se encontró por code pero aún no lo tiene.
+      if (normalizedExternalId && matched.idExterno?.trim() !== normalizedExternalId) {
+        await this.prisma.program.update({
+          where: { id: matched.id },
+          data: { idExterno: normalizedExternalId },
+        });
+      }
+      return { id: matched.id };
+    }
 
     return this.prisma.program.upsert({
       where: { code: normalizedCode },
@@ -850,20 +862,32 @@ export class UserPrismaRepository implements IUserRepository {
       select: { id: true, code: true, idExterno: true },
     });
 
-    if (normalizedExternalId) {
-      const byExternalId = sponsors.find((s) => {
-        if (!s.idExterno) return false;
-        const dbExternalId = s.idExterno.trim();
-        return (
-          dbExternalId === normalizedExternalId ||
-          Number(dbExternalId) === Number(normalizedExternalId)
-        );
-      });
-      if (byExternalId) return { id: byExternalId.id };
-    }
+    const byExternalId = normalizedExternalId
+      ? sponsors.find((s) => {
+          if (!s.idExterno) return false;
+          const dbExternalId = s.idExterno.trim();
+          return (
+            dbExternalId === normalizedExternalId ||
+            Number(dbExternalId) === Number(normalizedExternalId)
+          );
+        })
+      : undefined;
 
-    const byCode = sponsors.find((s) => s.code.trim().toUpperCase() === normalizedCode);
-    if (byCode) return { id: byCode.id };
+    const byCode = !byExternalId
+      ? sponsors.find((s) => s.code.trim().toUpperCase() === normalizedCode)
+      : undefined;
+
+    const matched = byExternalId ?? byCode;
+    if (matched) {
+      // Backfill: enlaza el idExterno si se encontró por code pero aún no lo tiene.
+      if (normalizedExternalId && matched.idExterno?.trim() !== normalizedExternalId) {
+        await this.prisma.sponsor.update({
+          where: { id: matched.id },
+          data: { idExterno: normalizedExternalId },
+        });
+      }
+      return { id: matched.id };
+    }
 
     return this.prisma.sponsor.upsert({
       where: { code: normalizedCode },
@@ -880,15 +904,75 @@ export class UserPrismaRepository implements IUserRepository {
 
   async findOrCreateOptionProgram(
     name: string,
+    code: string | null,
+    externalId: string | null,
     countryId: string,
     programId: string,
     sponsorId: string | null,
   ): Promise<{ id: string }> {
-    const existing = await this.prisma.optionProgram.findFirst({ where: { name }, select: { id: true } });
-    if (existing) return existing;
+    const normalizedCode = code?.trim().toUpperCase() || null;
+    const normalizedExternalId = externalId?.trim() || null;
+
+    const optionPrograms = await this.prisma.optionProgram.findMany({
+      select: { id: true, name: true, shortDatabase: true, idExterno: true },
+    });
+
+    // 1. Primero por ID externo (comparando como string y como número).
+    const byExternalId = normalizedExternalId
+      ? optionPrograms.find((o) => {
+          if (!o.idExterno) return false;
+          const dbExternalId = o.idExterno.trim();
+          return (
+            dbExternalId === normalizedExternalId ||
+            Number(dbExternalId) === Number(normalizedExternalId)
+          );
+        })
+      : undefined;
+
+    // 2. Luego por code (shortDatabase).
+    const byCode =
+      !byExternalId && normalizedCode
+        ? optionPrograms.find((o) => o.shortDatabase?.trim().toUpperCase() === normalizedCode)
+        : undefined;
+
+    // 3. Fallback por nombre — preserva el comportamiento anterior para registros ya existentes.
+    const byName =
+      !byExternalId && !byCode
+        ? optionPrograms.find(
+            (o) => o.name.trim().toUpperCase() === name.trim().toUpperCase(),
+          )
+        : undefined;
+
+    const matched = byExternalId ?? byCode ?? byName;
+
+    // Si ya existe, rellena el idExterno y el code faltantes o desactualizados (backfill).
+    if (matched) {
+      const updates: { idExterno?: string; shortDatabase?: string } = {};
+      if (normalizedExternalId && matched.idExterno?.trim() !== normalizedExternalId) {
+        updates.idExterno = normalizedExternalId;
+      }
+      if (normalizedCode && matched.shortDatabase?.trim().toUpperCase() !== normalizedCode) {
+        updates.shortDatabase = normalizedCode;
+      }
+      if (Object.keys(updates).length > 0) {
+        await this.prisma.optionProgram.update({ where: { id: matched.id }, data: updates });
+      }
+      return { id: matched.id };
+    }
+
     const shortName = name.split(/[\s(]/)[0].slice(0, 50) || name.slice(0, 50);
     return this.prisma.optionProgram.create({
-      data: { name, shortName, shortDatabase: shortName, countryId, programId, sponsorId: sponsorId ?? undefined, status: true, hideJobFair: false },
+      data: {
+        idExterno: normalizedExternalId,
+        name,
+        shortName,
+        shortDatabase: normalizedCode ?? shortName,
+        countryId,
+        programId,
+        sponsorId: sponsorId ?? undefined,
+        status: true,
+        hideJobFair: false,
+      },
       select: { id: true },
     });
   }

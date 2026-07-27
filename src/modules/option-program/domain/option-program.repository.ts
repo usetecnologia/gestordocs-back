@@ -17,8 +17,14 @@ export interface CreateOptionProgramData {
   shortDatabase: string;
   countryId: string;
   programId: string;
-  sponsorId: string;
+  sponsorId?: string | null;
   hideJobFair: boolean;
+}
+
+// Fila liviana para el sync masivo (link-data): solo lo necesario para matchear por idExterno.
+export interface OptionProgramSyncRow {
+  id: string;
+  idExterno: string | null;
 }
 
 export interface UpdateOptionProgramData {
@@ -35,6 +41,7 @@ export interface UpdateOptionProgramData {
 
 export interface IOptionProgramRepository {
   findAll(filters: OptionProgramFilters): Promise<{ data: OptionProgram[]; total: number }>;
+  findAllForSync(): Promise<OptionProgramSyncRow[]>;
   findById(id: string): Promise<OptionProgram | null>;
   create(data: CreateOptionProgramData): Promise<OptionProgram>;
   update(id: string, data: UpdateOptionProgramData): Promise<OptionProgram>;

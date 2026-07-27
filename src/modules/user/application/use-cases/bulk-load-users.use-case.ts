@@ -22,6 +22,8 @@ interface WorkuseUserItem {
   sponsor: string;
   sponsorId?: string;
   optionPrograma: string;
+  optionProgramId?: string;
+  optionProgramBD?: string;
   status?: string;
   employer?: string;
   status_hired?: number | null;
@@ -94,6 +96,8 @@ export class BulkLoadUsersUseCase {
           : null;
         const optionProgram = await this.userRepo.findOrCreateOptionProgram(
           item.optionPrograma.trim(),
+          item.optionProgramBD?.trim().toUpperCase() || null,
+          item.optionProgramId?.trim() || null,
           country.id,
           program.id,
           sponsor?.id ?? null,

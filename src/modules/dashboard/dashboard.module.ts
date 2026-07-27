@@ -15,6 +15,8 @@ import { PROGRAM_REPOSITORY } from '@modules/program/domain/program.repository';
 import { ProgramPrismaRepository } from '@modules/program/infrastructure/persistence/program.prisma.repository';
 import { SPONSOR_REPOSITORY } from '@modules/sponsor/domain/sponsor.repository';
 import { SponsorPrismaRepository } from '@modules/sponsor/infrastructure/persistence/sponsor.prisma.repository';
+import { OPTION_PROGRAM_REPOSITORY } from '@modules/option-program/domain/option-program.repository';
+import { OptionProgramPrismaRepository } from '@modules/option-program/infrastructure/persistence/option-program.prisma.repository';
 import { USER_REPOSITORY } from '@modules/user/domain/user.repository';
 import { UserPrismaRepository } from '@modules/user/infrastructure/persistence/user.prisma.repository';
 
@@ -30,6 +32,7 @@ import { UserPrismaRepository } from '@modules/user/infrastructure/persistence/u
     { provide: COUNTRY_REPOSITORY, useClass: CountryPrismaRepository },
     { provide: PROGRAM_REPOSITORY, useClass: ProgramPrismaRepository },
     { provide: SPONSOR_REPOSITORY, useClass: SponsorPrismaRepository },
+    { provide: OPTION_PROGRAM_REPOSITORY, useClass: OptionProgramPrismaRepository },
     { provide: USER_REPOSITORY, useClass: UserPrismaRepository },
     JwtAuthGuard,
   ],

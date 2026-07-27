@@ -10,4 +10,5 @@ export class SyncDataResponseDto {
   @ApiProperty({ type: SyncEntityResultDto }) countries!: SyncEntityResultDto;
   @ApiProperty({ type: SyncEntityResultDto }) programs!: SyncEntityResultDto;
   @ApiProperty({ type: SyncEntityResultDto }) sponsors!: SyncEntityResultDto;
+  @ApiProperty({ type: SyncEntityResultDto }) optionPrograms!: SyncEntityResultDto;
 }

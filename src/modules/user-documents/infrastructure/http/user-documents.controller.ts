@@ -94,12 +94,13 @@ export class UserDocumentsController {
   })
   @ApiQuery({
     name: 'sponsorIds',
-    required: true,
+    required: false,
     example: 'uuid-sponsor-1,uuid-sponsor-2',
-    description: 'IDs de sponsors separados por coma',
+    description:
+      'IDs de sponsors separados por coma. Si se omite, se devuelven solo los documentos generales.',
   })
   @ApiOkResponse({ type: [DocumentResponseDto] })
-  @ApiBadRequestResponse({ description: 'El parámetro sponsorIds es requerido y debe contener UUIDs válidos.' })
+  @ApiBadRequestResponse({ description: 'El parámetro sponsorIds debe contener UUIDs válidos.' })
   findDocumentsBySponsor(@Query() query: FindDocumentsBySponsorQueryDto) {
     return this.findInformativeDocumentsBySponsorsUseCase.execute(query.sponsorIds);
   }
