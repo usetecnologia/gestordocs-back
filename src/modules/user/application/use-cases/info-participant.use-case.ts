@@ -125,6 +125,8 @@ export class InfoParticipantUseCase {
       : null;
     const { id: optionProgramId } = await this.autoLoginRepo.findOrCreateOptionProgram(
       optionPrograma,
+      data.optionProgramBD?.trim() || null,
+      data.optionProgramId?.trim() || null,
       country.id,
       programId,
       sponsorId,
