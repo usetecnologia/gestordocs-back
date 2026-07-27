@@ -32,6 +32,8 @@ export interface IAutoLoginRepository {
   findOrCreateSponsor(code: string, externalId: string | null): Promise<{ id: string }>;
   findOrCreateOptionProgram(
     name: string,
+    code: string | null,
+    externalId: string | null,
     countryId: string,
     programId: string,
     sponsorId: string | null,

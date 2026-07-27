@@ -25,6 +25,7 @@ enum UserStatus {
   RETIRADO
   ACTIVO
   INACTIVO
+
   @@map("user_status")
 }
 
@@ -50,68 +51,71 @@ enum DocumentSponsorStatus {
 enum EmailTemplateType {
   NORMAL
   PROGRAMADA
+
   @@map("email_template_type")
 }
 
 model Country {
-  id       String   @id @default(uuid())
-  idExterno String?
-  code     String   @unique
-  name     String
-  currency String?
+  id          String   @id @default(uuid())
+  idExterno   String?
+  code        String   @unique
+  name        String
+  currency    String?
   countryCode String?
   status      Boolean  @default(true)
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  createAt    DateTime @default(now())
+  updateAt    DateTime @updatedAt
 
-  users User[]
-  optionPrograms OptionProgram[]
+  users                               User[]
+  optionPrograms                      OptionProgram[]
+  documentProgramDescriptionCountries DocumentProgramDescriptionCountry[]
 }
 
 model Program {
-  id       String   @id @default(uuid())
+  id        String   @id @default(uuid())
   idExterno String?
-  code     String   @unique
-  name     String
-  status      Boolean  @default(true)
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  code      String   @unique
+  name      String
+  status    Boolean  @default(true)
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
 
-  users User[]
-  optionPrograms OptionProgram[]
+  users            User[]
+  optionPrograms   OptionProgram[]
+  documentPrograms DocumentProgram[]
 }
 
 model Sponsor {
-  id       String   @id @default(uuid())
+  id        String   @id @default(uuid())
   idExterno String?
-  code     String   @unique
-  name     String
-  status      Boolean  @default(true)
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  code      String   @unique
+  name      String
+  status    Boolean  @default(true)
+  createAt  DateTime @default(now())
+  updateAt  DateTime @updatedAt
 
-  users User[]
-  optionPrograms OptionProgram[]
+  users            User[]
+  optionPrograms   OptionProgram[]
   documentSponsors DocumentSponsor[]
 }
 
 model OptionProgram {
-  id       String   @id @default(uuid())
-  idExterno String?
-  name     String
-  shortName    String
+  id            String   @id @default(uuid())
+  idExterno     String?
+  name          String
+  shortName     String
   shortDatabase String
-  countryId   String
-  programId String
-  sponsorId String?
-  status      Boolean  @default(true)
-  hideJobFair Boolean
-  createAt DateTime @default(now())
-  updateAt DateTime @updatedAt
+  countryId     String
+  programId     String
+  sponsorId     String?
+  status        Boolean  @default(true)
+  hideJobFair   Boolean
+  createAt      DateTime @default(now())
+  updateAt      DateTime @updatedAt
 
-  country   Country?     @relation(fields: [countryId], references: [id])
-  sponsor   Sponsor?     @relation(fields: [sponsorId], references: [id])
-  program   Program?     @relation(fields: [programId], references: [id])
+  country Country? @relation(fields: [countryId], references: [id])
+  sponsor Sponsor? @relation(fields: [sponsorId], references: [id])
+  program Program? @relation(fields: [programId], references: [id])
 
   users User[]
 }
@@ -126,132 +130,132 @@ model Role {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  users        User[]
+  users User[]
 }
 
 model Person {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  firstname       String
-  middlename      String?
-  lastfathername  String
-  lastmothername  String?
-  birthdate       String?
-  phone     String?   @db.VarChar(20)
-  avatar    String?   @db.VarChar(500)
-  dni       String?   @unique @db.VarChar(20)
+  id             String  @id @default(uuid()) @db.VarChar(36)
+  firstname      String
+  middlename     String?
+  lastfathername String
+  lastmothername String?
+  birthdate      String?
+  phone          String? @db.VarChar(20)
+  avatar         String? @db.VarChar(500)
+  dni            String? @unique @db.VarChar(20)
 
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 }
 
 model User {
-  id        String    @id @default(uuid()) @db.VarChar(36)
-  username  String?
-  password  String?
-  email     String?
-  roleId    String    @map("role_id") @db.VarChar(36)
-  countryId String?
-  sponsorId String?
-  programId String?
-  optionProgramId  String?
-  employer  String?
-  status_hired Int?
-  hired_date String?
-  jo_use_date String?
-  programAgreementOK Boolean?
+  id                    String     @id @default(uuid()) @db.VarChar(36)
+  username              String?
+  password              String?
+  email                 String?
+  roleId                String     @map("role_id") @db.VarChar(36)
+  countryId             String?
+  sponsorId             String?
+  programId             String?
+  optionProgramId       String?
+  employer              String?
+  status_hired          Int?
+  hired_date            String?
+  jo_use_date           String?
+  programAgreementOK    Boolean?
   fechadeenvioalsponsor String?
-  fechaDSinUSE String?
-  statusSolRetiro String?
-  statusExternal String?
-  status    UserStatus @default(ACTIVO)
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  fechaDSinUSE          String?
+  statusSolRetiro       String?
+  statusExternal        String?
+  status                UserStatus @default(ACTIVO)
+  createdAt             DateTime   @default(now()) @map("created_at")
+  updatedAt             DateTime   @updatedAt @map("updated_at")
 
-  role      Role         @relation(fields: [roleId], references: [id])
-  country   Country?     @relation(fields: [countryId], references: [id])
-  sponsor   Sponsor?     @relation(fields: [sponsorId], references: [id])
-  program   Program?     @relation(fields: [programId], references: [id])
-  optionProgram OptionProgram?  @relation(fields: [optionProgramId], references: [id])
+  role          Role           @relation(fields: [roleId], references: [id])
+  country       Country?       @relation(fields: [countryId], references: [id])
+  sponsor       Sponsor?       @relation(fields: [sponsorId], references: [id])
+  program       Program?       @relation(fields: [programId], references: [id])
+  optionProgram OptionProgram? @relation(fields: [optionProgramId], references: [id])
 
   documentsCreated        Documents[]       @relation("DocumentsCreatedBy")
   documentsUpdated        Documents[]       @relation("DocumentsUpdatedBy")
   documentSponsorsCreated DocumentSponsor[] @relation("DocumentSponsorCreatedBy")
   documentSponsorsUpdated DocumentSponsor[] @relation("DocumentSponsorUpdatedBy")
 
-  userDocuments UserDocuments[]
+  userDocuments         UserDocuments[]
   userDocumentHistories UserDocumentHistory[] @relation("UserDocumentHistoryCreatedBy")
-  etiquetasCreated Etiquetas[] @relation("EtiquetasCreatedBy")
-  etiquetasUpdated  Etiquetas[]  @relation("EtiquetasUpdatedBy")
+  etiquetasCreated      Etiquetas[]           @relation("EtiquetasCreatedBy")
+  etiquetasUpdated      Etiquetas[]           @relation("EtiquetasUpdatedBy")
 
-  userObservations  UserObservations[]
-  userObservationsCreated UserObservations[] @relation("UserObservationsCreatedBy")
-  userHistories  UserHistoryStatus[]
+  userObservations        UserObservations[]
+  userObservationsCreated UserObservations[]  @relation("UserObservationsCreatedBy")
+  userHistories           UserHistoryStatus[]
 
   emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
-  emailLogs EmailLog[]
+  emailLogs             EmailLog[]
 }
 
 model UserObservations {
-  id            String     @id @default(uuid()) @db.VarChar(36)
-  userId        String
-  observation   String     @db.Text
-  status        Boolean    @default(true)
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
-  endDate       DateTime?
-  createdById   String?    @map("created_by_id") @db.VarChar(36)
+  id          String    @id @default(uuid()) @db.VarChar(36)
+  userId      String
+  observation String    @db.Text
+  status      Boolean   @default(true)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  endDate     DateTime?
+  createdById String?   @map("created_by_id") @db.VarChar(36)
 
-  users         User      @relation(fields: [userId], references: [id])
-  createdBy     User?     @relation("UserObservationsCreatedBy", fields: [createdById], references: [id])
+  users                    User                       @relation(fields: [userId], references: [id])
+  createdBy                User?                      @relation("UserObservationsCreatedBy", fields: [createdById], references: [id])
   userObservationEtiquetas UserObservationEtiquetas[]
-  userObservationFiles  UserObservationFiles[]
+  userObservationFiles     UserObservationFiles[]
 }
 
 model UserObservationFiles {
-  id            String     @id @default(uuid()) @db.VarChar(36)
+  id                String   @id @default(uuid()) @db.VarChar(36)
   userObservationId String
-  file        String @db.Text
-  createdAt     DateTime   @default(now()) @map("created_at")
+  file              String   @db.Text
+  createdAt         DateTime @default(now()) @map("created_at")
 
-  userObservations    UserObservations @relation(fields: [userObservationId], references: [id])
+  userObservations UserObservations @relation(fields: [userObservationId], references: [id])
 }
 
 model UserObservationEtiquetas {
-  id                  String     @id @default(uuid()) @db.VarChar(36)
-  userObservationId   String
-  etiquetaId          String
+  id                String @id @default(uuid()) @db.VarChar(36)
+  userObservationId String
+  etiquetaId        String
 
-  userObservations    UserObservations @relation(fields: [userObservationId], references: [id])
-  etiquetas           Etiquetas @relation(fields: [etiquetaId], references: [id])
+  userObservations UserObservations @relation(fields: [userObservationId], references: [id])
+  etiquetas        Etiquetas        @relation(fields: [etiquetaId], references: [id])
 }
 
 model UserHistoryStatus {
-  id            String    @id @default(uuid()) @db.VarChar(36)
-  userId        String
-  status        UserStatus
-  createdById   String?   @map("created_by_id") @db.VarChar(36)
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  id          String     @id @default(uuid()) @db.VarChar(36)
+  userId      String
+  status      UserStatus
+  createdById String?    @map("created_by_id") @db.VarChar(36)
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
 
-  users     User      @relation(fields: [userId], references: [id])
+  users User @relation(fields: [userId], references: [id])
 }
 
 model Etiquetas {
-  id           String       @id @default(uuid()) @db.VarChar(36)
-  name         String
-  status       Boolean     @default(true)
-  createdAt     DateTime   @default(now()) @map("created_at")
-  updatedAt     DateTime   @updatedAt @map("updated_at")
+  id        String   @id @default(uuid()) @db.VarChar(36)
+  name      String
+  status    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  createdById String?  @map("created_by_id") @db.VarChar(36)
-  updatedById String?  @map("updated_by_id") @db.VarChar(36)
+  createdById String? @map("created_by_id") @db.VarChar(36)
+  updatedById String? @map("updated_by_id") @db.VarChar(36)
 
-  createdBy        User?             @relation("EtiquetasCreatedBy", fields: [createdById], references: [id])
-  updatedBy        User?             @relation("EtiquetasUpdatedBy", fields: [updatedById], references: [id])
+  createdBy User? @relation("EtiquetasCreatedBy", fields: [createdById], references: [id])
+  updatedBy User? @relation("EtiquetasUpdatedBy", fields: [updatedById], references: [id])
 
-  userDocumentHistoryEtiquetas  UserDocumentHistoryEtiquetas[]
-  userObservationEtiquetas UserObservationEtiquetas[]
+  userDocumentHistoryEtiquetas UserDocumentHistoryEtiquetas[]
+  userObservationEtiquetas     UserObservationEtiquetas[]
 }
 
 model Documents {
@@ -263,7 +267,7 @@ model Documents {
   title        String?
   order        Int?
   siglasCode   String?
-  instructions String       @db.Text
+  instructions String?      @db.Text
   required     Boolean      @default(false)
   status       Boolean      @default(true)
   createdById  String?      @map("created_by_id") @db.VarChar(36)
@@ -275,6 +279,7 @@ model Documents {
   updatedBy        User?             @relation("DocumentsUpdatedBy", fields: [updatedById], references: [id])
   documentSponsors DocumentSponsor[]
   userDocuments    UserDocuments[]
+  documentPrograms DocumentProgram[]
 
   @@index([type], map: "idx_documents_type")
   @@index([showHired], map: "idx_documents_show_hired")
@@ -287,8 +292,8 @@ model DocumentSponsor {
   id          String   @id @default(uuid()) @db.VarChar(36)
   documentId  String   @map("document_id") @db.VarChar(36)
   sponsorId   String   @map("sponsor_id") @db.VarChar(36)
-  required     Boolean      @default(false)
-  order        Int          @default(0)
+  required    Boolean  @default(false)
+  order       Int      @default(0)
   createdById String?  @map("created_by_id") @db.VarChar(36)
   updatedById String?  @map("updated_by_id") @db.VarChar(36)
   status      Boolean  @default(true)
@@ -309,19 +314,72 @@ model DocumentSponsor {
   @@map("document_sponsors")
 }
 
-model UserDocuments {
-  id                  String   @id @default(uuid()) @db.VarChar(36)
-  documentSponsorId   String?
-  documentId          String?
-  userId              String
-  status              DocumentSponsorStatus
-  statusDocument      Boolean  @default(true) @map("status_document")
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+model DocumentProgram {
+  id         String   @id @default(uuid()) @db.VarChar(36)
+  documentId String   @map("document_id") @db.VarChar(36)
+  programId  String   @map("program_id") @db.VarChar(36)
+  status     Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
-  documentSponsors    DocumentSponsor? @relation(fields: [documentSponsorId], references: [id])
-  documents           Documents? @relation(fields: [documentId], references: [id])
-  users               User @relation(fields: [userId], references: [id])
+  document             Documents                           @relation(fields: [documentId], references: [id])
+  program              Program                             @relation(fields: [programId], references: [id])
+  descriptions         DocumentProgramDescription[]
+  descriptionCountries DocumentProgramDescriptionCountry[]
+
+  @@unique([documentId, programId], map: "uq_document_program")
+  @@index([documentId], map: "idx_document_programs_document")
+  @@index([programId], map: "idx_document_programs_program")
+  @@map("document_programs")
+}
+
+model DocumentProgramDescription {
+  id                String   @id @default(uuid()) @db.VarChar(36)
+  documentProgramId String   @map("document_program_id") @db.VarChar(36)
+  title             String   @db.VarChar(200)
+  description       String   @db.Text
+  order             Int      @default(0)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  documentProgram DocumentProgram                     @relation(fields: [documentProgramId], references: [id])
+  countries       DocumentProgramDescriptionCountry[]
+
+  @@index([documentProgramId], map: "idx_document_program_descriptions_document_program")
+  @@map("document_program_descriptions")
+}
+
+model DocumentProgramDescriptionCountry {
+  id                           String   @id @default(uuid()) @db.VarChar(36)
+  documentProgramDescriptionId String   @map("document_program_description_id") @db.VarChar(36)
+  documentProgramId            String   @map("document_program_id") @db.VarChar(36)
+  countryId                    String   @map("country_id") @db.VarChar(36)
+  createdAt                    DateTime @default(now()) @map("created_at")
+
+  documentProgramDescription DocumentProgramDescription @relation(fields: [documentProgramDescriptionId], references: [id])
+  documentProgram            DocumentProgram            @relation(fields: [documentProgramId], references: [id])
+  country                    Country                    @relation(fields: [countryId], references: [id])
+
+  // Un país no puede pertenecer a dos grupos de descripción distintos bajo el mismo programa.
+  @@unique([documentProgramId, countryId], map: "uq_document_program_country")
+  @@index([documentProgramDescriptionId], map: "idx_dpd_countries_description")
+  @@index([countryId], map: "idx_dpd_countries_country")
+  @@map("document_program_description_countries")
+}
+
+model UserDocuments {
+  id                String                @id @default(uuid()) @db.VarChar(36)
+  documentSponsorId String?
+  documentId        String?
+  userId            String
+  status            DocumentSponsorStatus
+  statusDocument    Boolean               @default(true) @map("status_document")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+
+  documentSponsors DocumentSponsor? @relation(fields: [documentSponsorId], references: [id])
+  documents        Documents?       @relation(fields: [documentId], references: [id])
+  users            User             @relation(fields: [userId], references: [id])
 
   userDocumentHistory UserDocumentHistory[]
 }
@@ -336,30 +394,30 @@ model UserDocumentHistory {
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 
-  createdBy User?     @relation("UserDocumentHistoryCreatedBy", fields: [createdById], references: [id])
+  createdBy     User?         @relation("UserDocumentHistoryCreatedBy", fields: [createdById], references: [id])
   userDocuments UserDocuments @relation(fields: [userDocumentsId], references: [id])
 
   userDocumentHistoryEtiquetas UserDocumentHistoryEtiquetas[]
-  userDocumentObservationFiles  UserDocumentObservationFiles[]
+  userDocumentObservationFiles UserDocumentObservationFiles[]
 }
 
 model UserDocumentObservationFiles {
-  id            String     @id @default(uuid()) @db.VarChar(36)
+  id                    String   @id @default(uuid()) @db.VarChar(36)
   userDocumentHistoryId String
-  file        String @db.Text
-  createdAt     DateTime   @default(now()) @map("created_at")
+  file                  String   @db.Text
+  createdAt             DateTime @default(now()) @map("created_at")
 
-  userDocumentHistory    UserDocumentHistory @relation(fields: [userDocumentHistoryId], references: [id])
+  userDocumentHistory UserDocumentHistory @relation(fields: [userDocumentHistoryId], references: [id])
 }
 
 model UserDocumentHistoryEtiquetas {
-  id                      String   @id @default(uuid()) @db.VarChar(36)
-  userDocumentHistoryId   String   @db.VarChar(36)
-  etiquetaId              String   @db.VarChar(36)
-  createdAt           DateTime @default(now()) @map("created_at")
+  id                    String   @id @default(uuid()) @db.VarChar(36)
+  userDocumentHistoryId String   @db.VarChar(36)
+  etiquetaId            String   @db.VarChar(36)
+  createdAt             DateTime @default(now()) @map("created_at")
 
   userDocumentHistory UserDocumentHistory @relation(fields: [userDocumentHistoryId], references: [id])
-  etiquetas Etiquetas @relation(fields: [etiquetaId], references: [id])
+  etiquetas           Etiquetas           @relation(fields: [etiquetaId], references: [id])
 }
 
 model EmailAction {
@@ -382,7 +440,7 @@ model EmailTemplate {
   name        String            @db.VarChar(100)
   code        String            @unique @db.VarChar(50)
   subject     String            @db.VarChar(150)
-  htmlContent String            @db.Text @map("html_content")
+  htmlContent String            @map("html_content") @db.Text
   status      Boolean           @default(true)
   type        EmailTemplateType
   actionId    String            @map("action_id") @db.VarChar(36)
@@ -407,6 +465,7 @@ enum EmailLogStatus {
   ENVIADO
   FALLIDO
   OMITIDO
+
   @@map("email_log_status")
 }
 

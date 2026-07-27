@@ -5,7 +5,7 @@ export class UserDocumentDocumentInfoDto {
   @ApiProperty() name!: string;
   @ApiProperty() title!: string;
   @ApiProperty() type!: string;
-  @ApiProperty() instructions!: string;
+  @ApiPropertyOptional({ nullable: true }) instructions!: string | null;
   @ApiProperty() required!: boolean;
   @ApiPropertyOptional({ nullable: true, example: 1 }) order!: number | null;
 }

@@ -30,6 +30,7 @@ import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import { CreateDocumentUseCase } from '../../application/use-cases/create-document.use-case';
 import { FindAllDocumentUseCase } from '../../application/use-cases/find-all-document.use-case';
 import { FindOneDocumentUseCase } from '../../application/use-cases/find-one-document.use-case';
+import { FindDocumentCountriesUseCase } from '../../application/use-cases/find-document-countries.use-case';
 import { FindPendingDocumentsUseCase } from '../../application/use-cases/find-pending-documents.use-case';
 import { FindAllActiveDocumentsUseCase } from '../../application/use-cases/find-all-active-documents.use-case';
 import { UpdateDocumentUseCase } from '../../application/use-cases/update-document.use-case';
@@ -39,7 +40,7 @@ import { DeleteDocumentUseCase } from '../../application/use-cases/delete-docume
 import { CreateDocumentDto } from './dtos/create-document.dto';
 import { UpdateDocumentDto } from './dtos/update-document.dto';
 import { UpdateDocumentOrderDto } from './dtos/update-document-order.dto';
-import { DocumentResponseDto } from './dtos/document-response.dto';
+import { DocumentCountryResponseDto, DocumentResponseDto } from './dtos/document-response.dto';
 import { FindDocumentsQueryDto } from './dtos/find-documents-query.dto';
 
 @ApiTags('documents')
@@ -52,6 +53,7 @@ export class DocumentController {
     private readonly createDocument: CreateDocumentUseCase,
     private readonly findAllDocument: FindAllDocumentUseCase,
     private readonly findOneDocument: FindOneDocumentUseCase,
+    private readonly findDocumentCountries: FindDocumentCountriesUseCase,
     private readonly findPendingDocuments: FindPendingDocumentsUseCase,
     private readonly updateDocument: UpdateDocumentUseCase,
     private readonly updateDocumentOrder: UpdateDocumentOrderUseCase,
@@ -113,6 +115,19 @@ export class DocumentController {
   @ApiNotFoundResponse({ description: 'Documento no encontrado.' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.findOneDocument.execute(id);
+  }
+
+  @Get(':id/countries')
+  @ApiOperation({
+    summary: 'Países a los que aplica el documento',
+    description:
+      'Retorna la lista de países (sin duplicados) asociados al documento a través de sus programas.',
+  })
+  @ApiParam({ name: 'id', description: 'UUID del documento' })
+  @ApiOkResponse({ type: [DocumentCountryResponseDto] })
+  @ApiNotFoundResponse({ description: 'Documento no encontrado.' })
+  findCountries(@Param('id', ParseUUIDPipe) id: string) {
+    return this.findDocumentCountries.execute(id);
   }
 
   @Patch(':id')

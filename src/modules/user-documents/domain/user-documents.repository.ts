@@ -47,7 +47,7 @@ export interface UserDocumentDocumentInfo {
   title: string;
   type: string;
   formats: string | null;
-  instructions: string;
+  instructions: string | null;
   required: boolean;
   order: number | null;
 }

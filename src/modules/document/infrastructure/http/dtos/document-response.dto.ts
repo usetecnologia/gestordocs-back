@@ -22,15 +22,51 @@ class DocumentSponsorItemDto {
   @ApiProperty() status!: boolean;
 }
 
+class ProgramRefDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() code!: string;
+}
+
+class CountryRefDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty() code!: string;
+}
+
+class DocumentProgramDescriptionCountryItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() countryId!: string;
+  @ApiProperty({ type: CountryRefDto }) country!: CountryRefDto;
+}
+
+class DocumentProgramDescriptionItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() title!: string;
+  @ApiProperty() description!: string;
+  @ApiProperty({ example: 0 }) order!: number;
+  @ApiProperty({ type: [DocumentProgramDescriptionCountryItemDto] })
+  countries!: DocumentProgramDescriptionCountryItemDto[];
+}
+
+class DocumentProgramItemDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() programId!: string;
+  @ApiProperty({ type: ProgramRefDto }) program!: ProgramRefDto;
+  @ApiProperty() status!: boolean;
+  @ApiProperty({ type: [DocumentProgramDescriptionItemDto] })
+  descriptions!: DocumentProgramDescriptionItemDto[];
+}
+
 export class DocumentResponseDto {
   @ApiProperty({ example: 'uuid-del-documento' }) id!: string;
-  @ApiProperty({ example: 'Pasaporte Vigente' }) title!: string;
+  @ApiPropertyOptional({ example: 'Pasaporte Vigente' }) title!: string | null;
   @ApiProperty({ example: 'Pasaporte' }) name!: string;
   @ApiProperty({ enum: TypeDocument }) type!: TypeDocument;
   @ApiPropertyOptional({ example: 'pdf,jpg,png' }) formats!: string | null;
   @ApiProperty({ enum: TypeHired }) showHired!: TypeHired;
   @ApiPropertyOptional({ example: 'PAS' }) siglasCode!: string | null;
-  @ApiProperty({ example: 'El documento debe estar vigente.' }) instructions!: string;
+  @ApiPropertyOptional({ example: 'El documento debe estar vigente.' }) instructions!: string | null;
   @ApiPropertyOptional({ example: 1 }) order!: number | null;
   @ApiProperty({ example: false }) required!: boolean;
   @ApiProperty({ example: true }) status!: boolean;
@@ -39,6 +75,13 @@ export class DocumentResponseDto {
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
   @ApiProperty({ type: [DocumentSponsorItemDto] }) sponsors!: DocumentSponsorItemDto[];
+  @ApiProperty({ type: [DocumentProgramItemDto] }) programs!: DocumentProgramItemDto[];
   @ApiPropertyOptional({ type: UserRefDto }) createdBy!: UserRefDto | null;
   @ApiPropertyOptional({ type: UserRefDto }) updatedBy!: UserRefDto | null;
+}
+
+export class DocumentCountryResponseDto {
+  @ApiProperty({ example: 'uuid-del-pais' }) id!: string;
+  @ApiProperty({ example: 'PE' }) code!: string;
+  @ApiProperty({ example: 'Perú' }) name!: string;
 }

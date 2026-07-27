@@ -36,7 +36,7 @@ export class DashboardController {
   ) {}
 
   @Get('link-data')
-  @ApiOperation({ summary: 'Sync countries, programs and sponsors from Workuse API' })
+  @ApiOperation({ summary: 'Sync countries, programs, sponsors and option programs from Workuse API' })
   @ApiOkResponse({ type: SyncDataResponseDto })
   @ApiInternalServerErrorResponse({ description: 'Workuse API unreachable or returned an error' })
   linkData(): Promise<SyncDataResponseDto> {

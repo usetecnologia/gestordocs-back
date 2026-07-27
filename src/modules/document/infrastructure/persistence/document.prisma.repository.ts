@@ -1,18 +1,95 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@shared/prisma/prisma.service';
+import type { Prisma } from 'prisma/generated/prisma/client';
 import {
   IDocumentRepository,
   DocumentFilters,
   CreateDocumentData,
   UpdateDocumentData,
+  DocumentProgramInputData,
+  DocumentCountryItem,
 } from '../../domain/document.repository';
 import { Document } from '../../domain/document.entity';
 import { TypeDocument } from '../../domain/document.enums';
 import { DocumentMapper, DOCUMENT_FULL_INCLUDE, PrismaDocumentFull } from './document.mapper';
 
+type TransactionClient = Prisma.TransactionClient;
+
 @Injectable()
 export class DocumentPrismaRepository implements IDocumentRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async createPrograms(
+    tx: TransactionClient,
+    documentId: string,
+    programs: DocumentProgramInputData[],
+  ): Promise<void> {
+    for (const p of programs) {
+      const documentProgram = await tx.documentProgram.create({
+        data: { documentId, programId: p.programId, status: p.status ?? true },
+      });
+
+      const descriptions = p.descriptions ?? [];
+      for (let index = 0; index < descriptions.length; index++) {
+        const d = descriptions[index];
+        const description = await tx.documentProgramDescription.create({
+          data: {
+            documentProgramId: documentProgram.id,
+            title: d.title,
+            description: d.description,
+            order: index,
+          },
+        });
+
+        if (d.countryIds.length > 0) {
+          await tx.documentProgramDescriptionCountry.createMany({
+            data: d.countryIds.map((countryId) => ({
+              documentProgramDescriptionId: description.id,
+              documentProgramId: documentProgram.id,
+              countryId,
+            })),
+          });
+        }
+      }
+    }
+  }
+
+  private async replacePrograms(
+    tx: TransactionClient,
+    documentId: string,
+    programs: DocumentProgramInputData[],
+  ): Promise<void> {
+    // Sin historial de usuario dependiendo de este vínculo (a diferencia de DocumentSponsor),
+    // se reemplaza por completo en cada actualización: más simple que un diff y sin riesgo.
+    const existingPrograms = await tx.documentProgram.findMany({
+      where: { documentId },
+      select: { id: true },
+    });
+    const existingProgramIds = existingPrograms.map((p) => p.id);
+
+    if (existingProgramIds.length > 0) {
+      const existingDescriptions = await tx.documentProgramDescription.findMany({
+        where: { documentProgramId: { in: existingProgramIds } },
+        select: { id: true },
+      });
+      const existingDescriptionIds = existingDescriptions.map((d) => d.id);
+
+      if (existingDescriptionIds.length > 0) {
+        await tx.documentProgramDescriptionCountry.deleteMany({
+          where: { documentProgramDescriptionId: { in: existingDescriptionIds } },
+        });
+        await tx.documentProgramDescription.deleteMany({
+          where: { id: { in: existingDescriptionIds } },
+        });
+      }
+
+      await tx.documentProgram.deleteMany({ where: { id: { in: existingProgramIds } } });
+    }
+
+    if (programs.length > 0) {
+      await this.createPrograms(tx, documentId, programs);
+    }
+  }
 
   async findAll({ page, limit, type, showHired, status, search }: DocumentFilters): Promise<{
     data: Document[];
@@ -103,32 +180,48 @@ export class DocumentPrismaRepository implements IDocumentRepository {
     return row ? DocumentMapper.toDomain(row as PrismaDocumentFull) : null;
   }
 
-  async create(data: CreateDocumentData): Promise<Document> {
-    const { sponsors, createdById, ...fields } = data;
+  async findCountriesByDocumentId(documentId: string): Promise<DocumentCountryItem[]> {
+    const rows = await this.prisma.documentProgramDescriptionCountry.findMany({
+      where: { documentProgram: { documentId } },
+      distinct: ['countryId'],
+      include: { country: { select: { id: true, code: true, name: true } } },
+    });
+    return rows.map((r) => r.country);
+  }
 
-    const row = await this.prisma.documents.create({
-      data: {
-        ...fields,
-        ...(createdById && { createdById }),
-        ...(sponsors?.length && {
-          documentSponsors: {
-            create: sponsors.map(({ sponsorId, required, order }) => ({
-              sponsorId,
-              required: required ?? false,
-              order,
-              ...(createdById && { createdById }),
-            })),
-          },
-        }),
-      },
-      include: DOCUMENT_FULL_INCLUDE,
+  async create(data: CreateDocumentData): Promise<Document> {
+    const { sponsors, programs, createdById, ...fields } = data;
+
+    const documentId = await this.prisma.$transaction(async (tx) => {
+      const row = await tx.documents.create({
+        data: {
+          ...fields,
+          ...(createdById && { createdById }),
+          ...(sponsors?.length && {
+            documentSponsors: {
+              create: sponsors.map(({ sponsorId, required, order }) => ({
+                sponsorId,
+                required: required ?? false,
+                order,
+                ...(createdById && { createdById }),
+              })),
+            },
+          }),
+        },
+      });
+
+      if (programs?.length) {
+        await this.createPrograms(tx, row.id, programs);
+      }
+
+      return row.id;
     });
 
-    return DocumentMapper.toDomain(row as PrismaDocumentFull);
+    return (await this.findById(documentId))!;
   }
 
   async update(id: string, data: UpdateDocumentData): Promise<Document> {
-    const { sponsors, updatedById, ...fields } = data;
+    const { sponsors, programs, updatedById, ...fields } = data;
 
     await this.prisma.$transaction(async (tx) => {
       await tx.documents.update({
@@ -138,6 +231,10 @@ export class DocumentPrismaRepository implements IDocumentRepository {
           ...(updatedById !== undefined && { updatedById }),
         },
       });
+
+      if (programs !== undefined) {
+        await this.replacePrograms(tx, id, programs);
+      }
 
       if (fields.status !== undefined) {
         // Siempre sincronizar registros vinculados vía documentSponsorId (sponsor-específicos)
@@ -354,6 +451,32 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       }
 
       await tx.documentSponsor.deleteMany({ where: { documentId: id } });
+
+      const documentPrograms = await tx.documentProgram.findMany({
+        where: { documentId: id },
+        select: { id: true },
+      });
+      const documentProgramIds = documentPrograms.map((dp) => dp.id);
+
+      if (documentProgramIds.length > 0) {
+        const descriptions = await tx.documentProgramDescription.findMany({
+          where: { documentProgramId: { in: documentProgramIds } },
+          select: { id: true },
+        });
+        const descriptionIds = descriptions.map((d) => d.id);
+
+        if (descriptionIds.length > 0) {
+          await tx.documentProgramDescriptionCountry.deleteMany({
+            where: { documentProgramDescriptionId: { in: descriptionIds } },
+          });
+          await tx.documentProgramDescription.deleteMany({
+            where: { id: { in: descriptionIds } },
+          });
+        }
+
+        await tx.documentProgram.deleteMany({ where: { id: { in: documentProgramIds } } });
+      }
+
       await tx.documents.delete({ where: { id } });
     });
   }
