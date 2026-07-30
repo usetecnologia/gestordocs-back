@@ -18,6 +18,7 @@
     "update:document-status": "ts-node -r tsconfig-paths/register prisma/update-document-status-by-dni.ts",
     "backfill:document-program-country": "ts-node -r tsconfig-paths/register prisma/backfill-document-program-country.ts",
     "reset:option-programs": "ts-node -r tsconfig-paths/register prisma/reset-option-programs.ts",
+    "verify:user-documents-unique": "ts-node -r tsconfig-paths/register prisma/verify-user-documents-unique.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -108,7 +109,8 @@
       "^@shared/(.*)$": "<rootDir>/../src/shared/$1",
       "^@common/(.*)$": "<rootDir>/../src/common/$1",
       "^@config/(.*)$": "<rootDir>/../src/config/$1",
-      "^@modules/(.*)$": "<rootDir>/../src/modules/$1"
+      "^@modules/(.*)$": "<rootDir>/../src/modules/$1",
+      "^prisma/(.*)$": "<rootDir>/../prisma/$1"
     }
   }
 }
