@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { $Enums } from 'prisma/generated/prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { $Enums, Prisma } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import {
   IUserDocumentsRepository,
@@ -21,6 +21,20 @@ import {
   RefreshDocumentFromLatestData,
   PassportDocumentCandidate,
 } from '../../domain/user-documents.repository';
+
+const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
+
+/**
+ * Choque contra los índices únicos de `UserDocuments` (uq_user_documents_sponsor_active /
+ * uq_user_documents_document_active), que impiden dos registros activos del mismo documento
+ * para un mismo participante.
+ */
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === UNIQUE_CONSTRAINT_VIOLATION
+  );
+}
 
 const USER_DOCS_INCLUDE = {
   documentSponsors: {
@@ -129,7 +143,23 @@ async function buildPersonMap(
 
 @Injectable()
 export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
+  private readonly logger = new Logger(UserDocumentsPrismaRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Descarta el fallo de una escritura de la sincronización cuando lo causó una ejecución
+   * concurrente; cualquier otro error se propaga intacto.
+   *
+   * El sync es idempotente: se re-ejecuta en cada consulta de documentos del participante. Si dos
+   * ejecuciones concurren, la que pierde la carrera intenta crear o activar un registro que la otra
+   * ya dejó listo y el índice único la rechaza — esa escritura ya no aporta nada. Propagarla
+   * convertiría una carrera inofensiva en un error 500.
+   */
+  private skipIfConcurrentSync(error: unknown, description: string): void {
+    if (!isUniqueConstraintViolation(error)) throw error;
+    this.logger.warn(`Sincronización concurrente: se omite ${description}.`);
+  }
 
   async findByUserId(userId: string): Promise<ExistingUserDocument[]> {
     // Ordenado por última actividad real (updatedAt), no por fecha de creación del vínculo:
@@ -198,18 +228,23 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void> {
-    await this.prisma.userDocuments.create({
-      data: {
-        userId: data.userId,
-        documentSponsorId: data.documentSponsorId ?? null,
-        documentId: data.documentId ?? null,
-        status: 'PENDIENTE',
-        statusDocument: true,
-        userDocumentHistory: {
-          create: { status: 'PENDIENTE' },
+    try {
+      await this.prisma.userDocuments.create({
+        data: {
+          userId: data.userId,
+          documentSponsorId: data.documentSponsorId ?? null,
+          documentId: data.documentId ?? null,
+          status: 'PENDIENTE',
+          statusDocument: true,
+          userDocumentHistory: {
+            create: { status: 'PENDIENTE' },
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      const target = data.documentSponsorId ?? data.documentId;
+      this.skipIfConcurrentSync(error, `la creación del documento ${target}`);
+    }
   }
 
   async cloneDocumentForNewSponsor({
@@ -219,17 +254,24 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     url,
   }: CloneDocumentForSponsorData): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
-    await this.prisma.userDocuments.create({
-      data: {
-        userId,
-        documentSponsorId,
-        status: castedStatus,
-        statusDocument: true,
-        userDocumentHistory: {
-          create: { status: castedStatus, url },
+    try {
+      await this.prisma.userDocuments.create({
+        data: {
+          userId,
+          documentSponsorId,
+          status: castedStatus,
+          statusDocument: true,
+          userDocumentHistory: {
+            create: { status: castedStatus, url },
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      this.skipIfConcurrentSync(
+        error,
+        `el clonado del documento ${documentSponsorId}`,
+      );
+    }
   }
 
   async refreshDocumentFromLatest({
@@ -238,22 +280,36 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     url,
   }: RefreshDocumentFromLatestData): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
-    await this.prisma.$transaction([
-      this.prisma.userDocuments.update({
-        where: { id: userDocumentId },
-        data: { status: castedStatus, statusDocument: true },
-      }),
-      this.prisma.userDocumentHistory.create({
-        data: { userDocumentsId: userDocumentId, status: castedStatus, url },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.userDocuments.update({
+          where: { id: userDocumentId },
+          data: { status: castedStatus, statusDocument: true },
+        }),
+        this.prisma.userDocumentHistory.create({
+          data: { userDocumentsId: userDocumentId, status: castedStatus, url },
+        }),
+      ]);
+    } catch (error) {
+      this.skipIfConcurrentSync(
+        error,
+        `la puesta al día del documento ${userDocumentId}`,
+      );
+    }
   }
 
   async updateStatusDocument(id: string, statusDocument: boolean): Promise<void> {
-    await this.prisma.userDocuments.update({
-      where: { id },
-      data: { statusDocument },
-    });
+    try {
+      await this.prisma.userDocuments.update({
+        where: { id },
+        data: { statusDocument },
+      });
+    } catch (error) {
+      this.skipIfConcurrentSync(
+        error,
+        `el cambio de vigencia del documento ${id}`,
+      );
+    }
   }
 
   async addHistory(userDocumentsId: string, status: string, url: string, createdById: string): Promise<void> {
