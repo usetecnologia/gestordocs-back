@@ -30,7 +30,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 // Etiqueta "Observado por IA" — aplicada a toda observación generada automáticamente por este use case.
-const OBSERVADO_POR_IA_ETIQUETA_ID = '1bce007e-29de-439b-af33-d7f64cb2e567';
+const OBSERVADO_POR_IA_ETIQUETA_ID = '6de02d0d-a5ef-40c7-8488-7cf604a16d43';
 
 interface PassportReportRow {
   dni: string;
