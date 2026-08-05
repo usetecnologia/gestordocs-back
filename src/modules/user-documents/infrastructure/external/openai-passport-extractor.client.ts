@@ -66,7 +66,14 @@ Instrucciones estrictas:
 
 @Injectable()
 export class OpenAiPassportExtractorClient implements IPassportExtractorPort {
-  private readonly client = new OpenAI({ apiKey: envs.OPENAI_API_KEY });
+  // Timeout y reintentos explícitos: por defecto el SDK espera hasta 10 minutos por llamada y
+  // reintenta 2 veces, así que un solo pasaporte podía retener uno de los workers de la revisión
+  // masiva hasta media hora. Con estos valores el tope por documento son ~6 minutos.
+  private readonly client = new OpenAI({
+    apiKey: envs.OPENAI_API_KEY,
+    timeout: 120_000,
+    maxRetries: 2,
+  });
   private readonly model = envs.OPENAI_PASSPORT_MODEL;
 
   async extract(file: PassportSourceFile): Promise<PassportData> {

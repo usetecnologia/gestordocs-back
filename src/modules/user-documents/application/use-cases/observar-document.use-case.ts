@@ -4,6 +4,7 @@ import {
   IUserDocumentsRepository,
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
+import { resolveCurrentFileUrl } from '../../domain/user-document-file';
 import type { MulterFile } from '../../domain/multer-file.interface';
 import type { ObservarDocumentDto } from '../../infrastructure/http/dtos/review-document.dto';
 
@@ -15,13 +16,18 @@ export class ObservarDocumentUseCase {
     private readonly awsS3Service: AwsS3Service,
   ) {}
 
-  async execute(dto: ObservarDocumentDto, reviewedById: string, files?: MulterFile[]): Promise<void> {
-    const userDoc = await this.userDocumentsRepo.findByIdWithHistory(dto.userDocumentId);
-    if (!userDoc) throw new NotFoundException(`UserDocument #${dto.userDocumentId} not found`);
-
-    const lastSubido = [...userDoc.history]
-      .reverse()
-      .find((h) => h.status === 'SUBIDO');
+  async execute(
+    dto: ObservarDocumentDto,
+    reviewedById: string,
+    files?: MulterFile[],
+  ): Promise<void> {
+    const userDoc = await this.userDocumentsRepo.findByIdWithHistory(
+      dto.userDocumentId,
+    );
+    if (!userDoc)
+      throw new NotFoundException(
+        `UserDocument #${dto.userDocumentId} not found`,
+      );
 
     let fileUrls: string[] = [];
     if (files?.length) {
@@ -36,7 +42,7 @@ export class ObservarDocumentUseCase {
       observation: dto.observation,
       etiquetaIds: dto.etiquetaIds,
       reviewedById,
-      url: lastSubido?.url ?? null,
+      url: resolveCurrentFileUrl(userDoc.history),
       files: fileUrls,
     });
   }
