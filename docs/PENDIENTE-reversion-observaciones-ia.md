@@ -5,11 +5,40 @@
 > **`docs/PENDIENTE-revision-masiva-pasaportes.md`** — conviene leer al menos su sección 1 antes que
 > esto.
 >
-> **Estado: Fase 1 (inventario) TERMINADA. Nada se ha escrito todavía en la base de datos.**
+> ## ✅ EJECUTADA EL 5/8/2026 — 230 observaciones revertidas
 >
-> **▶ Al retomar, empezar por la §6: son las preguntas que hay que hacerle al usuario antes de
-> escribir una sola línea del script de ejecución.** Son 9, en orden de prioridad (3 bloqueantes, 3
-> operativas, 3 de negocio), cada una con sus opciones y una recomendación.
+> La reversión **ya se aplicó y se verificó**. Resumen:
+>
+> ```
+> 245  observaciones de la corrida errónea
+> −15  excluidas por decisión (detalle abajo)
+> ────
+> 230  revertidas · 0 omitidas · 0 errores
+> ```
+>
+> - **Documentos:** 224 volvieron a `REVISADO`, 4 a `SUBIDO`, 2 a `OBSERVADO` (los que ya estaban
+>   observados de antes).
+> - **Participantes:** 185 con su estado anterior restaurado; 45 recalculados con
+>   `TerminarRevisionUseCase` (todos `OBSERVADO_SPONSOR` → `ENVIADO_SPONSOR`), sin enviar correos.
+> - **Excluidos (15):** 2 registros de prueba (`12345666`, `12345678`), 5 participantes `INACTIVO`
+>   (`70487231`, `71155531`, `71183524`, `73254293`, `73984442`) y 8 con el documento ya tocado
+>   después de la corrida (`70488760`, `70496908`, `70538653`, `70627745`, `70720728`, `71905387`,
+>   `74212822`, `76016920`).
+>
+> **Verificación (`revert-ia-05-verificar.ts`):** 0 historiales sobrevivientes, 0 documentos con el
+> estado equivocado, 228 de 230 participantes exactos. Los 2 restantes (`70444426`, `76396846`) no
+> son un fallo: **subieron un documento después** de la reversión y el sistema recalculó su estado
+> correctamente (`DOCUMENTOS_SUBIDOS` y `PENDIENTE_REVISAR`).
+>
+> **Log completo:** `reversion-ia/revert-ia-04-aplicado.json` — incluye cada fila borrada entera
+> (historial, etiquetas y fila de estado), suficiente para reconstruirlas sin recurrir al backup.
+>
+> > **Nota operativa:** el proceso quedó colgado al cerrar (el contexto de Nest deja handles
+> > abiertos) **después** de completar todo y escribir el log, y hubo que matarlo. Ya se le agregó un
+> > `process.exit` al final. Si se vuelve a correr, el trabajo se completa igual: verificar siempre
+> > con `revert-ia-05-verificar.ts` en vez de fiarse del código de salida.
+>
+> Lo que sigue abajo es el análisis previo, que se conserva como registro de cómo se llegó acá.
 
 ---
 
@@ -54,7 +83,53 @@ repositorio). El estado anterior es el de la fila inmediatamente anterior a la d
 
 ---
 
-## 2. Resultado de la Fase 1 (inventario, ya ejecutada)
+## 2. Resultado de la Fase 1 (inventario)
+
+> ### ⚠️ RECALCULADO EL 5/8/2026 POR LA TARDE — los números de la mañana ya no valen
+>
+> ```
+> Observaciones con la etiqueta IA:      246
+>   De la corrida errónea del 4/8:       245   ← esto es lo que hay que revertir
+>   Manual, hecha por otra persona hoy:    1   ← NO TOCAR (ver más abajo)
+>
+> De las 245 de la corrida:
+>   Documento intacto → revertible:      238
+>   Documento ya tocado por alguien:       7   ← se omiten
+> ```
+>
+> **Dos cosas cambiaron y las dos importan.**
+>
+> **(1) La etiqueta ya no identifica la corrida.** El 5/8 a las 16:10 UTC alguien del equipo
+> (`fe52eded-04a3-48d2-8c32-dc5dba5429aa`) observó **a mano** el documento del DNI `73039210` usando
+> la etiqueta *"Observado por IA"*, con un texto propio ("No es el documento solicitado. La Oferta de
+> Trabajo de ASPIRE…"). El script de ejecución **no puede filtrar solo por etiqueta**: tiene que
+> exigir además `created_by_id = d5165eff-2df4-4a87-a65e-3ea50cf4ad3d` **y** la ventana del 4/8
+> (17:49:04 → 21:46:43). Si el equipo sigue usando esa etiqueta, aparecerán más casos así.
+>
+> **(2) Los "conflictos" se dispararon de 9 a 201, pero no son lo que parecen.** El culpable es el
+> cron **`bulk-info-participants-daily`** (`@Cron('0 0 2 * * *')`, hora de Perú = 07:00 UTC), que
+> esta madrugada movió **~2.000 estados de participantes** (2.904 cambios de estado en total hoy).
+> No es trabajo humano pisando la corrida: es la sincronización diaria haciendo su trabajo. De los
+> 201 conflictos, **194 son solo "el estado del participante se movió"** y el documento sigue
+> intacto en `OBSERVADO`; solo **7** tienen el documento realmente tocado.
+>
+> **Y eso simplifica la decisión P2 en vez de complicarla:** ese mismo cron llama a
+> `TerminarRevisionUseCase`, que **calcula el estado del participante a partir del estado real de sus
+> documentos**. Si revertimos los documentos, el sync de la madrugada siguiente recalcula los estados
+> solo — no hay que restaurarlos a mano.
+>
+> **Excepción:** los estados de `STATUSES_LOCKED_FROM_DOCUMENT_SYNC` (`ENVIADO_SPONSOR`,
+> `OBSERVADO_SPONSOR`, `RECHAZADO_SPONSOR`, `APROBADO_SPONSOR`, `DS2019_EMITIDO`, `RETENIDO_USE`,
+> `INACTIVO`) **no** se reevalúan. Reparto actual de los 238:
+>
+> | Estado actual del participante | Casos | Qué pasa al revertir el documento |
+> |---|---|---|
+> | `OBSERVADO` | 187 | El sync de las 02:00 le recalcula el estado solo |
+> | `OBSERVADO_SPONSOR` | 46 | **Bloqueado al sync** — requiere decisión |
+> | `INACTIVO` | 5 | **Bloqueado al sync** — requiere decisión |
+>
+> Los números de abajo son los del inventario original del 5/8 por la mañana; se dejan como
+> referencia histórica.
 
 ```
 Historiales escritos por la corrida IA:  245   (todos del 4/8, un solo autor)
@@ -220,6 +295,11 @@ guardados en S3 y 3 de ellos no se pueden ver desde el 3 de julio. Al revertir s
 > contra la BD apareció **76459964**, que faltaba porque la lista se armó desde el Excel y ese
 > participante es uno de los 9 que el Excel omitía. Las otras 22 observaciones por content-type
 > siguen confirmadas como falsos positivos, sin cambios.
+>
+> **Y esta pregunta ya casi se responde sola:** los archivos en S3 **ya se corrigieron** ese mismo
+> día (ver §4.4 b del otro documento). Los 6 se ven bien ahora, así que la observación perdió su
+> motivo y revertirla no deja ningún problema sin atender. La opción recomendada —revertir igual y
+> corregir aparte— ya está medio ejecutada: falta solo revertir.
 
 **P8. La acción de correo `DOCUMENTO_OBSERVADO` no tiene plantilla** (§3), así que **hoy ningún
 participante recibe aviso cuando le observan un documento**, ni en las revisiones manuales. ¿Es
@@ -294,6 +374,7 @@ npx ts-node -r tsconfig-paths/register prisma/<script>.ts [args]
 | `revert-ia-01-inventario.ts [carpeta]` | **Fase 1.** Genera `reversion-ia/inventario.json` + Excel con todo el mapa de la reversión |
 | `revert-ia-02-detalle.ts` | Desgloses finos sobre el inventario: INACTIVOs, ya-observados, conflictos, actividad del sistema |
 | `revert-ia-03-correos.ts` | Comprueba si la corrida pudo enviar correos (acción + plantillas + log) |
+| `inspect-actividad-reciente.ts` | Qué se movió desde la corrida: observaciones IA por día y autor, ráfagas de cambios de estado, el cron de las 02:00 |
 | `inspect-participant-passport.ts <dni>` | Todos los documentos e historiales de un participante |
 | `inspect-run-scope.ts` | Tipos reales de columnas en producción y alcance de la corrida por día |
 | `inspect-run-crosscheck.ts <excel>` | Cruza las observaciones en BD contra el Excel del reporte |
@@ -305,11 +386,14 @@ Todos son borrables cuando el incidente esté cerrado.
 
 ## 11. Próximo paso concreto
 
-1. Obtener las 3 respuestas de la §6.
-2. Hacer el `mysqldump` de la §7.
-3. Construir `revert-ia-04-aplicar.ts` con los requisitos de la §8.
-4. Correrlo en `--dry-run`, revisar la salida juntos.
-5. Aplicar en ventana de baja actividad.
-6. Verificar con la §9.
-7. Después, retomar el resto del incidente (fixes 3, 4 y 5, y la reparación de los archivos de S3)
-   desde `docs/PENDIENTE-revision-masiva-pasaportes.md`.
+✅ Pasos 1 a 6 **completados el 5/8/2026** (ver el recuadro del encabezado).
+
+Lo que queda:
+
+- ⬜ **Decidir qué hacer con los 15 excluidos.** Los 5 `INACTIVO` y los 2 de prueba siguen con su
+  documento en `OBSERVADO`; los 8 tocados después ya los está trabajando el equipo.
+- ⬜ **Avisar al equipo de dos cosas:** que 230 observaciones desaparecieron (quien vio una ayer no
+  la va a encontrar), y que **no usen la etiqueta "Observado por IA" a mano** — ya pasó el 5/8 con el
+  DNI `73039210` y rompe la trazabilidad de esta corrida.
+- ⬜ Retomar el resto del incidente desde `docs/PENDIENTE-revision-masiva-pasaportes.md`: quedan los
+  **3.395 archivos con `octet-stream`** en S3 y el **barrido de extensiones** (§4.5).

@@ -359,12 +359,47 @@ para quitar una observación es *aceptar* el documento, y sin el fix 1 eso borra
 exactamente lo que le pasó a Mariana. Sin el fix, limpiar los 22 falsos positivos rompería 22
 documentos más.
 
-**a) URL de Mariana (70627745)** — 1 fila, recuperable.
-`userDocumentId = a7733b6e-15e8-400e-8569-a0ad1054f551`. Su último historial (`2026-08-04 22:06:59`,
-`REVISADO`) tiene `url = NULL`; la URL previa es
-`https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf`.
+**a) URLs perdidas ✅ HECHO Y APLICADO (5/8/2026) — no era solo Mariana: eran 6.**
 
-**b) Los 6 archivos con mismatch real** — `CopyObject` sobre sí mismos con
+Con el filtro preciso (`prisma/inspect-lost-urls.ts`) el alcance real quedó medido:
+
+- **46 veces** ocurrió el bug en total (histórico). Muy por debajo de la cota de ~194 que daba la
+  nota del fix 1: la mayoría se resolvió sola porque después se resubió el archivo. La mayor parte
+  son historiales `OBSERVADO`, o sea el bug de `ObservarDocumentUseCase`, no el de aceptar.
+- **6 documentos estaban rotos** (último historial sin URL, todos activos, archivo intacto en S3):
+
+| DNI | Documento | Status | Se perdió el |
+|---|---|---|---|
+| 12345678 | (sin nombre, vía sponsor) | REVISADO | 16/06 22:25 |
+| 71386052 | Pasaporte | OBSERVADO | 03/07 03:58 |
+| 70714833 | Pasaporte | OBSERVADO | 30/07 21:04 |
+| 70627745 (Mariana) | Pasaporte | REVISADO | 04/08 22:06 |
+| 72740487 | Pasaporte | OBSERVADO | 04/08 22:40 |
+| 70538653 | Pasaporte | REVISADO | **05/08 11:23** |
+
+**El último es del mismo 5/8**: mientras el fix 1 no se despliegue, el bug sigue generando casos
+nuevos. Volver a correr `inspect-lost-urls.ts` después del despliegue para barrer los que aparezcan
+entre medio.
+
+Se repararon los 6 con `prisma/repair-01-lost-urls.ts --apply`, previa verificación en S3 de que
+cada archivo existe. Ninguno tenía la etiqueta IA, así que la reversión pendiente no los toca.
+Verificado después: cero documentos rotos. El log con el SQL de reversión está en
+`reparacion-datos/repair-01-lost-urls.json`.
+
+**b) Content-Type en S3 ✅ HECHO Y APLICADO (5/8/2026) — eran 15, no 6.**
+
+El barrido completo (`prisma/repair-02-s3-content-type.ts`, ver §4.5) encontró **15** archivos con
+el bug del fix 2, no 6: la tabla de abajo solo cubría pasaportes de la corrida IA, pero el bug afectó
+a cualquier documento subido con la extensión equivocada. Los 15 se corrigieron con `CopyObject` +
+`MetadataDirective: REPLACE` y **se verificó uno por uno contra S3** que el Content-Type quedó bien y
+que el contenido sigue intacto (15/15 correctos, tamaños sin cambios). Los 6 de la tabla original
+están incluidos.
+
+Combinaciones corregidas: 8 `application/pdf`→`image/jpeg`, 3 `application/pdf`→`image/png`,
+3 `image/jpeg`→`application/pdf`, 1 `image/png`→`application/pdf`.
+Log: `reparacion-datos/repair-02-s3-content-type.json`.
+
+Los 6 originalmente identificados (todos ya corregidos) — `CopyObject` sobre sí mismos con
 `MetadataDirective: 'REPLACE'` y el Content-Type correcto. Todos en
 `https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/`:
 
@@ -402,14 +437,48 @@ correo "documento observado". Se pueden listar desde `historial_correos` (`Email
 `actionCode = 'DOCUMENTO_OBSERVADO'`) filtrando por la ventana de la corrida, por si se quiere
 mandar una aclaración.
 
-### 4.5 Barridos pendientes ⬜
+### 4.5 Barridos ✅ HECHOS (5/8/2026) — con un hallazgo nuevo y grande
 
-- **S3:** buscar **todos** los objetos subidos después del 1/7/2026 18:01 cuyo Content-Type declarado
-  no coincida con sus bytes. Los 5 de arriba son solo los pasaportes; el bug afectó a cualquier
-  documento subido con la extensión equivocada desde esa fecha.
-- **URLs perdidas:** contar los casos históricos reales del bug del fix 1 con el filtro preciso
-  (historial con `url IS NULL` **cuyo documento sí tenía URL en un historial anterior**) y hacer el
-  backfill. Ver `prisma/inspect-null-url-scope.ts`.
+- **URLs perdidas:** hecho y reparado. Ver §4.4 (a).
+- **S3:** hecho. Se verificaron **17.308 archivos** (todas las URLs distintas de
+  `UserDocumentHistory` desde el 1/7 + los archivos de observación), leyendo los primeros bytes de
+  cada uno y comparándolos con el Content-Type que declara S3.
+
+**Resultado del barrido:**
+
+| Veredicto | Archivos | Qué significa |
+|---|---|---|
+| OK | 13.858 | Declarado y real coinciden |
+| **ROMPE** | **3.410** | El Content-Type impide ver el archivo |
+| INOCUO | 37 | Difieren pero el navegador acierta por sniffing (imagen↔imagen) — no se tocan |
+| TIPO_DESCONOCIDO | — | Firma no reconocida (docx, etc.): no se puede decidir, no se tocan |
+| ERROR | 3 | HTTP 416: archivos de menos de 32 bytes, posiblemente vacíos |
+
+De los 3.410 que rompen, **15 son el bug del fix 2** (ya corregidos, §4.4 b). Los otros **3.395 son
+un problema distinto que no estaba identificado en este incidente**:
+
+```
+application/octet-stream → application/pdf   2.629
+application/octet-stream → image/jpeg          687
+application/octet-stream → image/png            79
+```
+
+Casi todos en `user-documents/bulk/`. Un archivo servido como `application/octet-stream` el navegador
+**lo descarga en vez de mostrarlo**, así que es muy probable que esos documentos tampoco se vean en
+la aplicación. No lo causó el commit `458d146`: son archivos que se subieron sin un Content-Type
+reconocible. El fix 2 ya impide que se sigan creando (deriva el tipo de los bytes), pero **mientras
+no se despliegue siguen apareciendo**.
+
+**⬜ Pendiente de decisión:** corregir esos 3.395. El script ya los tiene inventariados
+(`reparacion-datos/repair-02-s3-content-type.dry-run.json`) y se aplican con:
+
+```bash
+npx ts-node -r tsconfig-paths/register prisma/repair-02-s3-content-type.ts --apply
+```
+
+**⬜ Pendiente:** los 3 archivos que dieron HTTP 416. El script ya se ajustó para leerlos completos y
+clasificarlos; si están vacíos (0 bytes), el documento de ese participante no tiene contenido y hay
+que pedírselo de nuevo.
 
 ---
 
@@ -429,8 +498,20 @@ npx ts-node -r tsconfig-paths/register prisma/<script>.ts [args]
 | `inspect-null-url-scope.ts` | Documentos que quedaron sin URL, con su URL previa recuperable |
 | `inspect-observation-column.ts` | Tipo real, tamaño y contenido de `observation` + últimas migraciones aplicadas |
 | `inspect-mismatch-rule.ts` | Contrasta la regla nueva de mismatch (fix 4) contra los mismatches ya escritos + desglose de los 245 motivos |
+| `inspect-lost-urls.ts` | Alcance real del bug del fix 1 con el filtro preciso: histórico + documentos rotos ahora |
+| `inspect-s3-content-type.ts` | Cuántos archivos hay que verificar en el barrido de Content-Type |
 
 Borrables cuando el incidente esté cerrado.
+
+### Scripts de REPARACIÓN (escriben — `--dry-run` por defecto)
+
+| Script | Qué hace | Estado |
+|---|---|---|
+| `repair-01-lost-urls.ts` | Restaura la URL perdida en el último historial. Verifica en S3 que el archivo exista antes de escribir | ✅ aplicado 5/8: 6 filas |
+| `repair-02-s3-content-type.ts` | Corrige el Content-Type en S3 con `CopyObject` + `REPLACE`. Acepta `--limite=N` para aplicar por muestra | ✅ aplicado 5/8: 15 de 3.410 |
+
+Ambos escriben su log en `reparacion-datos/` (contiene DNIs — **no commitear**). El log de
+`repair-01` incluye el SQL exacto para revertir.
 
 ---
 
@@ -441,9 +522,15 @@ Borrables cuando el incidente esté cerrado.
 3. ✅ Fix 3 — migración `observation` → `TEXT` **(hecha y aplicada en producción el 5/8)**
 4. ✅ Fix 4 — regla de mismatch por familias de renderizado **(hecho, falta desplegar)**
 5. ✅ Fix 5 — robustez del batch **(hecho, falta desplegar)**
-6. ⬜ **Desplegar** (mínimo los fixes 1 y 2 antes de cualquier reparación de datos)
-7. ⬜ Reparar datos: URL de Mariana → Content-Type de los 6 archivos → limpiar los 22 falsos positivos
-8. ⬜ Barridos de S3 y de URLs perdidas
+6. ⬜ **Desplegar** — ahora es lo más urgente: el bug del fix 1 sigue rompiendo documentos (el último
+   caso es del 5/8 11:23) y el del fix 2 sigue subiendo archivos con el tipo equivocado
+7. Reparar datos:
+   - ✅ URLs perdidas (6 reparadas el 5/8)
+   - ✅ Content-Type de los 15 archivos del bug del fix 2 (5/8)
+   - ⬜ Los 3.395 `octet-stream` (§4.5) — pendiente de decisión
+   - ⬜ Limpiar los 22 falsos positivos → queda subsumido en la reversión completa de las 245
+     (`docs/PENDIENTE-reversion-observaciones-ia.md`)
+8. ✅ Barridos de S3 y de URLs perdidas (5/8) — ver §4.5
 
 ---
 
