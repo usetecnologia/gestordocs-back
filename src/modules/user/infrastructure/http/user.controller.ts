@@ -233,9 +233,14 @@ export class UserController {
       roleId: query.roleId,
       countryId: query.countryId,
       sponsorId: query.sponsorId,
+      hasSponsor: query.hasSponsor,
       programId: query.programId,
       optionProgramId: query.optionProgramId,
+      statusSolRetiro: query.statusSolRetiro,
+      generalStatus: query.generalStatus,
       search: query.search,
+      sortBy: query.sortBy,
+      sortOrder: query.sortOrder,
     });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
