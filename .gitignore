@@ -60,3 +60,8 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Backups de BD (pueden contener PII) — nunca deben subirse al repo
 /backups
+
+# Salidas de los scripts del incidente de revisión masiva (contienen DNIs y datos de participantes)
+/reversion-ia
+/reversion-ia-2
+/reparacion-datos

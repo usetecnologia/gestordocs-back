@@ -3,6 +3,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
 import KeyvRedis from '@keyv/redis';
 import { envs } from './config/envs';
+import { AiQueryModule } from '@modules/ai-query/ai-query.module';
 import { AuthModule } from '@modules/auth/auth.module';
 import { DashboardModule } from '@modules/dashboard/dashboard.module';
 import { CountryModule } from '@modules/country/country.module';
@@ -34,6 +35,7 @@ import { UserDocumentsModule } from '@modules/user-documents/user-documents.modu
       }),
     }),
     ScheduleModule.forRoot(),
+    AiQueryModule,
     AuthModule,
     CountryModule,
     DashboardModule,

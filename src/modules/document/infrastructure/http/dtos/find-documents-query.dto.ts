@@ -38,7 +38,10 @@ export class FindDocumentsQueryDto {
   @IsBoolean()
   status?: boolean;
 
-  @ApiPropertyOptional({ example: 'pasaporte' })
+  @ApiPropertyOptional({
+    example: 'pasaporte',
+    description: 'Busca coincidencias parciales en el nombre o en las siglas del documento.',
+  })
   @IsOptional()
   @IsString()
   search?: string;

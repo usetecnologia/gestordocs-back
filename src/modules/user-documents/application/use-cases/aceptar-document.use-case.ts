@@ -3,6 +3,7 @@ import {
   IUserDocumentsRepository,
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
+import { resolveCurrentFileUrl } from '../../domain/user-document-file';
 
 @Injectable()
 export class AceptarDocumentUseCase {
@@ -12,17 +13,15 @@ export class AceptarDocumentUseCase {
   ) {}
 
   async execute(userDocumentId: string, reviewedById: string): Promise<void> {
-    const userDoc = await this.userDocumentsRepo.findByIdWithHistory(userDocumentId);
-    if (!userDoc) throw new NotFoundException(`UserDocument #${userDocumentId} not found`);
-
-    const lastSubido = [...userDoc.history]
-      .reverse()
-      .find((h) => h.status === 'SUBIDO');
+    const userDoc =
+      await this.userDocumentsRepo.findByIdWithHistory(userDocumentId);
+    if (!userDoc)
+      throw new NotFoundException(`UserDocument #${userDocumentId} not found`);
 
     await this.userDocumentsRepo.aceptarDocument({
       userDocumentId,
       reviewedById,
-      url: lastSubido?.url ?? null,
+      url: resolveCurrentFileUrl(userDoc.history),
     });
   }
 }
