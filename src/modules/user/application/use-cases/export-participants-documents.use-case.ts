@@ -10,6 +10,36 @@ import type { Document } from '@modules/document/domain/document.entity';
 
 const NOT_ASSIGNED = 'NO ASIGNADO';
 
+// Mismas etiquetas que el filtro de estado de /participant en el front, para que el Excel
+// hable el idioma que el usuario ve en pantalla y no el valor crudo del enum.
+const STATUS_LABELS: Record<string, string> = {
+  SIN_DOCUMENTOS: 'Sin documentos',
+  DOCUMENTOS_SUBIDOS: 'Documentos subidos',
+  DOCUMENTOS_INCOMPLETOS: 'Docs. incompletos',
+  PENDIENTE_REVISAR: 'Pendiente de revisar',
+  EN_REVISION: 'En revisión',
+  OBSERVADO: 'Observado',
+  RETENIDO_USE: 'Retenido USE',
+  PREPARACION: 'Docs. completos',
+  ENVIADO_SPONSOR: 'Enviado al sponsor',
+  OBSERVADO_SPONSOR: 'Observado por sponsor',
+  RECHAZADO_SPONSOR: 'Rechazado por sponsor',
+  APROBADO_SPONSOR: 'Aprobado por sponsor',
+  DS2019_EMITIDO: 'DS2019 emitido',
+  // Estados que no aparecen en el filtro — se toman las etiquetas de la tabla
+  ACTIVO: 'Activo',
+  INACTIVO: 'Retirado',
+  RETIRADO: 'Retirado',
+};
+
+function toStatusLabel(status: string): string {
+  if (!status) return '';
+  return (
+    STATUS_LABELS[status] ??
+    status.toLowerCase().replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase())
+  );
+}
+
 const STATUS_STYLES: Record<string, { color: string; bold: boolean }> = {
   REVISADO: { color: 'FF38761D', bold: true },
   PENDIENTE: { color: 'FF999999', bold: true },
@@ -99,7 +129,7 @@ export class ExportParticipantsDocumentsUseCase {
         names,
         user.status_hired ?? '',
         user.sponsor ?? '',
-        user.status,
+        toStatusLabel(user.status),
         ...columns.map((c) => (c.siglasCode && statuses?.get(c.siglasCode)) || NOT_ASSIGNED),
       ]);
 
