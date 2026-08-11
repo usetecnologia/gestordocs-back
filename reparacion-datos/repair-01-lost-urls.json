@@ -1,0 +1,51 @@
+{
+  "base": "docs26@161.132.45.31",
+  "totalDetectados": 6,
+  "aplicados": [
+    {
+      "historyId": "424fa094-8531-4ca9-b0c3-dfe6cf7ce96a",
+      "userDocumentId": "982b4fd4-a928-4c2d-97b5-2aba41da5845",
+      "dni": "12345678",
+      "urlAnterior": null,
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/02c6487f-d6b7-4a63-b4b7-71be56096634.jfif"
+    },
+    {
+      "historyId": "c0900464-bbfb-4bcb-ba43-ca7715949bf6",
+      "userDocumentId": "72f0bed1-eeb4-40be-81d9-4684d9ce742a",
+      "dni": "71386052",
+      "urlAnterior": null,
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/ebd9f322-3de4-46c1-9966-333007b1e3eb.pdf"
+    },
+    {
+      "historyId": "6b93b2c6-26c1-4e5f-8c81-bb048a52a95f",
+      "userDocumentId": "c6889bd3-1efd-4d9a-85ca-10d72307c16f",
+      "dni": "70714833",
+      "urlAnterior": null,
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/5454a25d-9f49-4828-9388-74384853d094.jpg"
+    },
+    {
+      "historyId": "ca9a176e-4481-474f-9a02-354c946a68db",
+      "userDocumentId": "a7733b6e-15e8-400e-8569-a0ad1054f551",
+      "dni": "70627745",
+      "urlAnterior": null,
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf"
+    },
+    {
+      "historyId": "a46e95d0-3220-416c-aa0f-6b6fa71d47a9",
+      "userDocumentId": "9a8f893d-93b7-431a-a83e-a370abdd49a9",
+      "dni": "72740487",
+      "urlAnterior": null,
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/a11f66ab-3bfd-45af-b216-9218c0023d22.jfif"
+    },
+    {
+      "historyId": "37dc6bfe-67b9-4441-8d35-9bd21945bdb9",
+      "userDocumentId": "6a604b82-14ba-45b1-941b-e58a2a015200",
+      "dni": "70538653",
+      "urlAnterior": null,
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/5dbe7350-04be-41e7-83bb-b193111efac5.pdf"
+    }
+  ],
+  "fallidos": [],
+  "omitidosPorS3": [],
+  "revertir": "UPDATE UserDocumentHistory SET url = NULL WHERE id IN ('424fa094-8531-4ca9-b0c3-dfe6cf7ce96a', 'c0900464-bbfb-4bcb-ba43-ca7715949bf6', '6b93b2c6-26c1-4e5f-8c81-bb048a52a95f', 'ca9a176e-4481-474f-9a02-354c946a68db', 'a46e95d0-3220-416c-aa0f-6b6fa71d47a9', '37dc6bfe-67b9-4441-8d35-9bd21945bdb9');"
+}

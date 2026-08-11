@@ -1,0 +1,36 @@
+{
+  "bucket": "use-515504445665-us-east-1-an",
+  "alcance": "DNI 70627745",
+  "hechos": [
+    {
+      "dni": "70627745",
+      "keyAnterior": "user-documents/bulk/9f46116a-5f18-4c8e-ba18-195c771577f0.pdf",
+      "keyNueva": "user-documents/bulk/9f46116a-5f18-4c8e-ba18-195c771577f0.jpg",
+      "urlAnterior": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/9f46116a-5f18-4c8e-ba18-195c771577f0.pdf",
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/9f46116a-5f18-4c8e-ba18-195c771577f0.jpg",
+      "contentType": "image/jpeg",
+      "historialesActualizados": 1
+    },
+    {
+      "dni": "70627745",
+      "keyAnterior": "user-documents/bulk/6246d2f2-c226-400a-a195-9e000e110819.pdf",
+      "keyNueva": "user-documents/bulk/6246d2f2-c226-400a-a195-9e000e110819.jpg",
+      "urlAnterior": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/6246d2f2-c226-400a-a195-9e000e110819.pdf",
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/6246d2f2-c226-400a-a195-9e000e110819.jpg",
+      "contentType": "image/jpeg",
+      "historialesActualizados": 1
+    },
+    {
+      "dni": "70627745",
+      "keyAnterior": "user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf",
+      "keyNueva": "user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.jpg",
+      "urlAnterior": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf",
+      "urlNueva": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.jpg",
+      "contentType": "image/jpeg",
+      "historialesActualizados": 3
+    }
+  ],
+  "fallidos": [],
+  "nota": "Los objetos originales NO se borraron: siguen en S3 con su key anterior.",
+  "revertir": "UPDATE UserDocumentHistory SET url = 'https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/9f46116a-5f18-4c8e-ba18-195c771577f0.pdf' WHERE url = 'https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/9f46116a-5f18-4c8e-ba18-195c771577f0.jpg';\nUPDATE UserDocumentHistory SET url = 'https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/6246d2f2-c226-400a-a195-9e000e110819.pdf' WHERE url = 'https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/6246d2f2-c226-400a-a195-9e000e110819.jpg';\nUPDATE UserDocumentHistory SET url = 'https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf' WHERE url = 'https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.jpg';"
+}

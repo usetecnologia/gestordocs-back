@@ -1,0 +1,101 @@
+{
+  "bucket": "use-515504445665-us-east-1-an",
+  "alcance": "desde 2026-07-01",
+  "verificados": 17312,
+  "detectados": 3410,
+  "limite": 15,
+  "pendientes": 3395,
+  "corregidos": [
+    {
+      "key": "user-documents/bulk/a80b04df-fe07-4a34-ae0e-f2b40892dbc0.jpg",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/a80b04df-fe07-4a34-ae0e-f2b40892dbc0.jpg",
+      "contentTypeAnterior": "image/jpeg",
+      "contentTypeNuevo": "application/pdf"
+    },
+    {
+      "key": "user-documents/bulk/b109936f-ceec-4148-9b7f-8bc8db915ebe.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/b109936f-ceec-4148-9b7f-8bc8db915ebe.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/bulk/dd7abdc3-a669-4b84-b70d-8ac5159f116e.jpg",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/dd7abdc3-a669-4b84-b70d-8ac5159f116e.jpg",
+      "contentTypeAnterior": "image/jpeg",
+      "contentTypeNuevo": "application/pdf"
+    },
+    {
+      "key": "user-documents/bulk/ddb5084d-c371-44ba-9ea6-8d4666dd3ce9.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/ddb5084d-c371-44ba-9ea6-8d4666dd3ce9.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/png"
+    },
+    {
+      "key": "user-documents/bulk/eb9e2725-e58f-456c-9196-14d45327c41e.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/eb9e2725-e58f-456c-9196-14d45327c41e.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/bulk/35510714-773e-47ae-ad12-8dcb015f4a0d.png",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/35510714-773e-47ae-ad12-8dcb015f4a0d.png",
+      "contentTypeAnterior": "image/png",
+      "contentTypeNuevo": "application/pdf"
+    },
+    {
+      "key": "user-documents/bulk/905df4bb-f1f1-4d4c-b2d9-6fb2c3fea9aa.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/905df4bb-f1f1-4d4c-b2d9-6fb2c3fea9aa.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/bulk/b666e2f7-b034-4cf4-8ce9-bcc29ebbfa40.jpg",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/b666e2f7-b034-4cf4-8ce9-bcc29ebbfa40.jpg",
+      "contentTypeAnterior": "image/jpeg",
+      "contentTypeNuevo": "application/pdf"
+    },
+    {
+      "key": "user-documents/bulk/6f754527-2bfe-440a-9397-c24c89f7d1ab.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/6f754527-2bfe-440a-9397-c24c89f7d1ab.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/png"
+    },
+    {
+      "key": "user-documents/bulk/563dbbb0-40a6-4c1e-ace2-fbafae931937.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/563dbbb0-40a6-4c1e-ace2-fbafae931937.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/bulk/03bfa849-4997-4b97-a536-7705d75e3535.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/03bfa849-4997-4b97-a536-7705d75e3535.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/png"
+    },
+    {
+      "key": "user-documents/bulk/6dce58cc-4837-4a09-ab73-0c88dc84fa32.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/6dce58cc-4837-4a09-ab73-0c88dc84fa32.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/bc68d9d2-3c79-41e3-8653-f4aa369bcbce.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/bulk/a57722fe-f41d-4da9-bada-90f18350315c.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/bulk/a57722fe-f41d-4da9-bada-90f18350315c.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    },
+    {
+      "key": "user-documents/49a25066-0bdf-4b64-aba8-5ba5c02f91f7.pdf",
+      "url": "https://use-515504445665-us-east-1-an.s3.us-east-1.amazonaws.com/user-documents/49a25066-0bdf-4b64-aba8-5ba5c02f91f7.pdf",
+      "contentTypeAnterior": "application/pdf",
+      "contentTypeNuevo": "image/jpeg"
+    }
+  ],
+  "fallidos": []
+}

@@ -1,0 +1,950 @@
+=== FASE 1 — INVENTARIO corrida 7/8/2026 (solo lectura) ===
+Base: 161.132.45.31:3394/docs26
+Firma: etiqueta 6de02d0d-a5ef-40c7-8488-7cf604a16d43 + autor d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+Ventana: 2026-08-08T01:20:00.000Z → 2026-08-08T04:44:00.000Z
+
+Historiales escritos por la corrida: 371
+Ventana real: 2026-08-08T01:21:40.089Z → 2026-08-08T04:42:54.751Z
+Documentos distintos: 371
+Participantes distintos: 371
+
+Otros historiales del mismo autor dentro de la ventana: 0
+=== RESULTADO ===
+Total observaciones escritas por la corrida: 371
+  Reversibles automáticamente:               79
+  Con conflicto (revisión manual):           292
+Correos "DOCUMENTO_OBSERVADO" registrados:   0 (irreversibles)
+
+Status actual de los documentos:   { OBSERVADO: 359, REVISADO: 8, SUBIDO: 4 }
+Status a restaurar en documentos:  { REVISADO: 355, OBSERVADO: 12, SUBIDO: 4 }
+Estado que dejó la corrida:        { OBSERVADO: 288, OBSERVADO_SPONSOR: 83 }
+Estado actual de participantes:    {
+  OBSERVADO: 260,
+  OBSERVADO_SPONSOR: 82,
+  INACTIVO: 17,
+  PREPARACION: 4,
+  PENDIENTE_REVISAR: 3,
+  DOCUMENTOS_SUBIDOS: 2,
+  DOCUMENTOS_INCOMPLETOS: 2,
+  ENVIADO_SPONSOR: 1
+}
+Estado a restaurar en participantes: {
+  PREPARACION: 134,
+  DOCUMENTOS_INCOMPLETOS: 81,
+  ENVIADO_SPONSOR: 81,
+  PENDIENTE_REVISAR: 25,
+  DOCUMENTOS_SUBIDOS: 21,
+  INACTIVO: 17,
+  OBSERVADO: 10,
+  OBSERVADO_SPONSOR: 2
+}
+
+Motivos de la observación: {
+  'menor de edad al emitirse': 364,
+  'no corresponde a un pasaporte': 5,
+  'cumplía 18 el mismo día': 2
+}
+
+Participantes en estado bloqueado al sync diario: 100 { OBSERVADO_SPONSOR: 82, INACTIVO: 17, ENVIADO_SPONSOR: 1 }
+
+=== CONFLICTOS (292) ===
+  DNI 70708063 | doc f566a6cd-efed-4298-b2c4-b1c6bc864c5d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:49.987Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:46.589Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:47.005Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 81071006 | doc 1a915b5c-42a2-43e9-a328-d88f70a5566f
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:04.223Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:59.259Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:59.864Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 81658404 | doc 9d8a904a-1e47-496f-be94-5b7ab6e96de5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:00.567Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:54.175Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:54.630Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76970611 | doc 24c5b3a4-1cf8-48b4-91fa-3139f29eb931
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:53.250Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:49.375Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:49.857Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 77666229 | doc 3ae896e1-5f05-4afa-8a4a-4d812e909c04
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:33.451Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:27.517Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:28.179Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76494859 | doc 52c8dec5-c93a-4276-b447-36e07a13a58d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:43.349Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:37.347Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:37.671Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76564745 | doc ef518b73-ac02-48d3-9b71-9ce651d280f2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:14.761Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:09.779Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:10.292Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76396846 | doc 270d03fe-bf25-4718-9d93-bcf6affc73d3
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:05.263Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:01.572Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T16:45:39.684Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:01.820Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76206041 | doc 371a17ae-36d2-483c-a44d-8bd0c10eef1f
+     → el participante cambió de estado 5 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:14.551Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:09.567Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:10.078Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T20:08:50.472Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-11T16:36:45.750Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75959510 | doc 216fa97e-b2af-492f-b93c-7e9b47a69ce7
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:19.182Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:15.326Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:15.788Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75609107 | doc bbe8a48e-91e2-4a6a-9037-f051ba4f2acc
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:36.753Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:32.574Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:32.761Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75559528 | doc f1b82d24-7393-4e6e-abff-c49b64e2eb67
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:47.332Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:42.982Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:43.239Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75086548 | doc 2a5e2dbf-908b-4615-8e18-862f21365872
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:36.918Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:32.746Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:32.953Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74989961 | doc 321de27a-e7f3-45f0-8c25-09787ed3caf4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:12.865Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:07.830Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:08.425Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74957192 | doc f581c1cc-8796-4101-8616-bc955064f83b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:20.862Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:13.856Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:14.860Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74747682 | doc 55810feb-5f2b-4624-936c-890d4b410675
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:10.592Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:06.595Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:06.992Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74528656 | doc f44c28c3-7fcf-432e-bc1e-97ab8330fe48
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:00.989Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:57.160Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:57.864Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74608344 | doc 7307264e-6178-4281-b28a-2a28e1c0a935
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:19.860Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:12.949Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:13.895Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74652856 | doc aa806a20-3df6-447f-81ce-86e9efc0a808
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:29.622Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:23.551Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:24.360Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74208543 | doc 80707c2b-5289-4db0-be3b-08986fda383a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:43.731Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:39.317Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:39.735Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74142586 | doc 9fdbf1fa-3683-4a83-8df2-5593a09d3580
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:18.306Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:12.970Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:13.558Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73876994 | doc eaf53f3b-dab8-4592-8292-eb618d62ed47
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:51.241Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:44.600Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:45.536Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74027564 | doc f293eafd-88d4-4987-810e-891060eaefb1
+     → el participante cambió de estado 2 vez(ces) después
+       estados: EN_REVISION@2026-08-10T10:23:48.360Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO_SPONSOR@2026-08-10T10:23:53.800Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73861032 | doc b594fb5b-5411-4409-ae1d-1ff057471d6f
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:25.281Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:19.530Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:20.330Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73592389 | doc b35dec7f-2108-4877-bd34-35d66a4612ca
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:29.076Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:22.980Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:23.867Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73213805 | doc faddf996-07f4-4933-9290-965f074b441e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:10.760Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:05.816Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:06.444Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72921251 | doc 0e8ecb70-2e23-43ce-b89f-5e5f9ef727f9
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:04.092Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:59.155Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:59.765Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72915698 | doc e72baffb-f359-4caf-a385-f9566f3fbf83
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:31.201Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:25.103Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:25.921Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72878253 | doc 3a45bbd4-ae7f-4df4-9a25-0cb75198de80
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:49.920Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:46.523Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:46.889Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72729478 | doc ee32ba77-e1a2-493e-b034-8f691d22fa96
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:57.406Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:52.943Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:53.427Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72691014 | doc bc3bd33c-fe75-4504-b2df-c59299ceb305
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:59.277Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:54.809Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:55.292Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72673848 | doc 1f219d7b-adf0-4998-9d08-ccd4e39196f4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:58.102Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:54.227Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:55.085Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72622168 | doc d0199a52-088f-4219-9674-7e44a071ae56
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:33.498Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:29.297Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:29.386Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72613065 | doc 4a2cdb4a-d123-42eb-8033-c8ed0a5ae04e
+     → el documento tiene 2 historial(es) posterior(es) a la observación IA | el participante cambió de estado 13 vez(ces) después
+       docs: SUBIDO@2026-08-09T21:18:49.980Z por 6255a2a6-3068-4a1e-9c6e-b1cc6834fd26 | REVISADO@2026-08-10T22:38:25.141Z por 67b73657-e6a3-4f59-b4e1-69b17afbd570
+       estados: OBSERVADO@2026-08-08T07:01:18.158Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:14.357Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T20:40:52.473Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T21:14:39.128Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-09T21:18:50.011Z por 6255a2a6-3068-4a1e-9c6e-b1cc6834fd26 | DOCUMENTOS_SUBIDOS@2026-08-10T07:01:14.828Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | EN_REVISION@2026-08-10T22:36:41.500Z por 67b73657-e6a3-4f59-b4e1-69b17afbd570 | DOCUMENTOS_INCOMPLETOS@2026-08-10T22:38:54.950Z por 67b73657-e6a3-4f59-b4e1-69b17afbd570 | DOCUMENTOS_INCOMPLETOS@2026-08-11T15:56:33.653Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_INCOMPLETOS@2026-08-11T15:56:36.016Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_INCOMPLETOS@2026-08-11T16:18:39.730Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-11T16:18:49.025Z por 6255a2a6-3068-4a1e-9c6e-b1cc6834fd26 | DOCUMENTOS_SUBIDOS@2026-08-11T16:18:55.221Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72335730 | doc bd74beaf-0d26-4d36-8701-ab0215e18f5e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:28.728Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:22.645Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:23.524Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72317181 | doc e0db8195-912f-4a54-a6d1-79e9e79cc4ee
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:57.401Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:53.567Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:54.406Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72065074 | doc b7d70bb3-7374-487c-9901-b62feb623007
+     → el participante cambió de estado 5 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:34.163Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:28.232Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:28.903Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T15:12:49.714Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T15:18:03.824Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71686734 | doc 3ba86ef8-b204-4ed1-ae4d-14e0f5a19ee5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:02.606Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:58.836Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:59.348Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71768914 | doc b6738969-313b-463f-82ff-94199313819b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:01.863Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:55.457Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:55.852Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71669012 | doc 9846677d-1cdb-4b7d-b154-27815e1d0ca2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:08.520Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:03.683Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:04.198Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71363164 | doc 1c4f4fc4-02e1-45c8-a7df-6a69496e6003
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:32.771Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:26.756Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:27.500Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71187586 | doc 072f5e90-00d0-4f90-9927-53a67e347a29
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:53.186Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:46.517Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:47.406Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71356311 | doc d41e48e7-cc98-40e2-9fc5-58b34c79d45b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:53.063Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:48.685Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:49.108Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71355436 | doc f891bf7b-e5be-4790-9172-12a9ee889bd2
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:48.042Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:43.643Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T16:54:45.199Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:43.928Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71170750 | doc 916bbd35-cb7d-4b41-a71f-fed87a6be292
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:58.085Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:51.691Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:52.314Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71182095 | doc c9448028-3b7d-4198-a1dd-b5c2708904cc
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:28.225Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:22.171Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:23.036Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71182713 | doc 8791f7d5-707c-46c0-9969-37850206dbbb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:03.289Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:56.828Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:57.154Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71158498 | doc 69cc1f7c-7323-45cb-a85c-ce8c9e9476bf
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:20.469Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:14.938Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:15.546Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71167853 | doc c782483f-712b-4953-bfd3-52dd4a55cc48
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:59.966Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:55.524Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:55.969Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71091515 | doc 356b2edd-4752-46e3-b908-bcb1ea3d07e2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:20.316Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:13.335Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:14.303Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71145013 | doc e8961523-c765-4818-86e8-494dfa9c382d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:53.920Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:47.317Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:48.214Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70959919 | doc de91e83f-835b-41d6-b734-cb1db32d8567
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:27.978Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:21.908Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T18:22:29.524Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:22.803Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70950725 | doc 3017b4ff-135f-4b51-b4cc-6c0312664e2e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:53.362Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:48.974Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:49.452Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70759125 | doc 55544de4-5b2b-429b-a30c-a70b3e621191
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:28.100Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:22.035Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:22.920Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70949383 | doc 11bf73e6-0020-4bc4-84d2-d204b7e0d5ff
+     → el participante cambió de estado 7 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:11.541Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T15:29:53.412Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T16:16:12.454Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T16:16:38.825Z por 760cca54-d696-4575-95f4-458c9a074852 | OBSERVADO@2026-08-08T16:16:59.902Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:06.565Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:07.175Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70743613 | doc 1a1fc576-c1e4-47c5-b590-3ba650ddb9ab
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:19.627Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:14.224Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:14.817Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70718546 | doc 3b5ab70c-8bc9-40e1-8f0f-3a4c8706600f
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:57.343Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:52.875Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:53.371Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70718039 | doc d21abca9-60ff-4972-9c6e-b696dcb72f73
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:08.257Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:03.431Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:03.956Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70716602 | doc 5ebd9941-e1cc-420f-ae4a-fe710a076377
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:22.919Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:15.804Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:16.981Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70711460 | doc d34a4e88-42af-42eb-9699-188ae638fc29
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:02.308Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:57.503Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:58.138Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70697022 | doc f5d2529f-a13d-4b94-88ce-9540a49f2e55
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:47.998Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:41.427Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:42.324Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70648911 | doc 4246b628-37ec-494c-83d9-84ff1b84a093
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:27.714Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:23.595Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:23.923Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70648526 | doc 4717c26b-cf96-47c2-949f-e9dd70711cd8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:39.801Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:33.930Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:34.403Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70645898 | doc af8c93fe-e5bb-4606-a6e0-cf9bc15904ac
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:51.364Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:44.721Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:45.640Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70645416 | doc f945459e-e431-46ed-b473-4ccacf3b619e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:52.782Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:48.364Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:48.822Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70639710 | doc ce31f5b9-2b47-48ee-b0f3-e8e475fd7b6d
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:27.283Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:23.160Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T22:28:29.902Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:23.506Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70639379 | doc c21569a3-15b4-43b1-b117-20e09e7c920f
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:02.177Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:57.405Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:58.049Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70635566 | doc 188bc078-55bc-4e99-86b9-c12427fd5708
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:30.422Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:24.356Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:25.233Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70636377 | doc dd1e93db-ffd3-4ff1-8582-59765bb5e371
+     → el documento tiene 2 historial(es) posterior(es) a la observación IA | el participante cambió de estado 9 vez(ces) después
+       docs: SUBIDO@2026-08-10T16:09:05.572Z por 534e6339-0d80-4d43-a128-bdfbe926be56 | REVISADO@2026-08-10T20:53:08.273Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+       estados: OBSERVADO@2026-08-08T07:03:05.422Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T04:33:31.769Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:58.788Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:58.994Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T16:08:52.827Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-10T16:09:05.622Z por 534e6339-0d80-4d43-a128-bdfbe926be56 | EN_REVISION@2026-08-10T20:53:06.543Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd | DOCUMENTOS_INCOMPLETOS@2026-08-10T20:53:09.382Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd | DOCUMENTOS_INCOMPLETOS@2026-08-10T20:59:44.707Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70625102 | doc d8a8a4f0-7874-410a-ab5d-0ca6aaa1d62e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:31.086Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:27.019Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:27.098Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70621906 | doc 8c5a1d29-db9f-4ff9-a76d-90b5ce8b0423
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:33.839Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:29.642Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:29.772Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70631726 | doc 507408b3-3675-4a87-bb0b-6eeca2d03764
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:26.094Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:20.307Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:21.117Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70624364 | doc abfee70a-f359-4da5-81ee-f2cea8ec1207
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:25.778Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:20.044Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T21:37:04.162Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:20.812Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70595606 | doc 8ac134b0-7891-41f9-af1d-adeb0e12a9ac
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:50.820Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:44.233Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:45.183Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70592556 | doc 308d4cc9-fb54-4f7e-a054-2b400263feb5
+     → el documento tiene 2 historial(es) posterior(es) a la observación IA | el participante cambió de estado 6 vez(ces) después
+       docs: SUBIDO@2026-08-09T21:01:21.305Z por f5997690-ef36-43b1-83c8-0e04266a9642 | REVISADO@2026-08-10T21:49:01.014Z por 67b73657-e6a3-4f59-b4e1-69b17afbd570
+       estados: PENDIENTE_REVISAR@2026-08-09T21:01:21.346Z por f5997690-ef36-43b1-83c8-0e04266a9642 | PENDIENTE_REVISAR@2026-08-09T21:06:03.930Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T07:01:31.994Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T21:16:30.548Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | EN_REVISION@2026-08-10T21:48:59.326Z por 67b73657-e6a3-4f59-b4e1-69b17afbd570 | ENVIADO_SPONSOR@2026-08-10T21:50:15.898Z por 67b73657-e6a3-4f59-b4e1-69b17afbd570
+  DNI 70591513 | doc ad086408-f6ff-472e-b898-6e7aa7baa479
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:48.816Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:44.357Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:44.739Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70536353 | doc 621e5cee-8bfb-4867-b37f-74daa7067724
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:05.136Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:01.454Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:01.686Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70534870 | doc b2cba193-cd5e-492f-b590-5a7248887118
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:48.980Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:42.405Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:43.300Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70535424 | doc 80250220-6454-4a53-9062-e30e1b46a048
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:05.483Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:58.844Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:59.056Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70534325 | doc af4f27fb-1196-425f-ae12-df3a433626aa
+     → el participante cambió de estado 8 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:13.171Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T15:20:36.859Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T15:31:31.543Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T15:59:44.857Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:08.170Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T02:49:06.233Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T03:25:21.407Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:08.700Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70532568 | doc 59701c58-2c55-43e0-894b-93ba4d5feea5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:58.705Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:54.168Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:54.681Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70531468 | doc 96bae73f-b9d0-47a9-8979-931be9434a39
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:25.391Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:21.310Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:21.720Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70531696 | doc a0c3c35b-0a6e-4c24-a77e-2b60ad0ad3c2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:57.901Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:53.394Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:53.901Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70512635 | doc 58be9f53-06e4-474b-9992-fd989556a4ca
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:09.803Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:04.893Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:05.538Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70499130 | doc 374fdd2e-3ca6-42d7-95c6-0dbd9e74dbf1
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:21.438Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:15.831Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:16.582Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70492410 | doc a57805b2-6fae-4011-b681-bb9f5bd298a3
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:22.845Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:17.204Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:17.954Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70527747 | doc 92ea93d0-56dd-42e0-94ec-f50480f147a5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:39.185Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:33.325Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:33.830Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70469633 | doc 9c91e177-520d-4c46-a387-b39f8c477889
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:19.280Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:12.460Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:13.326Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70458675 | doc 06fc825a-3d59-43c6-a684-478407f76feb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:55.015Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:48.446Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:49.308Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70452061 | doc a5fcb376-9f36-4715-8172-07cd79f67c70
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:01.653Z por null | INACTIVO@2026-08-09T07:01:56.980Z por null | INACTIVO@2026-08-10T07:01:57.543Z por null
+  DNI 70444426 | doc 76e0743f-c932-42a7-b6bf-b107f990c2ae
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:05.329Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T17:56:18.182Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:01.623Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:01.893Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70412887 | doc d9f779b4-8840-4970-8205-3669b6ba8370
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:01:22.008Z por null | INACTIVO@2026-08-09T07:01:17.836Z por null | INACTIVO@2026-08-10T07:01:18.374Z por null
+  DNI 640185 | doc c393b52f-df0e-4089-b1c3-8cfe7b286b01
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:44.182Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:38.019Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:38.490Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70446501 | doc b3765a0b-f3af-4e18-958a-ebcf364adabf
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:25.962Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:20.185Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:20.991Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70426023 | doc 12da5b83-9b35-4cae-a1f0-f717f4e6406a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:14.110Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:09.173Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:09.635Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 62501564 | doc ea068989-9b83-404e-8a40-2947d9015d4b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:56.172Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:51.698Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:52.195Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61904867 | doc c9c67b41-b42a-459c-ab31-906c9955829a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:54.088Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:50.172Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:50.824Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61891147 | doc 6bc353f8-601e-4b0c-a42f-175e9a0882fc
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:57.140Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:50.675Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:51.391Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 62256715 | doc 51ecf095-f62c-442b-a4e4-526bfb3717bf
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:00.237Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:55.813Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:56.254Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61345369 | doc a0d50849-b9a8-4374-85d0-5f62a0d721eb
+     → el documento tiene 1 historial(es) posterior(es) a la observación IA | el participante cambió de estado 5 vez(ces) después
+       docs: REVISADO@2026-08-10T22:54:57.626Z por 778dce39-2abb-4aca-9100-7ae4d1e6d292
+       estados: OBSERVADO@2026-08-08T07:02:07.718Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:02.920Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:03.367Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | EN_REVISION@2026-08-10T22:54:43.176Z por 778dce39-2abb-4aca-9100-7ae4d1e6d292 | PREPARACION@2026-08-10T22:55:06.154Z por 778dce39-2abb-4aca-9100-7ae4d1e6d292
+  DNI 61335097 | doc 7cdaaf0e-cbd7-46c9-b878-4ab54ddccd49
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:49.883Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:45.522Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:45.935Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-11T15:03:10.937Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61437855 | doc 997da137-067a-4196-a2eb-bffd1d74d32e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:52.661Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:48.236Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:48.699Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61313563 | doc 22a320cc-e01c-475f-943d-d49743361934
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:19.467Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:14.097Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:14.684Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61332387 | doc 9daa16db-c8c3-4c38-be36-d660bb3782b2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:15.681Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:08.975Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:09.635Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61327955 | doc 249a5729-b3f5-4d83-b030-5d0644c2281e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:48.748Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:44.292Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:44.683Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61222621 | doc b8e649f4-07c8-4b29-9fbd-ed30a8771f82
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:08.676Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:01.968Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:02.219Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61187054 | doc f0480c33-7ee7-437a-9665-c2ed0cab9954
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:29.021Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:24.850Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:25.050Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61213588 | doc cf72356a-7fc7-4b59-ae9b-87d3ba433b93
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:30.923Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T12:51:50.496Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:26.878Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:26.911Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61184447 | doc 16313ada-08d9-4137-b020-247e93779f8a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:19.921Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:14.490Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:15.072Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61174713 | doc 5c81cece-4556-45ab-83bb-7c9a9176d695
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:22.431Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:16.788Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:17.510Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61176951 | doc e8078c09-9c90-4a7d-a4f4-8199ce748cf8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:36.189Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:32.044Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:32.207Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61174714 | doc a232bdc9-aaa9-42c7-ab1f-e5990b9a2ae5
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:05.557Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T04:20:35.060Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:00.582Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:01.079Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61151777 | doc 728aefde-11dd-42b7-bcb7-32a815620749
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:00:55.092Z por null | INACTIVO@2026-08-09T07:00:51.147Z por null | INACTIVO@2026-08-10T07:00:51.918Z por null
+  DNI 61143329 | doc 6fd14e6e-9095-4507-b6fb-6449708a06ec
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:13.657Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:08.680Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:09.149Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61107490 | doc 02fa70bf-de3d-4bbd-95e1-09679e8bc91e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:49.633Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:45.236Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:45.645Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61152052 | doc 213bad02-6135-4596-a549-45c795ef37d6
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:52.226Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:47.730Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:48.244Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61013295 | doc 5045d067-ee11-44f0-aecd-a783bb4e6150
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:08.621Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:01.897Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:02.169Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61010832 | doc 1240f73a-f68b-44b0-ada2-5bd3c5e618a8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:21.705Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:14.585Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:15.656Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61011056 | doc 442f76d2-1553-44d7-89e7-676c103503db
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:59.053Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:52.714Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:53.190Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60961483 | doc d5acc3f7-322c-40a7-9a03-29249db5208a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:24.500Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:20.447Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:20.828Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60943154 | doc 29803055-7a1f-4df7-9333-8484321e4941
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:52.406Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:47.954Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:48.440Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60943007 | doc 7e4d8913-8826-45ce-871e-a6b6bd7f899b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:53.787Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:49.351Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:49.866Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60924156 | doc badcfc62-1e48-4958-8c74-db1b781482be
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:23.803Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:18.125Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:18.926Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60929717 | doc 3f91381f-b34d-4e13-afab-b7748b0f7a47
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:17.864Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:11.084Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:11.871Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60919875 | doc 9f0f3308-8eea-4f9c-980c-e8fea8121b24
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:31.428Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:25.311Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:26.121Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60919420 | doc 81721b94-64c7-474c-8fe8-a3e2788074e4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:01.732Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:57.058Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:57.630Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60919570 | doc 1193b949-ab19-480c-af03-ef4046bd7642
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:27.439Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:23.308Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:23.665Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60880428 | doc ad89df92-9c21-43e9-9c70-f06ff8390efb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:26.782Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:20.967Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:21.809Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60890527 | doc b67c0011-fe9a-4735-a06a-a25a515d154a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:22.080Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:16.405Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:17.182Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60880362 | doc 2b8fe253-c9f4-4ddc-a483-662fbffdacef
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:23.565Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:17.897Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:18.662Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60872824 | doc 57ae0969-e2e5-4c38-b7af-406ca911c47b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:43.959Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:39.561Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:39.960Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60871469 | doc d30b3f7c-33b5-4550-9172-c0bb254cf248
+     → el participante cambió de estado 10 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:43.841Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:39.448Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:39.845Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | EN_REVISION@2026-08-10T11:01:50.118Z por 96a8cd67-1229-4eb6-9948-b9f0cf3a0702 | OBSERVADO@2026-08-10T11:04:25.538Z por 96a8cd67-1229-4eb6-9948-b9f0cf3a0702 | OBSERVADO@2026-08-10T17:45:32.369Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T17:57:05.952Z por 02f3c26f-e402-4ffb-a805-89cd7339fcdc | OBSERVADO@2026-08-10T18:03:10.485Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | EN_REVISION@2026-08-11T12:21:51.517Z por 96a8cd67-1229-4eb6-9948-b9f0cf3a0702 | OBSERVADO@2026-08-11T12:22:25.479Z por 96a8cd67-1229-4eb6-9948-b9f0cf3a0702
+  DNI 60875911 | doc 5f687aed-e137-44d2-8f58-cc4cd0f40e7b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:06.019Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:02.329Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:02.537Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60854206 | doc 912530ab-c559-4818-867c-35758407ecd4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:53.861Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:49.420Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:49.945Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60846207 | doc c543ceaa-8d58-46b9-ba65-7a1d43568da7
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:07.287Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:02.351Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:02.852Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60812121 | doc 8f1244b5-66b9-4420-9dcd-76706cb03021
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:50.376Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:43.805Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:44.745Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60853578 | doc bb60177f-52d8-4357-891d-58611403746d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:39.197Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:35.022Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:35.302Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60798422 | doc 0f056e56-d23f-46d7-8433-1919c3511c51
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:34.585Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:30.378Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:30.512Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T21:23:57.395Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60798081 | doc 2037c211-39fd-4283-8a2b-31681caad247
+     → el documento tiene 2 historial(es) posterior(es) a la observación IA | el participante cambió de estado 7 vez(ces) después
+       docs: SUBIDO@2026-08-10T12:44:09.897Z por d23cb89f-0dde-4b72-b3a1-b2fee532ec18 | REVISADO@2026-08-10T21:40:52.690Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+       estados: OBSERVADO@2026-08-08T07:02:06.729Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:01.752Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:02.342Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T12:43:55.103Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T12:44:09.925Z por d23cb89f-0dde-4b72-b3a1-b2fee532ec18 | EN_REVISION@2026-08-10T21:40:51.132Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd | PREPARACION@2026-08-10T21:40:55.922Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+  DNI 60798151 | doc a87ffaae-251f-40c8-9f42-eca4e699fa3a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:10.933Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:05.976Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:06.573Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60781087 | doc 88332cdf-c9e9-450e-946f-bcdb22dc16c2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:47.966Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:43.581Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:43.863Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60786868 | doc ca714801-e306-41be-815d-22d8841cf791
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:57.883Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:54.008Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:54.882Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60772355 | doc 177b4aee-ee34-425b-a07a-1b243c4be9a5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:59.765Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:55.322Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:55.758Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60756904 | doc 0880c870-a58a-47ab-adc0-b59b7ccbea2a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:03.976Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:00.257Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:00.632Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60752793 | doc e87c99bf-0865-4239-bbe7-1b49df8f4004
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:12.547Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:07.531Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:08.125Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60750577 | doc 2e0feb20-a4b6-47ef-9bf1-44e614edd30f
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:01.802Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:57.123Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:49:56.786Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:57.706Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60760124 | doc 478479f5-321f-4231-ae27-4ee815b0a1eb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:19.345Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:12.520Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:13.397Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60750527 | doc 20d385df-4fad-466a-b0a7-0ca7b68e1606
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:52.736Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:48.905Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:49.428Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60750338 | doc c84b7085-0d6e-4488-97e1-390ce92c9ef4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:25.944Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:18.878Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:20.231Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60429722 | doc dbca7e81-56d9-4ca1-a95b-ead7a1081b36
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:17.406Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:12.079Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:12.632Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60750376 | doc ba213c43-8480-42a5-b637-2e9de5cf9b3d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:05.618Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:00.648Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:01.154Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60443237 | doc d65e9227-baf3-48cd-950d-d342db1c8bd6
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:57.475Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:53.006Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:53.495Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60342038 | doc b9f767d9-4723-4e94-bb19-5c081634417a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:53.015Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:49.174Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:49.674Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 211241000k | doc f8948246-6854-4288-89a8-0aa7495b271b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:00.776Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:56.928Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:57.653Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70488760 | doc aa0b5902-8b1f-4c5a-8ace-0b052e81e04d
+     → el participante cambió de estado 6 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:50.165Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:45.778Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T01:34:23.053Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:46.236Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T13:38:30.866Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T14:52:44.638Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70538653 | doc 6a604b82-14ba-45b1-941b-e58a2a015200
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:10.574Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:05.635Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:06.309Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73254293 | doc 9490b485-8f81-44c6-a9b1-21fdccc4b64b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:26.527Z por null | INACTIVO@2026-08-09T07:02:20.721Z por null | INACTIVO@2026-08-10T07:02:21.546Z por null
+  DNI 71155531 | doc c1bdf691-1cea-4231-bd1c-11bac356db95
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:34.397Z por null | INACTIVO@2026-08-09T07:02:28.462Z por null | INACTIVO@2026-08-10T07:02:29.106Z por null
+  DNI 73984442 | doc 863980ff-d11d-4be3-b0b9-cd9bb07b7e13
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:00:53.833Z por null | INACTIVO@2026-08-09T07:00:49.955Z por null | INACTIVO@2026-08-10T07:00:50.586Z por null
+  DNI 71183524 | doc d3726398-f9e3-4fe3-8437-2606c3f7f29a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:31.918Z por null | INACTIVO@2026-08-09T07:02:25.814Z por null | INACTIVO@2026-08-10T07:02:26.582Z por null
+  DNI 12345666 | doc 6f3a1918-a043-4a0a-9a8b-7c8a262ccdb1
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:52.534Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:48.702Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:49.201Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70487231 | doc 4153de23-6eb9-44d6-bb80-af2309acd017
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:01:07.436Z por null | INACTIVO@2026-08-09T07:01:03.615Z por null | INACTIVO@2026-08-10T07:01:03.800Z por null
+  DNI 70714833 | doc c6889bd3-1efd-4d9a-85ca-10d72307c16f
+     → el participante cambió de estado 7 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:54.074Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T15:03:25.814Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T21:40:30.282Z por 9c2d519a-5a8b-4957-89c5-8d4fa25fe836 | OBSERVADO@2026-08-08T21:42:21.524Z por 9c2d519a-5a8b-4957-89c5-8d4fa25fe836 | OBSERVADO@2026-08-09T07:02:47.460Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:48.352Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T15:17:48.586Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71495652 | doc c280a1ef-420e-4ab1-994d-a20c838d1136
+     → el participante cambió de estado 8 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:15.059Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:11.233Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T22:32:41.614Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T23:03:31.053Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T23:04:31.072Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:11.567Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-11T16:25:55.791Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-11T16:26:05.746Z por 3984cd30-4bd4-4966-a2ca-427b59f54013
+  DNI 71386052 | doc 72f0bed1-eeb4-40be-81d9-4684d9ce742a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:48.156Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:41.561Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:42.464Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73883268 | doc 2b1a05d5-75dc-4a0b-bfdc-1daf69974fe2
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:14.952Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:08.297Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:08.930Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T13:52:29.500Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60881195 | doc 1fc72bb1-6d87-4a67-b6b3-7c358aa3beb9
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:02.479Z por null | INACTIVO@2026-08-09T07:01:57.666Z por null | INACTIVO@2026-08-10T07:01:58.297Z por null
+  DNI 60798124 | doc 54e675f5-bd76-4cd9-b2e6-49e79580ad46
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:43.574Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:39.126Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:39.532Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60918129 | doc 388953be-1d15-460f-a434-fa4b2764ce10
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:18.335Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:11.519Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:12.310Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71168564 | doc 0198efc3-00d3-476d-a306-9a8a5449dcc0
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:20.566Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T21:24:42.046Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:13.569Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:14.561Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60819212 | doc 57368478-bac2-4600-9fb5-b76efe475e1e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:14.053Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:07.284Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:07.826Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61345216 | doc 37b95dd4-b24d-4cb3-8978-402e10e597e4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:30.990Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:26.951Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:27.025Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71188433 | doc eeb18b67-c3e1-47a9-9328-595323ba0696
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:40.486Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:34.690Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:35.077Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71814523 | doc cc64c8b0-74aa-45e9-8e02-0740223b4e6a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:36.699Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:30.615Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:31.306Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70710164 | doc dc3626dd-b4f3-4e2b-b891-04b5c4a2143e
+     → el participante cambió de estado 8 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:03.153Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T19:21:50.588Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T22:01:49.010Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:56.695Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T03:01:37.469Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:57.025Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T14:01:25.640Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-11T15:46:59.691Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60430627 | doc de4fda74-7403-4902-85a9-a5e03aff623e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:26.239Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:19.149Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:20.502Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60773609 | doc d66af109-9a68-4c8e-9612-474a65fff700
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:47.024Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:40.627Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:41.412Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T16:29:15.853Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70631278 | doc fa22abe0-7ba9-4bfa-826f-37d577a5946a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:03:18.200Z por null | INACTIVO@2026-08-09T07:03:11.371Z por null | INACTIVO@2026-08-10T07:03:12.188Z por null
+  DNI 60880295 | doc c9b605b9-e14b-4756-bf1b-b6b29f511ec3
+     → el documento tiene 1 historial(es) posterior(es) a la observación IA | el participante cambió de estado 7 vez(ces) después
+       docs: SUBIDO@2026-08-09T21:51:47.565Z por 32a4ae86-379e-43d0-91ee-58e88a5ea451
+       estados: OBSERVADO@2026-08-08T07:03:07.681Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T16:58:02.649Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:01.012Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T21:50:45.756Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-09T21:51:47.602Z por 32a4ae86-379e-43d0-91ee-58e88a5ea451 | PENDIENTE_REVISAR@2026-08-10T07:03:01.219Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T16:10:49.789Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71191661 | doc eacda402-cb1b-4077-8a9c-9a01ef9356d2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:52.999Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:46.309Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:47.196Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60880585 | doc 51d0c5a9-8567-4692-9750-9c257172e2a5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:21.018Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:13.994Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:14.992Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61222632 | doc 09a89117-56b5-468a-bba0-394fd5300d22
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:56.508Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:50.033Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:50.833Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71165457 | doc c022d192-a27f-441f-b118-ded20e8723de
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:37.331Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:31.297Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:31.891Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61355149 | doc 4ff4482d-dd4f-4df7-83ae-d2ef477d2750
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:52.880Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:46.188Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:47.063Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75970111 | doc e7d2e2d2-b02e-444d-80e5-3a1a6ab3f4db
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:23.488Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:16.358Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:17.527Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70735027 | doc 166c3a63-cbe9-4e6a-b3b9-78dd97623330
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:55.251Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:48.721Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:49.588Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60822724 | doc 84bd7578-25fc-41eb-ac2c-e48e245c0e86
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:19.784Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:12.889Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:13.824Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61212739 | doc 978ea407-febb-4483-8264-87ae50a8e8e1
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:35.108Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:29.096Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:29.789Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 1720476 | doc d22e4a32-8d10-410b-9df8-cc28a4e3e90a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:38.748Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:32.805Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:33.333Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61042859 | doc 63c40406-1e5a-4496-aefd-1cd865d597b9
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:25.523Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T02:20:10.351Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:19.780Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:20.538Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61063649 | doc 34034673-2f9e-4667-b4d6-f95e198838a0
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:11.068Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:04.266Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:04.625Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60556582 | doc c652e00f-093a-49d5-9358-32221dc283cf
+     → el documento tiene 3 historial(es) posterior(es) a la observación IA | el participante cambió de estado 11 vez(ces) después
+       docs: SUBIDO@2026-08-10T19:14:16.259Z por dacff353-8e14-4c8b-9c58-a37833cea617 | SUBIDO@2026-08-10T19:15:29.406Z por dacff353-8e14-4c8b-9c58-a37833cea617 | REVISADO@2026-08-10T21:25:40.739Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+       estados: OBSERVADO@2026-08-08T07:02:08.082Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T14:04:19.242Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T14:05:58.907Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:03.255Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T17:46:15.344Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:03.773Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T19:13:45.729Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T19:14:16.288Z por dacff353-8e14-4c8b-9c58-a37833cea617 | PENDIENTE_REVISAR@2026-08-10T19:15:29.431Z por dacff353-8e14-4c8b-9c58-a37833cea617 | EN_REVISION@2026-08-10T21:25:39.200Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd | PREPARACION@2026-08-10T21:25:49.215Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+  DNI 70468716 | doc 3f751d4f-050a-4cdb-8de5-6c28d5ee4385
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:34.858Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:28.859Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:29.543Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61374003 | doc 066d82f3-c1b5-4205-9810-5a74629b1762
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:31.609Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:25.511Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:26.304Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60075649 | doc 9d1b3c64-b458-4b6f-bf47-10ec7a7199e7
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:31.279Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:25.171Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:25.982Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60829002 | doc 6685e3be-cc47-4d1f-bf20-57ed329c3957
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:22.290Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:16.658Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:17.388Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76785117 | doc a1075944-e8da-423e-a5ec-158dae524fac
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:05.759Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:59.129Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:59.310Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72916620 | doc 0fcdbd80-b0de-400b-8e4c-c3812bd705c4
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:30.069Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:24.005Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:24.775Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60892344 | doc 5ffcd1db-98f0-4617-960b-30b2c2a5dff8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:34.737Z por null | INACTIVO@2026-08-09T07:02:28.719Z por null | INACTIVO@2026-08-10T07:02:29.420Z por null
+  DNI 71959100 | doc e5e21fdf-5f75-4f3b-876f-c3aa9369b66b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:46.689Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:42.378Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:42.675Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72229060 | doc bdf9f3e5-6065-478c-8ef6-da59aea87442
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:07.302Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:00.624Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:00.848Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70564081 | doc 465430ed-9054-409b-a5f2-1043a4f688a4
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:35.921Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:31.763Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T23:39:52.921Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:31.892Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61186799 | doc 1a925555-b816-412a-b36e-652f483b2b94
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:57.264Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:50.811Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:51.537Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60812341 | doc 5fa3369f-e55f-4c41-8aca-237516caebcd
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:09.746Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:04.826Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:05.469Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73969031 | doc 8ae49705-c1e4-425a-b8f9-8e00ec3281fb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:32.650Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:26.613Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:27.356Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60962138 | doc 786f224b-6a29-4879-ad13-b56a3daf6154
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:06.330Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:59.687Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:59.840Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61175141 | doc cd6965d9-09da-4e95-8315-649b35f860bc
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:47.152Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:40.744Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:41.552Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60188108 | doc 34d58fbc-54fc-4621-b1fb-31d9c34d6b54
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:42.282Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:36.352Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:36.611Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60761919 | doc fe0d8516-84ad-4d6a-86ca-59427bf9834c
+     → el participante cambió de estado 5 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:46.224Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T01:53:31.088Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:41.905Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:42.181Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T18:22:27.874Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61249661 | doc 23c24f88-93dc-4037-bcfe-a41707564fe8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:16.314Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:11.192Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:11.769Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61213643 | doc 8988bcf8-2bfe-4e5c-9fe0-75d155efec00
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:11.456Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:04.687Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:05.052Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71163705 | doc 5bed2306-762c-4427-986f-2fcfd792ace0
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:29.736Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:23.695Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:24.466Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70644102 | doc 33bb9962-9544-48e6-bca1-095819d63498
+     → el participante cambió de estado 5 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:55.373Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:48.854Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T15:00:18.678Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:49.718Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-11T16:38:25.684Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70861015 | doc e26a2f0d-9d78-477e-8e90-a636807316a8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:35.685Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:31.514Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:31.668Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60772522 | doc 4ffc4843-29db-4c37-8b0b-69c3aa59cc6a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:54.840Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:48.284Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:49.141Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70452711 | doc 056588e0-da8e-43c2-bdf3-ca6bf15de84a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:30.209Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:24.143Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:24.919Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70952146 | doc d3758f39-57da-4ff5-9881-4f7934de31e5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:18.546Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:11.738Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:12.537Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73904877 | doc de561d70-976c-4873-9a23-a10775bff88e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:23.086Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:17.443Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:18.199Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72336441 | doc d76ed7cc-b147-48bd-9127-123fdf241243
+     → el participante cambió de estado 5 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:22.721Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T23:00:23.399Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:18.617Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:19.122Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T15:33:03.818Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70645997 | doc 54e067ea-ff66-4190-bb2d-0a8744899d4d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:25.600Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:18.531Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:19.897Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70708718 | doc 6ccc8515-9188-4773-9f1f-913f2df4d793
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:37.389Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:31.367Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:31.963Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74042592 | doc c2e5f590-3a96-4277-a02d-a39fe7d66977
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:19.168Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:12.350Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:13.215Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70590421 | doc c8e35862-9c63-4aa5-9b8e-c467dbba896e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:05.362Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:58.718Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:58.924Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 77696101 | doc ea373d23-b2aa-45d0-a973-0bd1b6f9d1c5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:13.707Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:06.937Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:07.446Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70499065 | doc e3f77066-808b-456e-9d4e-1c0227d17ef3
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:17.787Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:11.021Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:11.812Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60785332 | doc 40062911-5440-4b3f-af9c-9c81fbadf5eb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:03.078Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:56.632Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:56.973Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61023417 | doc 160678d1-b7fd-4d35-8d5f-be81daa0fae0
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:16.458Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:09.686Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:10.469Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60948113 | doc 1dcb4522-0dec-455d-90c1-b35a538f8e66
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:40.066Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:34.216Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:34.633Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70588211 | doc 9e7e7761-3249-4b6b-b9b1-6331233a6afd
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:05.302Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:58.657Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:58.860Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60749247 | doc b718d549-f462-4d3f-be57-c8db1cc53265
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:34.700Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:28.692Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:29.396Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60772118 | doc 30f54598-2967-4c6b-8f5a-534fec661eb8
+     → el documento tiene 1 historial(es) posterior(es) a la observación IA | el participante cambió de estado 2 vez(ces) después
+       docs: SUBIDO@2026-08-11T00:57:20.476Z por 43781f88-eaea-4e20-b4d9-522023b5b0b9
+       estados: PENDIENTE_REVISAR@2026-08-11T00:57:20.508Z por 43781f88-eaea-4e20-b4d9-522023b5b0b9 | PENDIENTE_REVISAR@2026-08-11T15:16:57.886Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72144870 | doc 2649faa3-ca69-4bb0-a38e-455cbc448074
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:21.675Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:17.478Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:18.032Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75359974 | doc 4bd7e24b-fb0b-4e93-afc7-364f39400227
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:25.763Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:18.705Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:20.077Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60853809 | doc e182f61c-9e83-45cb-957b-e3f91c60fd73
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:19.061Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:12.236Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:13.113Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60786674 | doc 7a96b6e8-f61f-43a7-9466-6d40c9a9259c
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:58.440Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:52.084Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:52.660Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72169186 | doc 3a036c7b-b976-43ef-9376-f8c1f5fe907a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:58.783Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:52.437Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:52.954Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70624850 | doc 07e8d27d-b614-4cb8-8c5c-39c909d05bbe
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:11.759Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:04.986Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:05.371Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T14:51:50.354Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71168482 | doc fa5bea59-2814-40fe-aecf-028e9ce61581
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:47.409Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:40.975Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:41.783Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60987982 | doc ba6e0955-1a0a-4e0d-9f80-d4000d188c14
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:10.134Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:03.474Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:03.803Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70592948 | doc f5c73fcd-5a79-4a25-b526-2fbbd705e03a
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:36.049Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:31.909Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:32.052Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T17:18:20.836Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60967651 | doc 11b15de6-5751-4297-969e-ca6223c28d7a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:00.083Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:53.752Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:54.194Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 73518172 | doc fc3150ff-feba-440e-832d-0381f60c9677
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:06.209Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:01.185Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:01.777Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70627588 | doc 1f24dddd-20ee-4b3b-b9f4-4f1d3b78af20
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:07.847Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:03.054Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:03.541Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60786634 | doc d0780e73-67f5-4ab0-9c24-bca2dec8ea3f
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:51.672Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:47.135Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:47.644Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75922562 | doc 06195c20-cbe8-4576-9d27-1018eb272003
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:13.212Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:09.316Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:09.754Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 76599707 | doc 842890cb-a17d-452f-827b-3a6b721a81b7
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:45.562Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:39.251Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:39.841Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60842528 | doc af281d65-67cc-4fa3-a6c7-b4799d2a9e5d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:01:08.169Z por null | INACTIVO@2026-08-09T07:01:04.277Z por null | INACTIVO@2026-08-10T07:01:04.461Z por null
+  DNI 70529422 | doc 3f7a56ee-b7cf-44a0-a035-4292d9b7cd8f
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:23.507Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:17.827Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:18.598Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60940623 | doc f863faec-1935-4e31-acdb-8f7129f7075b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:12.471Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:07.472Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:08.060Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71183209 | doc 5f34fc5f-0857-4306-89df-dc5ab2a9610d
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:00:59.315Z por null | INACTIVO@2026-08-09T07:00:55.479Z por null | INACTIVO@2026-08-10T07:00:56.335Z por null
+  DNI 61058634 | doc 837e6a2e-6415-497e-bfa6-3e268d5c0c62
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:05.743Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:02.006Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:02.281Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71894449 | doc e548c895-48e3-497c-856d-7078755d7c47
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:01.239Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:54.886Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:55.258Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70742621 | doc dbd2db5e-23c5-434d-8b8a-80b231caa2e4
+     → el participante cambió de estado 5 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:59.899Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:53.579Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:54.035Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T18:34:40.167Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T20:34:05.396Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60829387 | doc 9d7d6e4e-e758-41dd-92b4-f13ac14fecad
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:42.508Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:36.554Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:36.824Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70534626 | doc 0840a9c7-fe1e-4031-aca1-1d122d3ec4b0
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:22.786Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:17.143Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:17.862Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70626061 | doc f125c51a-17aa-4df3-b5bf-f613c17c94e5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:21.846Z por null | INACTIVO@2026-08-09T07:02:16.195Z por null | INACTIVO@2026-08-10T07:02:16.976Z por null
+  DNI 61331048 | doc 8ecbc4c3-ca1f-444a-878f-3dc461b9bb3a
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:08.161Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:01.425Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:01.679Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75843623 | doc d04fe511-82e1-465c-8660-003d564bc788
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:02.159Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:58.370Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:58.893Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70637534 | doc b466b540-f860-405a-8db6-49a40b0fc743
+     → el participante cambió de estado 6 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:14.500Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T00:39:29.169Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:07.757Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T17:08:07.397Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T17:17:56.056Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:08.354Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60880584 | doc d1d13641-5f0f-4072-8650-43d0c01acc0b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:01:27.074Z por null | INACTIVO@2026-08-09T07:01:22.995Z por null | INACTIVO@2026-08-10T07:01:23.324Z por null
+  DNI 72512171 | doc 517c67bc-bb50-471c-a246-b96c8f572414
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:02:28.249Z por null | INACTIVO@2026-08-09T07:02:22.199Z por null | INACTIVO@2026-08-10T07:02:23.064Z por null
+  DNI 60822745 | doc 20cca8a0-cd63-46b8-a578-282fd27838fd
+     → el documento tiene 2 historial(es) posterior(es) a la observación IA | el participante cambió de estado 7 vez(ces) después
+       docs: SUBIDO@2026-08-10T16:30:23.717Z por 05148cae-ce15-485d-bf04-947c642d3ba5 | REVISADO@2026-08-10T21:22:59.121Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+       estados: OBSERVADO@2026-08-08T07:03:13.064Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:06.205Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:06.690Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T16:28:51.655Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T16:30:23.749Z por 05148cae-ce15-485d-bf04-947c642d3ba5 | EN_REVISION@2026-08-10T21:22:48.119Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd | PREPARACION@2026-08-10T21:23:01.250Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+  DNI 61136781 | doc 7c3f1773-919b-40be-b199-71143527cacb
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:45.197Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:38.949Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:39.482Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61107782 | doc 0e4ff5d0-0ee2-4f65-92ef-ba2de1a3e3e6
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:13.060Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:09.129Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:09.564Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71161455 | doc 5bc4f455-c761-426b-9ca7-0dacedbb2280
+     → el documento tiene 2 historial(es) posterior(es) a la observación IA | el participante cambió de estado 7 vez(ces) después
+       docs: SUBIDO@2026-08-09T19:13:54.117Z por 643c448f-5757-4a65-bddc-64725d8c628d | REVISADO@2026-08-10T21:38:45.785Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+       estados: OBSERVADO@2026-08-08T07:01:13.972Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:10.090Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T19:12:28.657Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-09T19:13:54.157Z por 643c448f-5757-4a65-bddc-64725d8c628d | DOCUMENTOS_SUBIDOS@2026-08-10T07:01:10.472Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | EN_REVISION@2026-08-10T21:38:23.300Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd | DOCUMENTOS_INCOMPLETOS@2026-08-10T21:38:46.931Z por 5c7c8a85-8272-477a-a039-10fe6f5933bd
+  DNI 70702306 | doc e6386f5b-49d4-4ce1-8d93-91e3d0eb3eab
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:56.702Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:50.243Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:51.012Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70624679 | doc 7d3d83d6-106b-4773-bdff-e82afed1c650
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:08.631Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:04.694Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:04.901Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60923102 | doc 2d400f2a-ff0b-48f8-8add-1393a64dae07
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:05.246Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:58.592Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:58.795Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60892535 | doc 3c5a40a9-8c8c-4c67-930f-94a66db3bf3e
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:00.309Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:56.485Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:57.239Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70451940 | doc dc4e8e73-2b96-4512-979f-b5853ca19865
+     → el participante cambió de estado 2 vez(ces) después
+       estados: EN_REVISION@2026-08-10T10:24:12.970Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO_SPONSOR@2026-08-10T10:24:18.918Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 75002131 | doc e89b8e36-0e1e-4d81-bcd6-35d360fba652
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:50.006Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-08T23:13:11.316Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:45.642Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:46.082Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71148375 | doc e0532ba7-7138-41f6-b46f-c60a14a4ed0b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:32.553Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:28.430Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:28.512Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74635027 | doc 538b4e98-9dde-4f3c-8218-9d532f8a59c5
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:18.864Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:15.019Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:15.482Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61482158 | doc 8d1670dd-60fb-4c2a-b889-ecefa2dff002
+     → el documento tiene 1 historial(es) posterior(es) a la observación IA | el participante cambió de estado 9 vez(ces) después
+       docs: SUBIDO@2026-08-10T13:52:35.218Z por df2e53b4-2e2e-4eb2-b95a-d8bcf5a5ab4c
+       estados: OBSERVADO@2026-08-08T07:02:49.514Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:42.947Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:43.878Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T13:46:36.625Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-10T13:52:35.248Z por df2e53b4-2e2e-4eb2-b95a-d8bcf5a5ab4c | DOCUMENTOS_SUBIDOS@2026-08-10T13:56:40.872Z por df2e53b4-2e2e-4eb2-b95a-d8bcf5a5ab4c | DOCUMENTOS_SUBIDOS@2026-08-10T14:45:03.444Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-10T17:01:20.365Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | DOCUMENTOS_SUBIDOS@2026-08-10T19:11:17.439Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60749946 | doc a557ee1c-82b7-4db8-80b8-9cd6a268ddaa
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:17.498Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:10.734Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:11.507Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70399249 | doc c4c13279-ea4e-4103-8aec-ae012be102d0
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:00.968Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:54.599Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:55.028Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74824782 | doc 993d5819-cdf9-442b-a94d-9209eec09a40
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:16.100Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:12.268Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:12.646Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60777503 | doc 2bc4e673-1300-469e-9f79-a3d7bc3e9a90
+     → el documento tiene 1 historial(es) posterior(es) a la observación IA | el participante cambió de estado 5 vez(ces) después
+       docs: SUBIDO@2026-08-10T19:14:40.624Z por 793d50ee-12f4-45a6-add7-d605a48f80bf
+       estados: OBSERVADO@2026-08-08T07:02:48.368Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:41.778Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:42.663Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T19:12:50.205Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | PENDIENTE_REVISAR@2026-08-10T19:14:40.657Z por 793d50ee-12f4-45a6-add7-d605a48f80bf
+  DNI 70968057 | doc 11c4373c-7615-4cd9-a1fe-fe41263703f9
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:12.127Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:05.314Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:05.759Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 72094430 | doc 28d8b4ef-de12-476a-9cca-1bd47fcf1eb0
+     → el participante cambió de estado 4 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:20.186Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:15.865Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:16.332Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T16:38:36.767Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 71163032 | doc 73749e42-41af-4d31-b326-ec22881c498c
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:51.939Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:45.332Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:46.191Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61472108 | doc a20d630b-b316-4168-927e-2ee1bf71cbe2
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:59.429Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:55.606Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:56.434Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70635883 | doc 7bdf8dc9-8cd2-4500-8223-404ea43ad0fa
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:00.928Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:57.095Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:57.806Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60853924 | doc 080d97b7-c0db-48a2-980c-3d3ea32245e8
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:03:24.226Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:03:17.123Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:03:18.411Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70597559 | doc 9909199a-4dc6-4122-8038-8ef9b92935a6
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:10.664Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:06.668Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:07.051Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 61093452 | doc 4b38a1ef-6dd0-48bb-af7f-91e1b2812648
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:56.883Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:52.988Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:53.740Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70953570 | doc 3c3ee17c-b446-4c4e-acc5-349bd0953a3b
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:00:55.271Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:00:51.349Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:00:52.125Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 60876072 | doc 95000748-08c9-4e08-b994-8cbd6f2fcd9d
+     → el participante cambió de estado 1 vez(ces) después
+       estados: OBSERVADO_SPONSOR@2026-08-08T07:00:56.595Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 74157479 | doc b1189920-8509-4679-bc86-ccf0632d48c3
+     → el participante cambió de estado 3 vez(ces) después
+       estados: INACTIVO@2026-08-08T07:01:00.803Z por null | INACTIVO@2026-08-09T07:00:56.959Z por null | INACTIVO@2026-08-10T07:00:57.677Z por null
+  DNI 61223085 | doc 1d56c132-2ba7-4e3e-9eb7-0c6d2129aa48
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:13.070Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:08.044Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:08.606Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70956254 | doc a9b695da-b4ea-4162-a2c8-feb3bde719a3
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:01:05.954Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:01:02.262Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:01:02.484Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+  DNI 70619519 | doc 97fe0ebe-a732-4a62-a1e6-f3b97da6bd75
+     → el participante cambió de estado 3 vez(ces) después
+       estados: OBSERVADO@2026-08-08T07:02:39.938Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-09T07:02:34.075Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d | OBSERVADO@2026-08-10T07:02:34.525Z por d5165eff-2df4-4a87-a65e-3ea50cf4ad3d
+
+=== CRUCE CONTRA EL EXCEL ===
+Excel: 2158 filas | OBSERVADO: 371 | CORRECTO: 1787
+BD: 371 observaciones
+Observados en el Excel que NO están en BD: 0 []
+Observaciones en BD que NO están en el Excel: 0 []
+
+=== ARCHIVOS GENERADOS ===
+  C:\Users\sespinoza\Desktop\docs project\gestordocs-back\reversion-ia-2\inventario.json
+  C:\Users\sespinoza\Desktop\docs project\gestordocs-back\reversion-ia-2\inventario-reversion.xlsx
+
+No se escribió NADA en la base de datos.
