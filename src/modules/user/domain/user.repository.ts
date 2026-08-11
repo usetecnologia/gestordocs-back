@@ -191,9 +191,14 @@ export interface ExportUsersFilters {
   roleId?: string;
   countryId?: string;
   sponsorId?: string;
+  hasSponsor?: boolean;
   programId?: string;
   optionProgramId?: string;
+  statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
+  generalStatus?: 'ACTIVO' | 'INACTIVO';
   search?: string;
+  sortBy?: 'firstname' | 'lastfathername';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface ExportUserRow {
