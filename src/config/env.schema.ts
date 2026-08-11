@@ -36,7 +36,12 @@ export const envSchema = z.object({
   AWS_S3_BUCKET: z.string().min(1),
   // OpenAI
   OPENAI_API_KEY: z.string().min(1),
-  OPENAI_PASSPORT_MODEL: z.string().default('gpt-4o'),
+  OPENAI_PASSPORT_MODEL: z.string().default('gpt-5.6-terra'),
+  OPENAI_SQL_MODEL: z.string().default('gpt-5.6-terra'),
+  // Consultas en lenguaje natural — usuario de BD de solo lectura (opcional pero recomendado).
+  // Si no se define, se reutilizan las credenciales principales.
+  READONLY_USER_DB: z.string().optional(),
+  READONLY_PASSWORD_DB: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;
