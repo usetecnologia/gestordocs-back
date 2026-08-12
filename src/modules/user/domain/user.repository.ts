@@ -127,8 +127,8 @@ export interface UpdateUserData {
   birthdate?: string;
   phone?: string;
   avatar?: string;
-  username?: string;
-  email?: string;
+  username?: string | null;
+  email?: string | null;
   password?: string;
   roleId?: string;
   countryId?: string;
@@ -175,6 +175,7 @@ export interface UpdateExternalUserData {
   optionProgramId?: string | null;
   status: string;
   employer?: string | null;
+  email?: string | null;
   status_hired?: number | null;
   hired_date?: string | null;
   jo_use_date?: string | null;
@@ -190,9 +191,14 @@ export interface ExportUsersFilters {
   roleId?: string;
   countryId?: string;
   sponsorId?: string;
+  hasSponsor?: boolean;
   programId?: string;
   optionProgramId?: string;
+  statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
+  generalStatus?: 'ACTIVO' | 'INACTIVO';
   search?: string;
+  sortBy?: 'firstname' | 'lastfathername';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface ExportUserRow {
@@ -217,6 +223,8 @@ export interface IUserRepository {
   create(data: CreateUserData): Promise<User>;
   update(id: string, data: UpdateUserData): Promise<User>;
   delete(id: string): Promise<void>;
+  isUsernameTaken(username: string, excludeId?: string): Promise<boolean>;
+  isEmailTaken(email: string, excludeId?: string): Promise<boolean>;
   addStatusHistory(userId: string, status: UserStatus, createdById?: string): Promise<void>;
   createObservation(data: CreateObservationData): Promise<ObservationResult>;
   closeObservation(observationId: string): Promise<string>;

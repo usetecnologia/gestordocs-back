@@ -324,6 +324,15 @@ model UserDocuments {
   users               User @relation(fields: [userId], references: [id])
 
   userDocumentHistory UserDocumentHistory[]
+
+  // Un participante no puede tener dos registros ACTIVOS del mismo documento: statusDocument
+  // forma parte de la clave para que los registros históricos (statusDocument = false) sigan
+  // conviviendo con el vigente sin restricción. Cierra la condición de carrera del sync, que
+  // creaba el mismo vínculo dos veces cuando dos ejecuciones concurrían.
+  // Las filas con NULL no colisionan en MySQL/MariaDB: cada registro cae solo en el índice
+  // que le corresponde según si el documento está ligado a un sponsor o es global.
+  @@unique([userId, documentSponsorId, statusDocument], map: "uq_user_documents_sponsor_active")
+  @@unique([userId, documentId, statusDocument], map: "uq_user_documents_document_active")
 }
 
 model UserDocumentHistory {
@@ -331,7 +340,7 @@ model UserDocumentHistory {
   userDocumentsId     String
   status              DocumentSponsorStatus
   url                 String? @db.Text
-  observation         String?
+  observation         String? @db.Text
   createdById         String?  @map("created_by_id") @db.VarChar(36)
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")

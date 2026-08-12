@@ -1,6 +1,11 @@
-import { Injectable } from '@nestjs/common';
-import { $Enums } from 'prisma/generated/prisma/client';
+import { Injectable, Logger } from '@nestjs/common';
+import { $Enums, Prisma } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
+import {
+  MYSQL_TEXT_MAX_BYTES,
+  exceedsByteLimit,
+  truncateToBytes,
+} from '@common/utils/text.util';
 import {
   IUserDocumentsRepository,
   ExistingUserDocument,
@@ -19,7 +24,22 @@ import {
   UserDocumentTargetHistoryItem,
   CloneDocumentForSponsorData,
   RefreshDocumentFromLatestData,
+  PassportDocumentCandidate,
 } from '../../domain/user-documents.repository';
+
+const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
+
+/**
+ * Choque contra los índices únicos de `UserDocuments` (uq_user_documents_sponsor_active /
+ * uq_user_documents_document_active), que impiden dos registros activos del mismo documento
+ * para un mismo participante.
+ */
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === UNIQUE_CONSTRAINT_VIOLATION
+  );
+}
 
 const USER_DOCS_INCLUDE = {
   documentSponsors: {
@@ -128,7 +148,23 @@ async function buildPersonMap(
 
 @Injectable()
 export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
+  private readonly logger = new Logger(UserDocumentsPrismaRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Descarta el fallo de una escritura de la sincronización cuando lo causó una ejecución
+   * concurrente; cualquier otro error se propaga intacto.
+   *
+   * El sync es idempotente: se re-ejecuta en cada consulta de documentos del participante. Si dos
+   * ejecuciones concurren, la que pierde la carrera intenta crear o activar un registro que la otra
+   * ya dejó listo y el índice único la rechaza — esa escritura ya no aporta nada. Propagarla
+   * convertiría una carrera inofensiva en un error 500.
+   */
+  private skipIfConcurrentSync(error: unknown, description: string): void {
+    if (!isUniqueConstraintViolation(error)) throw error;
+    this.logger.warn(`Sincronización concurrente: se omite ${description}.`);
+  }
 
   async findByUserId(userId: string): Promise<ExistingUserDocument[]> {
     // Ordenado por última actividad real (updatedAt), no por fecha de creación del vínculo:
@@ -197,18 +233,23 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void> {
-    await this.prisma.userDocuments.create({
-      data: {
-        userId: data.userId,
-        documentSponsorId: data.documentSponsorId ?? null,
-        documentId: data.documentId ?? null,
-        status: 'PENDIENTE',
-        statusDocument: true,
-        userDocumentHistory: {
-          create: { status: 'PENDIENTE' },
+    try {
+      await this.prisma.userDocuments.create({
+        data: {
+          userId: data.userId,
+          documentSponsorId: data.documentSponsorId ?? null,
+          documentId: data.documentId ?? null,
+          status: 'PENDIENTE',
+          statusDocument: true,
+          userDocumentHistory: {
+            create: { status: 'PENDIENTE' },
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      const target = data.documentSponsorId ?? data.documentId;
+      this.skipIfConcurrentSync(error, `la creación del documento ${target}`);
+    }
   }
 
   async cloneDocumentForNewSponsor({
@@ -218,17 +259,24 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     url,
   }: CloneDocumentForSponsorData): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
-    await this.prisma.userDocuments.create({
-      data: {
-        userId,
-        documentSponsorId,
-        status: castedStatus,
-        statusDocument: true,
-        userDocumentHistory: {
-          create: { status: castedStatus, url },
+    try {
+      await this.prisma.userDocuments.create({
+        data: {
+          userId,
+          documentSponsorId,
+          status: castedStatus,
+          statusDocument: true,
+          userDocumentHistory: {
+            create: { status: castedStatus, url },
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      this.skipIfConcurrentSync(
+        error,
+        `el clonado del documento ${documentSponsorId}`,
+      );
+    }
   }
 
   async refreshDocumentFromLatest({
@@ -237,22 +285,36 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     url,
   }: RefreshDocumentFromLatestData): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
-    await this.prisma.$transaction([
-      this.prisma.userDocuments.update({
-        where: { id: userDocumentId },
-        data: { status: castedStatus, statusDocument: true },
-      }),
-      this.prisma.userDocumentHistory.create({
-        data: { userDocumentsId: userDocumentId, status: castedStatus, url },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.userDocuments.update({
+          where: { id: userDocumentId },
+          data: { status: castedStatus, statusDocument: true },
+        }),
+        this.prisma.userDocumentHistory.create({
+          data: { userDocumentsId: userDocumentId, status: castedStatus, url },
+        }),
+      ]);
+    } catch (error) {
+      this.skipIfConcurrentSync(
+        error,
+        `la puesta al día del documento ${userDocumentId}`,
+      );
+    }
   }
 
   async updateStatusDocument(id: string, statusDocument: boolean): Promise<void> {
-    await this.prisma.userDocuments.update({
-      where: { id },
-      data: { statusDocument },
-    });
+    try {
+      await this.prisma.userDocuments.update({
+        where: { id },
+        data: { statusDocument },
+      });
+    } catch (error) {
+      this.skipIfConcurrentSync(
+        error,
+        `el cambio de vigencia del documento ${id}`,
+      );
+    }
   }
 
   async addHistory(userDocumentsId: string, status: string, url: string, createdById: string): Promise<void> {
@@ -283,6 +345,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
 
   async observarDocument({ userDocumentId, observation, etiquetaIds, reviewedById, url, files }: ObservarDocumentData): Promise<void> {
     const status = $Enums.DocumentSponsorStatus.OBSERVADO;
+    const safeObservation = this.fitObservation(observation, userDocumentId);
     await this.prisma.$transaction(async (tx) => {
       await tx.userDocuments.update({
         where: { id: userDocumentId },
@@ -292,7 +355,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         data: {
           userDocumentsId: userDocumentId,
           status,
-          observation,
+          observation: safeObservation,
           createdById: reviewedById,
           url,
           userDocumentHistoryEtiquetas: {
@@ -306,6 +369,23 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         },
       });
     });
+  }
+
+  /**
+   * Ajusta la observación a la capacidad real de la columna. Perder el final de un texto
+   * desmedido es preferible a que el INSERT falle y la transacción se lleve consigo el cambio de
+   * estado del documento y del participante, que es lo que pasó en la revisión masiva del 4/8/2026
+   * cuando la columna todavía era `varchar(191)`.
+   */
+  private fitObservation(observation: string, userDocumentId: string): string {
+    if (!exceedsByteLimit(observation, MYSQL_TEXT_MAX_BYTES))
+      return observation;
+
+    this.logger.warn(
+      `Observación demasiado larga para UserDocument #${userDocumentId} ` +
+        `(${Buffer.byteLength(observation, 'utf8')} bytes): se recorta a ${MYSQL_TEXT_MAX_BYTES}.`,
+    );
+    return truncateToBytes(observation, MYSQL_TEXT_MAX_BYTES);
   }
 
   async countRequiredDocs(userId: string): Promise<RequiredDocsCount> {
@@ -587,5 +667,63 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       select: { id: true },
     });
     return userDoc?.id ?? null;
+  }
+
+  async findAllPassportDocuments(): Promise<PassportDocumentCandidate[]> {
+    const passportDoc = await this.prisma.documents.findFirst({
+      where: { siglasCode: 'PASSPORT', status: true },
+      select: {
+        id: true,
+        documentSponsors: { where: { status: true }, select: { id: true } },
+      },
+    });
+    if (!passportDoc) return [];
+
+    const documentSponsorIds = passportDoc.documentSponsors.map((ds) => ds.id);
+
+    // Sin "take": se recorren todos los participantes con pasaporte pendiente de analizar.
+    // Varias filas pueden pertenecer al mismo participante (p. ej. si cambió de sponsor) y
+    // otras pueden no tener URL aún — se dedupean abajo, quedándose con la más reciente por usuario.
+    const rows = await this.prisma.userDocuments.findMany({
+      where: {
+        statusDocument: true,
+        status: { not: $Enums.DocumentSponsorStatus.PENDIENTE },
+        OR: [
+          { documentId: passportDoc.id },
+          ...(documentSponsorIds.length ? [{ documentSponsorId: { in: documentSponsorIds } }] : []),
+        ],
+      },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        updatedAt: true,
+        userDocumentHistory: {
+          select: { url: true },
+          orderBy: { createdAt: 'desc' as const },
+          take: 1,
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const seenUsers = new Set<string>();
+    const candidates: PassportDocumentCandidate[] = [];
+    for (const row of rows) {
+      if (seenUsers.has(row.userId)) continue;
+      const url = row.userDocumentHistory[0]?.url;
+      if (!url) continue;
+
+      seenUsers.add(row.userId);
+      candidates.push({
+        userId: row.userId,
+        userDocumentId: row.id,
+        status: row.status as string,
+        url,
+        updatedAt: row.updatedAt,
+      });
+    }
+
+    return candidates;
   }
 }

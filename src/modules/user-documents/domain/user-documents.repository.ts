@@ -144,6 +144,14 @@ export interface UserDocumentTargetHistoryItem {
   createdAt: Date;
 }
 
+export interface PassportDocumentCandidate {
+  userId: string;
+  userDocumentId: string;
+  status: string;
+  url: string;
+  updatedAt: Date;
+}
+
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
   findUserSponsorCode(userId: string): Promise<string | null>;
@@ -176,6 +184,7 @@ export interface IUserDocumentsRepository {
     documentId: string,
     sponsorId: string | null,
   ): Promise<string | null>;
+  findAllPassportDocuments(): Promise<PassportDocumentCandidate[]>;
 }
 
 export const USER_DOCUMENTS_REPOSITORY = Symbol('USER_DOCUMENTS_REPOSITORY');

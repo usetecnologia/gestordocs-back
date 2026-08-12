@@ -1,37 +1,13 @@
-import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IUserRepository, USER_REPOSITORY } from '../../domain/user.repository';
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
+import { WorkuseService } from '@shared/workuse/workuse.service';
+import type { WorkuseParticipant } from '@shared/workuse/interfaces/workuse-participant.interface';
 
-const WORKUSE_BULK_URL = 'https://secure.workuse.com/api/user/userinfo.php';
 const DEFAULT_PASSWORD = 'password26';
 const EMPTY_SPONSOR_VALUES = new Set(['', '&NBSP;', '_NBSP_']);
 const TARGET_COUNTRY = 'PERU';
 const TARGET_PROGRAM = 'WAT USA';
-
-interface WorkuseUserItem {
-  valid: boolean;
-  firstname: string;
-  middlename?: string;
-  lastfathername: string;
-  lastmothername?: string;
-  dni: string;
-  birthdate?: string;
-  country: string;
-  program: string;
-  programId?: string;
-  sponsor: string;
-  sponsorId?: string;
-  optionPrograma: string;
-  status?: string;
-  employer?: string;
-  status_hired?: number | null;
-  hired_date?: string | null;
-  jo_use_date?: string | null;
-  programAgreementOK?: boolean | null;
-  fechadeenvioalsponsor?: string | null;
-  fechaDSinUSE?: string | null;
-  statusSolRetiro?: string | null;
-}
 
 export interface BulkLoadResult {
   created: string[];
@@ -44,7 +20,7 @@ function normalizeSponsor(value: string): string | null {
   return EMPTY_SPONSOR_VALUES.has(trimmed) ? null : trimmed;
 }
 
-function resolveUserStatus(item: WorkuseUserItem): string {
+function resolveUserStatus(item: WorkuseParticipant): string {
   if (item.status?.trim().toLowerCase() === 'retired') return 'RETIRADO';
   if (item.fechadeenvioalsponsor) return 'ENVIADO_SPONSOR';
   return 'SIN_DOCUMENTOS';
@@ -55,10 +31,11 @@ export class BulkLoadUsersUseCase {
   constructor(
     @Inject(USER_REPOSITORY) private readonly userRepo: IUserRepository,
     @Inject(PASSWORD_HASHER) private readonly passwordHasher: IPasswordHasher,
+    private readonly workuseService: WorkuseService,
   ) {}
 
   async execute(): Promise<BulkLoadResult> {
-    const users = await this.fetchFromWorkuse();
+    const users = await this.workuseService.fetchParticipantsBulk();
     const role = await this.userRepo.findDefaultRole();
     const passwordHash = await this.passwordHasher.hash(DEFAULT_PASSWORD);
 
@@ -111,6 +88,7 @@ export class BulkLoadUsersUseCase {
           optionProgramId: optionProgram.id,
           status: resolveUserStatus(item),
           employer: item.employer || null,
+          email: item.email ?? null,
           status_hired: item.status_hired ?? null,
           hired_date: item.hired_date || null,
           jo_use_date: item.jo_use_date || null,
@@ -140,21 +118,5 @@ export class BulkLoadUsersUseCase {
     }
 
     return result;
-  }
-
-  private async fetchFromWorkuse(): Promise<WorkuseUserItem[]> {
-    let response: Response;
-    try {
-      response = await fetch(WORKUSE_BULK_URL);
-    } catch {
-      throw new ServiceUnavailableException('No se pudo conectar con el servicio externo.');
-    }
-
-    const raw = (await response.json().catch(() => null)) as WorkuseUserItem[] | null;
-    if (!response.ok || !Array.isArray(raw)) {
-      throw new ServiceUnavailableException('Respuesta inválida del servicio externo.');
-    }
-
-    return raw;
   }
 }

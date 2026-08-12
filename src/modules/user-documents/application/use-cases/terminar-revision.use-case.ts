@@ -18,7 +18,14 @@ export class TerminarRevisionUseCase {
     private readonly emailDispatchService: EmailDispatchService,
   ) {}
 
-  async execute(participantId: string, createdById?: string): Promise<void> {
+  // `suppressParticipantEmail` evita el correo de "documento observado" hacia el participante
+  // (usado por jobs automáticos de sincronización masiva) sin afectar el resto de callers, que
+  // no lo pasan y mantienen el envío normal.
+  async execute(
+    participantId: string,
+    createdById?: string,
+    suppressParticipantEmail = false,
+  ): Promise<void> {
     const docs = await this.userDocumentsRepo.findByUserIdWithHistory(
       participantId,
       UserDocumentFilter.ALL,
@@ -34,15 +41,17 @@ export class TerminarRevisionUseCase {
 
     const observedDocs = docs.filter((d) => d.status === 'OBSERVADO');
 
-    // 0. Tiene una observación vigente (activa y sin endDate) → se mantiene/pasa a OBSERVADO
+    // 0. Tiene una observación vigente (activa y sin endDate) → se mantiene/pasa a OBSERVADO, o a
+    // OBSERVADO_SPONSOR si el participante ya fue enviado al sponsor alguna vez.
     if (await this.userStatusPort.hasActiveObservation(participantId)) {
-      await this.setObservado(participantId, createdById, observedDocs);
+      await this.setObservado(participantId, createdById, observedDocs, suppressParticipantEmail);
       return;
     }
 
-    // 1. Existe algún documento OBSERVADO → participante pasa a OBSERVADO
+    // 1. Existe algún documento OBSERVADO → participante pasa a OBSERVADO, o a OBSERVADO_SPONSOR
+    // si el participante ya fue enviado al sponsor alguna vez (fechadeenvioalsponsor con valor).
     if (observedDocs.length > 0) {
-      await this.setObservado(participantId, createdById, observedDocs);
+      await this.setObservado(participantId, createdById, observedDocs, suppressParticipantEmail);
       return;
     }
 
@@ -52,9 +61,12 @@ export class TerminarRevisionUseCase {
       return;
     }
 
-    // 3. Todos los obligatorios están REVISADO → PREPARACION
+    // 3. Todos los obligatorios están REVISADO → ENVIADO_SPONSOR si ya fue enviado al sponsor
+    // (fechadeenvioalsponsor con valor), o PREPARACION si aún no.
     if (requiredDocs.length > 0 && requiredDocs.every((d) => d.status === 'REVISADO')) {
-      await this.userStatusPort.updateStatus(participantId, 'PREPARACION', createdById);
+      const wasSentToSponsor = await this.userStatusPort.hasBeenSentToSponsor(participantId);
+      const nuevoEstado = wasSentToSponsor ? 'ENVIADO_SPONSOR' : 'PREPARACION';
+      await this.userStatusPort.updateStatus(participantId, nuevoEstado, createdById);
       return;
     }
 
@@ -78,15 +90,22 @@ export class TerminarRevisionUseCase {
     participantId: string,
     createdById: string | undefined,
     observedDocs: UserDocumentWithHistory[],
+    suppressParticipantEmail = false,
   ): Promise<void> {
     const previousStatus = await this.userStatusPort.getStatus(participantId);
-    await this.userStatusPort.updateStatus(participantId, 'OBSERVADO', createdById);
+    const wasSentToSponsor = await this.userStatusPort.hasBeenSentToSponsor(participantId);
+    const newStatus = wasSentToSponsor ? 'OBSERVADO_SPONSOR' : 'OBSERVADO';
+    await this.userStatusPort.updateStatus(participantId, newStatus, createdById);
+
+    // El correo de "documento observado" solo aplica a la observación interna (OBSERVADO) — si
+    // ya fue observado por el sponsor, no se notifica al participante por este canal.
+    if (newStatus !== 'OBSERVADO') return;
 
     // Un solo correo por revisión sin importar cuántos documentos se observaron por separado
     // (evita mandar uno por cada documento). Solo se envía en la transición real hacia
     // OBSERVADO — si el participante ya estaba OBSERVADO, una nueva llamada a terminar-revisión
     // no debe reenviar el mismo correo.
-    if (observedDocs.length === 0 || previousStatus === 'OBSERVADO') return;
+    if (observedDocs.length === 0 || previousStatus === newStatus || suppressParticipantEmail) return;
 
     const emailContext = await this.userDocumentsRepo.findEmailContextByUserId(participantId);
     const nombreDocumento = [

@@ -40,13 +40,13 @@ export class UpdateUserDto {
   @MaxLength(20)
   phone?: string;
 
-  @ApiPropertyOptional({ example: 'johndoe' })
+  @ApiPropertyOptional({ example: 'johndoe', description: 'Enviar "" (string vacío) para limpiar el campo.' })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   username?: string;
 
-  @ApiPropertyOptional({ example: 'john@example.com' })
+  @ApiPropertyOptional({ example: 'john@example.com', description: 'Enviar "" (string vacío) para limpiar el campo.' })
   @IsOptional()
   @IsString()
   @MaxLength(200)

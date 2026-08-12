@@ -22,7 +22,12 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       ...(type && { type }),
       ...(showHired && { showHired }),
       ...(status !== undefined && { status }),
-      ...(search && { name: { contains: search } }),
+      // El buscador acepta tanto el nombre como las siglas: en la tabla el documento se reconoce
+      // por su badge de siglas, así que escribir "DNI" tiene que encontrarlo igual que "Documento
+      // Nacional de Identidad".
+      ...(search && {
+        OR: [{ name: { contains: search } }, { siglasCode: { contains: search } }],
+      }),
     };
 
     const [data, total] = await this.prisma.$transaction([

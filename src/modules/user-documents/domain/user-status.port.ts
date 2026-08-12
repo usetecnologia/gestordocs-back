@@ -4,6 +4,7 @@ export interface IUserStatusPort {
   getRole(userId: string): Promise<string | null>;
   hasActiveObservation(userId: string): Promise<boolean>;
   findLastStatusBeforeInactive(userId: string): Promise<string | null>;
+  hasBeenSentToSponsor(userId: string): Promise<boolean>;
 }
 
 export const USER_STATUS_PORT = Symbol('USER_STATUS_PORT');
