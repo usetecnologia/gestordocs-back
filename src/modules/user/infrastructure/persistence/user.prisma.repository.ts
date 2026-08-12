@@ -76,6 +76,17 @@ export class UserPrismaRepository implements IUserRepository {
     return Prisma.sql`u.sponsorId = ${sponsorId}`;
   }
 
+  // SI = tiene fecha de envío al sponsor (fechadeenvioalsponsor con valor). NO = vacío/nulo.
+  // Todos los flujos de escritura (autologin, bulk-load, updateByDni) normalizan el campo con
+  // `|| null`, así que nunca queda un string vacío guardado — solo se necesita chequear null.
+  private fechaEnvioSponsorWhereFragment(
+    value: 'SI' | 'NO' | undefined,
+  ): { fechadeenvioalsponsor?: null | { not: null } } {
+    if (value === 'SI') return { fechadeenvioalsponsor: { not: null } };
+    if (value === 'NO') return { fechadeenvioalsponsor: null };
+    return {};
+  }
+
   // `status` (estado exacto) y `generalStatus` (ACTIVO/INACTIVO) filtran el mismo campo de Prisma
   // — no se pueden mezclar en un solo spread de objeto porque la clave repetida se pisa. Se
   // combinan siempre con AND: si ambos vienen, deben cumplirse los dos a la vez.
@@ -105,6 +116,7 @@ export class UserPrismaRepository implements IUserRepository {
     optionProgramId,
     statusSolRetiro,
     generalStatus,
+    fechaEnvioSponsor,
     search,
     sortBy,
     sortOrder,
@@ -168,6 +180,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...(hasSponsor === false && { sponsorId: null }),
       ...(programId && { programId }),
       ...(optionProgramId && { optionProgramId }),
+      ...this.fechaEnvioSponsorWhereFragment(fechaEnvioSponsor),
       ...(combinedIds !== undefined && { id: { in: combinedIds } }),
     };
 

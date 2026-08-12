@@ -49,6 +49,7 @@ export interface UserFilters {
   optionProgramId?: string;
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
   generalStatus?: 'ACTIVO' | 'INACTIVO';
+  fechaEnvioSponsor?: 'SI' | 'NO';
   search?: string;
   sortBy?: 'firstname' | 'lastfathername';
   sortOrder?: 'asc' | 'desc';

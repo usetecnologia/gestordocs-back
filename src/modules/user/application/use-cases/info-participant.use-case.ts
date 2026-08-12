@@ -178,7 +178,20 @@ export class InfoParticipantUseCase {
     // "cerrado" del flujo con el sponsor (o retenido/inactivo), no se reevalúa — salvo que sea
     // una reactivación sin historial previo utilizable, donde se fuerza la reevaluación.
     const noHistoryReactivation = isReactivation && !userStatus;
-    if (noHistoryReactivation || !STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)) {
+
+    // El participante estaba ENVIADO_SPONSOR pero Workuse ya no reporta fechadeenvioalsponsor
+    // (el upsert previo la dejó en null). En ese caso se fuerza la reevaluación por documentos
+    // aunque ENVIADO_SPONSOR esté bloqueado: como hasBeenSentToSponsor() lee la fecha ya
+    // limpiada en BD, TerminarRevisionUseCase re-derivará el estado real (PREPARACION,
+    // DOCUMENTOS_INCOMPLETOS, OBSERVADO, etc.) en lugar de dejarlo atrapado en ENVIADO_SPONSOR.
+    const sponsorDateGone =
+      existing?.status === 'ENVIADO_SPONSOR' && !data.fechadeenvioalsponsor;
+
+    if (
+      noHistoryReactivation ||
+      sponsorDateGone ||
+      !STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)
+    ) {
       await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID, false);
     }
 

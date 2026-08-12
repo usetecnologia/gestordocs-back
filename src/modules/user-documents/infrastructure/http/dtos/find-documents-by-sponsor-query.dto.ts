@@ -1,11 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
+import { IsArray, IsOptional, IsUUID } from 'class-validator';
 
 export class FindDocumentsBySponsorQueryDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
     example: 'uuid-sponsor-1,uuid-sponsor-2',
-    description: 'IDs de sponsors separados por coma',
+    description:
+      'IDs de sponsors separados por coma. Si se omite, se devuelven solo los documentos generales.',
   })
   @Transform(({ value }) => {
     if (Array.isArray(value)) {
@@ -17,10 +18,10 @@ export class FindDocumentsBySponsorQueryDto {
         .map((v) => v.trim())
         .filter(Boolean);
     }
-    return value;
+    return [];
   })
+  @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
   @IsUUID('all', { each: true })
-  sponsorIds!: string[];
+  sponsorIds: string[] = [];
 }

@@ -20,6 +20,7 @@ export class FindAllUserUseCase {
       optionProgramId: query.optionProgramId,
       statusSolRetiro: query.statusSolRetiro,
       generalStatus: query.generalStatus,
+      fechaEnvioSponsor: query.fechaEnvioSponsor,
       search: query.search,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder ?? 'asc',

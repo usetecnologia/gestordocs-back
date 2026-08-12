@@ -76,6 +76,17 @@ export class FindUsersQueryDto {
   @IsIn(['ACTIVO', 'INACTIVO'])
   generalStatus?: 'ACTIVO' | 'INACTIVO';
 
+  @ApiPropertyOptional({
+    enum: ['SI', 'NO'],
+    example: 'SI',
+    description:
+      'Filtra por si el participante tiene fecha de envío al sponsor. SI = tiene un valor en fechadeenvioalsponsor. ' +
+      'NO = el campo está vacío/nulo.',
+  })
+  @IsOptional()
+  @IsIn(['SI', 'NO'])
+  fechaEnvioSponsor?: 'SI' | 'NO';
+
   @ApiPropertyOptional({ example: 'john' })
   @IsOptional()
   @IsString()
