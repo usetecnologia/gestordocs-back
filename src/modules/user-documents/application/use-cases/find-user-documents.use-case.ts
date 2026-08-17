@@ -16,8 +16,7 @@ export class FindUserDocumentsUseCase {
   ) {}
 
   async execute(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
-    const sponsorCode = await this.userDocumentsRepo.findUserSponsorCode(userId);
-    await this.syncUserDocumentsUseCase.execute(userId, sponsorCode);
+    await this.syncUserDocumentsUseCase.execute(userId);
     return this.userDocumentsRepo.findByUserIdWithHistory(userId, filter);
   }
 }

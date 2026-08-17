@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   ExistingUserDocument,
   IUserDocumentsRepository,
@@ -13,6 +13,8 @@ const PENDIENTE_STATUS = 'PENDIENTE';
 
 @Injectable()
 export class SyncUserDocumentsUseCase {
+  private readonly logger = new Logger(SyncUserDocumentsUseCase.name);
+
   constructor(
     @Inject(USER_DOCUMENTS_REPOSITORY)
     private readonly userDocumentsRepo: IUserDocumentsRepository,
@@ -20,8 +22,28 @@ export class SyncUserDocumentsUseCase {
     private readonly documentRepo: IDocumentRepository,
   ) {}
 
-  async execute(userId: string, sponsorCode: string | null | undefined): Promise<void> {
-    const documents = await this.documentRepo.findBySponsorCode(sponsorCode ?? '');
+  /**
+   * El contexto de aplicabilidad (sponsor + programa) se resuelve aquí a partir del `userId`,
+   * no se recibe por parámetro: hay siete caminos que sincronizan un expediente y así ninguno
+   * puede quedar pasando datos distintos ni desactualizarse cuando se agregue una dimensión.
+   */
+  async execute(userId: string): Promise<void> {
+    const context = await this.userDocumentsRepo.findUserApplicabilityContext(userId);
+
+    // Sin programa o sin país no se puede decidir qué documentos aplican. Se sale sin tocar
+    // nada en vez de desactivar el expediente completo: el filtro estricto haría que ningún
+    // documento calce, y perder un expediente por un dato faltante es peor que no sincronizar.
+    if (!context?.programId || !context.countryId) {
+      const falta = !context?.programId ? 'programa' : 'país';
+      this.logger.warn(
+        `Sync omitido para el usuario ${userId}: no tiene ${falta} asignado. ` +
+          'Su expediente queda intacto hasta que se le asigne uno.',
+      );
+      return;
+    }
+
+    const { sponsorCode } = context;
+    const documents = await this.documentRepo.findApplicableForParticipant(context);
     const existing = await this.userDocumentsRepo.findByUserId(userId);
 
     // Mapea cada vínculo documento-sponsor (DocumentSponsor.id) al documento padre al que

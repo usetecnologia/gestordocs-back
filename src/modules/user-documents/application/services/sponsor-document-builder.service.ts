@@ -252,8 +252,17 @@ export class SponsorDocumentBuilder {
   ): Promise<DocumentToMerge[]> {
     const documents: DocumentToMerge[] = [];
 
+    // El sponsor lo fija el flujo que arma el paquete (ASPIRE / AAG), no es necesariamente el
+    // del participante. Programa y país, en cambio, siempre salen del participante: son las
+    // dimensiones que deciden qué documentos le corresponden.
+    const context = await this.userDocumentsRepo.findUserApplicabilityContext(userId);
+
     for (const siglas of siglasList) {
-      const target = await this.userDocumentsRepo.findDocumentTargetBySiglasCode(siglas, sponsorCode);
+      const target = await this.userDocumentsRepo.findDocumentTargetBySiglasCode(siglas, {
+        sponsorCode,
+        programId: context?.programId ?? null,
+        countryId: context?.countryId ?? null,
+      });
       if (!target.found || !target.applicable) continue;
 
       const history = await this.userDocumentsRepo.findHistoryByUserAndTarget(

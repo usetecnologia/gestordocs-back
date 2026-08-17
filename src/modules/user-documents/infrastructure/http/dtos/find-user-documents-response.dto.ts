@@ -8,6 +8,24 @@ export class UserDocumentDocumentInfoDto {
   @ApiPropertyOptional({ nullable: true }) instructions!: string | null;
   @ApiProperty() required!: boolean;
   @ApiPropertyOptional({ nullable: true, example: 1 }) order!: number | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 'Formulario DS-2019',
+    description:
+      'Título configurado para el programa y el país del participante. Reemplaza a `title` ' +
+      'cuando está presente.',
+  })
+  programTitle!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 'Debe presentar el formulario DS-2019 ante la embajada en Lima.',
+    description:
+      'Descripción configurada para el programa y el país del participante. Reemplaza a ' +
+      '`instructions` cuando está presente.',
+  })
+  programDescription!: string | null;
 }
 
 export class UserDocumentSponsorInfoDto {

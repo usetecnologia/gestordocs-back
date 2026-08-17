@@ -8,6 +8,7 @@ import {
   UpdateDocumentData,
   DocumentProgramInputData,
   DocumentCountryItem,
+  ParticipantDocumentFilter,
 } from '../../domain/document.repository';
 import { Document } from '../../domain/document.entity';
 import { TypeDocument } from '../../domain/document.enums';
@@ -137,6 +138,49 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       where: {
         OR: [
           { documentSponsors: { some: { sponsor: { code: sponsorCode }, status: true } } },
+          { documentSponsors: { none: { status: true } } },
+        ],
+      },
+      include: {
+        ...DOCUMENT_FULL_INCLUDE,
+        documentSponsors: {
+          where: { status: true },
+          include: { sponsor: { select: { id: true, name: true, code: true } } },
+          orderBy: { order: 'asc' as const },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return (rows as PrismaDocumentFull[]).map(DocumentMapper.toDomain);
+  }
+
+  async findApplicableForParticipant({
+    sponsorCode,
+    programId,
+    countryId,
+  }: ParticipantDocumentFilter): Promise<Document[]> {
+    // Programa y país son dimensiones ESTRICTAS: un documento se le pide al participante solo
+    // si está asociado explícitamente a su programa Y tiene, dentro de ese programa, una
+    // descripción configurada para su país. A diferencia del sponsor, aquí NO aplica la regla
+    // "sin vínculos = aplica a todos" — un documento sin programas no le corresponde a nadie, y
+    // un programa o país nuevo no hereda documentos hasta que alguien los configure. Es
+    // deliberado: evita que un catálogo a medio configurar genere expedientes con data mala.
+    // Corolario: sin programa o sin país, el participante no recibe ningún documento.
+    if (!programId || !countryId) return [];
+
+    const rows = await this.prisma.documents.findMany({
+      where: {
+        documentPrograms: {
+          some: {
+            programId,
+            status: true,
+            descriptions: { some: { countries: { some: { countryId } } } },
+          },
+        },
+        // El sponsor conserva su regla histórica: el vínculo del sponsor del participante, o
+        // ningún vínculo activo (documento general).
+        OR: [
+          { documentSponsors: { some: { sponsor: { code: sponsorCode ?? '' }, status: true } } },
           { documentSponsors: { none: { status: true } } },
         ],
       },

@@ -293,7 +293,7 @@ export class BulkInfoParticipantsUseCase {
       email: data.email || null,
     });
 
-    await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);
+    await this.syncUserDocumentsUseCase.execute(credentials.id);
 
     // El estado final del participante se determina por el estado real de sus documentos
     // (misma lógica de TerminarRevisionUseCase), sin importar si Workuse reporta un estado

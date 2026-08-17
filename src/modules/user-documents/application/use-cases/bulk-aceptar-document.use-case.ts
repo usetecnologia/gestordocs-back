@@ -75,8 +75,7 @@ export class BulkAceptarDocumentUseCase {
     const userId = await this.userDocumentsRepo.findUserIdByDni(dni);
     if (!userId) throw new Error(`Usuario con DNI "${dni}" no encontrado.`);
 
-    const sponsorCode = await this.userDocumentsRepo.findUserSponsorCode(userId);
-    await this.syncUserDocumentsUseCase.execute(userId, sponsorCode);
+    await this.syncUserDocumentsUseCase.execute(userId);
 
     const userDocumentId = await this.userDocumentsRepo.findUserDocumentIdForTarget(
       userId,

@@ -25,9 +25,17 @@ import {
   CloneDocumentForSponsorData,
   RefreshDocumentFromLatestData,
   PassportDocumentCandidate,
+  UserApplicabilityContext,
 } from '../../domain/user-documents.repository';
 
 const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
+
+/** Contexto vacío: sin programa ni país no hay texto por país que resolver. */
+const EMPTY_APPLICABILITY_CONTEXT: UserApplicabilityContext = {
+  sponsorCode: null,
+  programId: null,
+  countryId: null,
+};
 
 /**
  * Choque contra los índices únicos de `UserDocuments` (uq_user_documents_sponsor_active /
@@ -66,20 +74,45 @@ type UserDocRow = Awaited<
   ReturnType<typeof PrismaService.prototype.userDocuments.findMany<{ include: typeof USER_DOCS_INCLUDE }>>
 >[number];
 
-function toDocInfo(d: {
-  id: string;
-  name: string;
-  title: string | null;
-  type: string;
-  formats: string | null;
-  instructions: string | null;
-  required: boolean;
-  order: number | null;
-}): UserDocumentDocumentInfo {
-  return { id: d.id, name: d.name, title: d.title ?? '', type: d.type, formats: d.formats, instructions: d.instructions, required: d.required, order: d.order };
+/** Texto configurado para la combinación (programa, país) del participante. */
+interface ProgramText {
+  title: string;
+  description: string;
 }
 
-function mapUserDocToHistory(ud: UserDocRow, personMap: Map<string, string>): UserDocumentWithHistory {
+function toDocInfo(
+  d: {
+    id: string;
+    name: string;
+    title: string | null;
+    type: string;
+    formats: string | null;
+    instructions: string | null;
+    required: boolean;
+    order: number | null;
+  },
+  programTextByDocId: Map<string, ProgramText>,
+): UserDocumentDocumentInfo {
+  const programText = programTextByDocId.get(d.id);
+  return {
+    id: d.id,
+    name: d.name,
+    title: d.title ?? '',
+    type: d.type,
+    formats: d.formats,
+    instructions: d.instructions,
+    required: d.required,
+    order: d.order,
+    programTitle: programText?.title ?? null,
+    programDescription: programText?.description ?? null,
+  };
+}
+
+function mapUserDocToHistory(
+  ud: UserDocRow,
+  personMap: Map<string, string>,
+  programTextByDocId: Map<string, ProgramText>,
+): UserDocumentWithHistory {
   const ds = ud.documentSponsors;
   return {
     id: ud.id,
@@ -97,11 +130,11 @@ function mapUserDocToHistory(ud: UserDocRow, personMap: Map<string, string>): Us
           sponsorId: ds.sponsorId,
           required: ds.required,
           order: ds.order,
-          document: toDocInfo(ds.document),
+          document: toDocInfo(ds.document, programTextByDocId),
           sponsor: ds.sponsor,
         }
       : null,
-    document: ud.documents ? toDocInfo(ud.documents) : null,
+    document: ud.documents ? toDocInfo(ud.documents, programTextByDocId) : null,
     history: ud.userDocumentHistory.map((h) => ({
       id: h.id,
       userDocumentsId: h.userDocumentsId,
@@ -146,6 +179,48 @@ async function buildPersonMap(
   return map;
 }
 
+/**
+ * Resuelve, por documento, el título y la descripción configurados para la combinación
+ * (programa, país) del participante. El unique `uq_document_program_country` garantiza que un
+ * país aparece en una sola descripción por documento-programa, así que hay a lo sumo una
+ * coincidencia y no hace falta desempatar.
+ */
+async function buildProgramTextMap(
+  prisma: PrismaService,
+  rows: UserDocRow[],
+  context: UserApplicabilityContext,
+): Promise<Map<string, ProgramText>> {
+  const map = new Map<string, ProgramText>();
+  const { programId, countryId } = context;
+  if (!programId || !countryId) return map;
+
+  const documentIds = [
+    ...new Set(
+      rows
+        .map((r) => r.documentId ?? r.documentSponsors?.documentId ?? null)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+  if (!documentIds.length) return map;
+
+  const descriptions = await prisma.documentProgramDescription.findMany({
+    where: {
+      documentProgram: { documentId: { in: documentIds }, programId, status: true },
+      countries: { some: { countryId } },
+    },
+    select: {
+      title: true,
+      description: true,
+      documentProgram: { select: { documentId: true } },
+    },
+  });
+
+  for (const d of descriptions) {
+    map.set(d.documentProgram.documentId, { title: d.title, description: d.description });
+  }
+  return map;
+}
+
 @Injectable()
 export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   private readonly logger = new Logger(UserDocumentsPrismaRepository.name);
@@ -185,12 +260,17 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     }));
   }
 
-  async findUserSponsorCode(userId: string): Promise<string | null> {
+  async findUserApplicabilityContext(userId: string): Promise<UserApplicabilityContext | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { sponsor: { select: { code: true } } },
+      select: { programId: true, countryId: true, sponsor: { select: { code: true } } },
     });
-    return user?.sponsor?.code ?? null;
+    if (!user) return null;
+    return {
+      sponsorCode: user.sponsor?.code ?? null,
+      programId: user.programId,
+      countryId: user.countryId,
+    };
   }
 
   async findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
@@ -218,8 +298,12 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       include: USER_DOCS_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
-    const personMap = await buildPersonMap(this.prisma, rows);
-    return rows.map((ud) => mapUserDocToHistory(ud, personMap));
+    const context = await this.findUserApplicabilityContext(userId);
+    const [personMap, programTextMap] = await Promise.all([
+      buildPersonMap(this.prisma, rows),
+      buildProgramTextMap(this.prisma, rows, context ?? EMPTY_APPLICABILITY_CONTEXT),
+    ]);
+    return rows.map((ud) => mapUserDocToHistory(ud, personMap, programTextMap));
   }
 
   async findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null> {
@@ -228,8 +312,12 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       include: USER_DOCS_INCLUDE,
     });
     if (!ud) return null;
-    const personMap = await buildPersonMap(this.prisma, [ud]);
-    return mapUserDocToHistory(ud, personMap);
+    const context = await this.findUserApplicabilityContext(ud.userId);
+    const [personMap, programTextMap] = await Promise.all([
+      buildPersonMap(this.prisma, [ud]),
+      buildProgramTextMap(this.prisma, [ud], context ?? EMPTY_APPLICABILITY_CONTEXT),
+    ]);
+    return mapUserDocToHistory(ud, personMap, programTextMap);
   }
 
   async createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void> {
@@ -444,12 +532,19 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
 
   async findDocumentTargetBySiglasCode(
     siglasCode: string,
-    sponsorCode: string | null,
+    { sponsorCode, programId, countryId }: UserApplicabilityContext,
   ): Promise<DocumentTargetResult> {
     const doc = await this.prisma.documents.findFirst({
       where: { siglasCode, status: true },
       select: {
         id: true,
+        documentPrograms: {
+          where: { status: true },
+          select: {
+            programId: true,
+            descriptionCountries: { select: { countryId: true } },
+          },
+        },
         documentSponsors: {
           where: { status: true },
           select: { id: true, sponsor: { select: { code: true } } },
@@ -458,6 +553,21 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     });
 
     if (!doc) return { found: false };
+
+    // Mismo criterio estricto de programa y país que `findApplicableForParticipant`: si el
+    // documento no está configurado para el programa del participante, o no tiene descripción
+    // para su país, no le corresponde. Sin esto la carga masiva por nombre de archivo podría
+    // crear un registro que el sync desactiva en la siguiente pasada.
+    const programaAplica =
+      !!programId &&
+      !!countryId &&
+      doc.documentPrograms.some(
+        (dp) =>
+          dp.programId === programId &&
+          dp.descriptionCountries.some((dc) => dc.countryId === countryId),
+      );
+
+    if (!programaAplica) return { found: true, applicable: false };
 
     // Documento sin vínculos a sponsors: se rastrea directo por documentId.
     if (doc.documentSponsors.length === 0) {

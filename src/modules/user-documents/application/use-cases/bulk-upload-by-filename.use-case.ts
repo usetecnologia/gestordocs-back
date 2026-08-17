@@ -162,8 +162,15 @@ export class BulkUploadByFilenameUseCase {
       };
     }
 
-    const sponsorCode = await this.userDocumentsRepo.findUserSponsorCode(userId);
-    const target = await this.userDocumentsRepo.findDocumentTargetBySiglasCode(siglasCode, sponsorCode);
+    const context = await this.userDocumentsRepo.findUserApplicabilityContext(userId);
+    if (!context) {
+      return {
+        kind: 'error',
+        item: { filename, reason: `Usuario con DNI "${dni}" no encontrado.`, dni, siglasCode },
+      };
+    }
+
+    const target = await this.userDocumentsRepo.findDocumentTargetBySiglasCode(siglasCode, context);
 
     if (!target.found) {
       return {
@@ -177,7 +184,7 @@ export class BulkUploadByFilenameUseCase {
         kind: 'error',
         item: {
           filename,
-          reason: `El documento "${siglasCode}" no aplica al sponsor del participante.`,
+          reason: `El documento "${siglasCode}" no aplica al programa ni al sponsor del participante.`,
           dni,
           siglasCode,
         },

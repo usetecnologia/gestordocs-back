@@ -50,6 +50,13 @@ export interface UserDocumentDocumentInfo {
   instructions: string | null;
   required: boolean;
   order: number | null;
+  /**
+   * Título y descripción configurados para la combinación (programa del participante, país del
+   * participante). El filtrado garantiza que todo documento visible tenga una descripción para
+   * su país, así que vienen poblados; quedan nulos solo si se consultan fuera de ese flujo.
+   */
+  programTitle: string | null;
+  programDescription: string | null;
 }
 
 export interface UserDocumentWithHistory {
@@ -114,6 +121,17 @@ export type DocumentTargetResult =
   | { found: true; applicable: false }
   | { found: true; applicable: true; documentId: string | null; documentSponsorId: string | null };
 
+/**
+ * Datos del participante con los que se resuelve qué documentos le corresponden. Se cargan
+ * dentro del sync (no se reciben por parámetro) para que todos los caminos que sincronizan
+ * un expediente usen exactamente el mismo criterio.
+ */
+export interface UserApplicabilityContext {
+  sponsorCode: string | null;
+  programId: string | null;
+  countryId: string | null;
+}
+
 export interface ActiveUserDocumentStatus {
   userId: string;
   documentId: string | null;
@@ -154,7 +172,7 @@ export interface PassportDocumentCandidate {
 
 export interface IUserDocumentsRepository {
   findByUserId(userId: string): Promise<ExistingUserDocument[]>;
-  findUserSponsorCode(userId: string): Promise<string | null>;
+  findUserApplicabilityContext(userId: string): Promise<UserApplicabilityContext | null>;
   findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]>;
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;
@@ -166,7 +184,10 @@ export interface IUserDocumentsRepository {
   aceptarDocument(data: AceptarDocumentData): Promise<void>;
   observarDocument(data: ObservarDocumentData): Promise<void>;
   findUserIdByDni(dni: string): Promise<string | null>;
-  findDocumentTargetBySiglasCode(siglasCode: string, sponsorCode: string | null): Promise<DocumentTargetResult>;
+  findDocumentTargetBySiglasCode(
+    siglasCode: string,
+    context: UserApplicabilityContext,
+  ): Promise<DocumentTargetResult>;
   upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;
   findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]>;
   hasObservedDocument(userId: string): Promise<boolean>;

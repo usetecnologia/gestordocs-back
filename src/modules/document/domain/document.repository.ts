@@ -66,10 +66,22 @@ export interface UpdateDocumentData {
   updatedById?: string;
 }
 
+/**
+ * Dimensiones con las que se decide si un documento le corresponde a un participante.
+ * `sponsorCode` sigue la regla histórica "sin vínculos activos = aplica a todos";
+ * `programId` y `countryId` son estrictamente explícitos (ver `findApplicableForParticipant`).
+ */
+export interface ParticipantDocumentFilter {
+  sponsorCode: string | null;
+  programId: string | null;
+  countryId: string | null;
+}
+
 export interface IDocumentRepository {
   findAll(filters: DocumentFilters): Promise<{ data: Document[]; total: number }>;
   findAllActive(): Promise<Document[]>;
   findBySponsorCode(sponsorCode: string): Promise<Document[]>;
+  findApplicableForParticipant(filter: ParticipantDocumentFilter): Promise<Document[]>;
   findInformativeBySponsorIds(sponsorIds: string[]): Promise<Document[]>;
   findById(id: string): Promise<Document | null>;
   findCountriesByDocumentId(documentId: string): Promise<DocumentCountryItem[]>;

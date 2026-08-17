@@ -19,6 +19,8 @@
     "backfill:document-program-country": "ts-node -r tsconfig-paths/register prisma/backfill-document-program-country.ts",
     "reset:option-programs": "ts-node -r tsconfig-paths/register prisma/reset-option-programs.ts",
     "verify:user-documents-unique": "ts-node -r tsconfig-paths/register prisma/verify-user-documents-unique.ts",
+    "inspect:document-programs": "ts-node -r tsconfig-paths/register prisma/inspect-document-programs.ts",
+    "inspect:filtro-documentos": "ts-node -r tsconfig-paths/register prisma/inspect-filtro-documentos.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",

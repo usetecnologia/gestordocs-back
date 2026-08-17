@@ -173,7 +173,7 @@ export class InfoParticipantUseCase {
       email: data.email || null,
     });
 
-    await this.syncUserDocumentsUseCase.execute(credentials.id, credentials.sponsor?.code ?? null);
+    await this.syncUserDocumentsUseCase.execute(credentials.id);
 
     // El estado final del participante se determina por el estado real de sus documentos, sin
     // importar el estado externo que reporte Workuse. Excepción: si ya está en un estado
