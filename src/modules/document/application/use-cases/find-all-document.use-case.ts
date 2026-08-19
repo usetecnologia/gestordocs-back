@@ -17,6 +17,9 @@ export class FindAllDocumentUseCase {
       showHired: query.showHired,
       status: query.status,
       search: query.search,
+      sponsorId: query.sponsorId,
+      programId: query.programId,
+      countryId: query.countryId,
     });
   }
 }

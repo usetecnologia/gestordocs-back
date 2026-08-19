@@ -92,11 +92,21 @@ export class DocumentPrismaRepository implements IDocumentRepository {
     }
   }
 
-  async findAll({ page, limit, type, showHired, status, search }: DocumentFilters): Promise<{
+  async findAll({
+    page,
+    limit,
+    type,
+    showHired,
+    status,
+    search,
+    sponsorId,
+    programId,
+    countryId,
+  }: DocumentFilters): Promise<{
     data: Document[];
     total: number;
   }> {
-    const where = {
+    const where: Prisma.DocumentsWhereInput = {
       ...(type && { type }),
       ...(showHired && { showHired }),
       ...(status !== undefined && { status }),
@@ -105,6 +115,31 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       // Nacional de Identidad".
       ...(search && {
         OR: [{ name: { contains: search } }, { siglasCode: { contains: search } }],
+      }),
+      // Los tres filtros del catálogo coinciden con lo que la tabla muestra en sus columnas, no
+      // con la regla de aplicabilidad del participante. En particular NO se aplica aquí el
+      // "sin vínculos de sponsor = aplica a todos": filtrar por un sponsor y recibir además
+      // todos los documentos generales (que la columna Sponsors muestra como "—") se leería
+      // como que el filtro no hizo nada.
+      ...(sponsorId && { documentSponsors: { some: { sponsorId } } }),
+      // Programa y país comparten la relación `documentPrograms`. Se combinan en un `AND` de dos
+      // `some` independientes y no en un solo `some`, para que país y programa puedan venir de
+      // vínculos distintos: un documento en (WAT USA, Perú) y (Internship USA, Argentina) sale
+      // al filtrar por WAT USA y también al filtrar por Argentina, que es lo que muestran las
+      // columnas. Exigirlos en el mismo vínculo sería un filtro combinado distinto.
+      ...((programId || countryId) && {
+        AND: [
+          ...(programId ? [{ documentPrograms: { some: { programId } } }] : []),
+          ...(countryId
+            ? [
+                {
+                  documentPrograms: {
+                    some: { descriptions: { some: { countries: { some: { countryId } } } } },
+                  },
+                },
+              ]
+            : []),
+        ],
       }),
     };
 

@@ -180,6 +180,47 @@ async function buildPersonMap(
 }
 
 /**
+ * Restringe las filas de `UserDocuments` a los documentos que aplican al programa Y al país del
+ * participante — el mismo criterio estricto de `findApplicableForParticipant`, pero evaluado en
+ * la LECTURA.
+ *
+ * El sync ya desactiva lo que no aplica, pero eso deja el expediente visible a merced de que el
+ * sync haya corrido bien: si se omitió (participante sin programa o país en ese momento), si una
+ * desactivación falló, o si alguien insertó/reactivó un registro por otra vía, el participante
+ * termina viendo documentos de otro país. Filtrando también al leer, lo que se muestra es siempre
+ * el expediente de su país sin depender del estado en que quedó `statusDocument`.
+ *
+ * Devuelve `null` cuando el participante no tiene programa o país: sin esas dos dimensiones no hay
+ * nada con qué decidir y se prefiere no filtrar antes que mostrarle un expediente vacío — mismo
+ * criterio que el sync, que en ese caso se omite en vez de desactivar todo.
+ */
+function programCountryScopeFilter(
+  context: UserApplicabilityContext,
+): Prisma.UserDocumentsWhereInput | null {
+  const { programId, countryId } = context;
+  if (!programId || !countryId) return null;
+
+  const applicable: Prisma.DocumentsWhereInput = {
+    documentPrograms: {
+      some: {
+        programId,
+        status: true,
+        descriptions: { some: { countries: { some: { countryId } } } },
+      },
+    },
+  };
+
+  // Un `UserDocuments` apunta al documento por una de dos vías (documentId directo o a través
+  // del vínculo con el sponsor): el país se valida sobre el documento padre en ambos casos.
+  return {
+    OR: [
+      { documentId: { not: null }, documents: applicable },
+      { documentSponsorId: { not: null }, documentSponsors: { document: applicable } },
+    ],
+  };
+}
+
+/**
  * Resuelve, por documento, el título y la descripción configurados para la combinación
  * (programa, país) del participante. El unique `uq_document_program_country` garantiza que un
  * país aparece en una sola descripción por documento-programa, así que hay a lo sumo una
@@ -274,31 +315,40 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
-    const where: Record<string, unknown> = {
-      userId,
-      statusDocument: true,
-      OR: [{ documentSponsorId: { not: null } }, { documentId: { not: null } }],
-    };
+    // El contexto se resuelve antes de consultar porque ahora alimenta dos cosas: el alcance
+    // (programa + país) de la consulta y los textos por país del mapeo.
+    const context = await this.findUserApplicabilityContext(userId);
+
+    const conditions: Prisma.UserDocumentsWhereInput[] = [
+      { OR: [{ documentSponsorId: { not: null } }, { documentId: { not: null } }] },
+    ];
+
+    const scope = programCountryScopeFilter(context ?? EMPTY_APPLICABILITY_CONTEXT);
+    if (scope) conditions.push(scope);
 
     if (filter === UserDocumentFilter.REQUIRED) {
-      where['AND'] = [
-        {
-          OR: [
-            { documentSponsors: { required: true } },
-            { documentSponsorId: null, documents: { required: true } },
-          ],
-        },
-      ];
-    } else if (filter === UserDocumentFilter.OBSERVED) {
-      where['status'] = $Enums.DocumentSponsorStatus.OBSERVADO;
+      conditions.push({
+        OR: [
+          { documentSponsors: { required: true } },
+          { documentSponsorId: null, documents: { required: true } },
+        ],
+      });
     }
+
+    const where: Prisma.UserDocumentsWhereInput = {
+      userId,
+      statusDocument: true,
+      AND: conditions,
+      ...(filter === UserDocumentFilter.OBSERVED
+        ? { status: $Enums.DocumentSponsorStatus.OBSERVADO }
+        : {}),
+    };
 
     const rows = await this.prisma.userDocuments.findMany({
       where,
       include: USER_DOCS_INCLUDE,
       orderBy: { createdAt: 'desc' },
     });
-    const context = await this.findUserApplicabilityContext(userId);
     const [personMap, programTextMap] = await Promise.all([
       buildPersonMap(this.prisma, rows),
       buildProgramTextMap(this.prisma, rows, context ?? EMPTY_APPLICABILITY_CONTEXT),
@@ -477,9 +527,16 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async countRequiredDocs(userId: string): Promise<RequiredDocsCount> {
+    // Se cuenta sobre el MISMO alcance (programa + país) con el que el participante ve su
+    // expediente: si se contara sobre todas sus filas activas, un documento de otro país que
+    // quedó sin desactivar lo dejaría eternamente en DOCUMENTOS_INCOMPLETOS pese a haber
+    // subido todo lo que la vista le pide.
+    const context = await this.findUserApplicabilityContext(userId);
+    const scope = programCountryScopeFilter(context ?? EMPTY_APPLICABILITY_CONTEXT);
+
     // Un documento obligatorio es aquel con type DOCUMENT y required:true,
     // ya sea marcado en el vínculo con el sponsor o directamente en el documento.
-    const requiredDocFilter = {
+    const requiredDocFilter: Prisma.UserDocumentsWhereInput = {
       OR: [
         {
           documentSponsors: {
@@ -497,12 +554,14 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       ],
     };
 
+    const conditions = scope ? [requiredDocFilter, scope] : [requiredDocFilter];
+
     const [totalRequired, submittedRequired] = await this.prisma.$transaction([
       this.prisma.userDocuments.count({
         where: {
           userId,
           statusDocument: true,
-          AND: [requiredDocFilter],
+          AND: conditions,
         },
       }),
       this.prisma.userDocuments.count({
@@ -516,7 +575,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
               $Enums.DocumentSponsorStatus.REVISADO,
             ],
           },
-          AND: [requiredDocFilter],
+          AND: conditions,
         },
       }),
     ]);

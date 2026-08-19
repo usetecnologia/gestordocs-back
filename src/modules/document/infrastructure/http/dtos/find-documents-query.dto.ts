@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
 import { TypeDocument, TypeHired } from '../../../domain/document.enums';
 
 export class FindDocumentsQueryDto {
@@ -45,4 +45,27 @@ export class FindDocumentsQueryDto {
   @IsOptional()
   @IsString()
   search?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Devuelve solo los documentos vinculados explícitamente a este sponsor. Los documentos ' +
+      'generales (sin ningún sponsor) NO se incluyen, aunque en la práctica se le pidan a todos.',
+  })
+  @IsOptional()
+  @IsUUID()
+  sponsorId?: string;
+
+  @ApiPropertyOptional({ description: 'Devuelve solo los documentos asociados a este programa.' })
+  @IsOptional()
+  @IsUUID()
+  programId?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Devuelve solo los documentos que tienen al menos una descripción configurada para este ' +
+      'país, en cualquiera de sus programas.',
+  })
+  @IsOptional()
+  @IsUUID()
+  countryId?: string;
 }

@@ -8,6 +8,12 @@ export interface DocumentFilters {
   showHired?: TypeHired;
   status?: boolean;
   search?: string;
+  /** Documentos vinculados explícitamente a este sponsor. */
+  sponsorId?: string;
+  /** Documentos asociados a este programa. */
+  programId?: string;
+  /** Documentos con al menos una descripción configurada para este país. */
+  countryId?: string;
 }
 
 export interface DocumentSponsorInputData {
