@@ -32,9 +32,13 @@ import {
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { MulterFile } from '../../domain/multer-file.interface';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
+import { Roles } from '@common/decorators/roles.decorator';
+import { RoleCode, STAFF_ROLES, STAFF_AND_PARTICIPANT_ROLES } from '@common/enums/role-code.enum';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import { UploadFileDocumentUseCase } from '../../application/use-cases/upload-file-document.use-case';
@@ -70,7 +74,8 @@ import { ParseOptionalPdfPipe } from './pipes/parse-optional-pdf.pipe';
 @ApiTags('user-documents')
 @ApiBearerAuth('access-token')
 @ApiUnauthorizedResponse({ description: 'Token inválido o ausente' })
-@UseGuards(JwtAuthGuard)
+@ApiForbiddenResponse({ description: 'El rol del usuario no tiene permiso para esta acción.' })
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller({ path: 'user-documents', version: '1' })
 export class UserDocumentsController {
   constructor(
@@ -89,6 +94,7 @@ export class UserDocumentsController {
     private readonly bulkExtractPassportDataUseCase: BulkExtractPassportDataUseCase,
   ) {}
 
+  @Roles(...STAFF_AND_PARTICIPANT_ROLES)
   @Get('documents-by-sponsor')
   @ApiOperation({
     summary: 'Documentos informativos por sponsor',
@@ -109,6 +115,7 @@ export class UserDocumentsController {
     return this.findInformativeDocumentsBySponsorsUseCase.execute(query.sponsorIds);
   }
 
+  @Roles(...STAFF_AND_PARTICIPANT_ROLES)
   @Get('by-user/:userId')
   @ApiOperation({ summary: 'Listar documentos con historial de un usuario' })
   @ApiParam({ name: 'userId', description: 'UUID del usuario' })
@@ -122,6 +129,7 @@ export class UserDocumentsController {
     return this.findUserDocumentsUseCase.execute(userId, query.filter);
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('download-by-sponsor/bulk')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('vacationLetter'))
@@ -185,6 +193,7 @@ export class UserDocumentsController {
     res.send(buffer);
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('download-by-sponsor/:userId')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('vacationLetter'))
@@ -248,6 +257,7 @@ export class UserDocumentsController {
     res.send(buffer);
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('aceptar-document')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Aceptar un documento — cambia estado a REVISADO' })
@@ -261,6 +271,7 @@ export class UserDocumentsController {
     return { message: 'Documento aceptado correctamente.' };
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('observar-document')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FilesInterceptor('files', 10))
@@ -289,6 +300,7 @@ export class UserDocumentsController {
     return { message: 'Documento observado correctamente.' };
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('bulk-aceptar-document')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -307,6 +319,7 @@ export class UserDocumentsController {
     return this.bulkAceptarDocumentUseCase.execute(dto.dnis, dto.documentId, dto.sponsorId, user.sub);
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('bulk-observar-document')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -333,6 +346,7 @@ export class UserDocumentsController {
     );
   }
 
+  @Roles(...STAFF_AND_PARTICIPANT_ROLES)
   @Post('upload-file-document')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(FileInterceptor('file'))
@@ -360,6 +374,7 @@ export class UserDocumentsController {
     return { message: 'Archivo subido correctamente.' };
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('terminar-revision')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Terminar revisión — evalúa documentos del participante y actualiza su estado' })
@@ -370,6 +385,7 @@ export class UserDocumentsController {
     return { message: 'Revisión finalizada correctamente.' };
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('terminar-revision-masivo')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -381,6 +397,7 @@ export class UserDocumentsController {
     return { message: 'Revisión masiva finalizada.', ...result };
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('bulk-upload-by-filename')
   @HttpCode(HttpStatus.OK)
   @UseInterceptors(AnyFilesInterceptor())
@@ -419,6 +436,7 @@ export class UserDocumentsController {
     return this.bulkUploadByFilenameUseCase.execute(status, files ?? [], user.sub);
   }
 
+  @Roles(...STAFF_ROLES)
   @Post('revision-masiva-pasaporte')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

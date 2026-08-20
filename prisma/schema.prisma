@@ -29,6 +29,13 @@ enum UserStatus {
   @@map("user_status")
 }
 
+enum ProcesoEstado {
+  EN_PROCESO
+  FINALIZADO
+
+  @@map("proceso_estado")
+}
+
 enum TypeDocument {
   DOCUMENT
   INFORMATIVE
@@ -68,6 +75,7 @@ model Country {
 
   users                               User[]
   documentProgramDescriptionCountries DocumentProgramDescriptionCountry[]
+  procesos                            Proceso[]
 }
 
 model Program {
@@ -83,6 +91,7 @@ model Program {
   optionPrograms   OptionProgram[]
   documentPrograms DocumentProgram[]
   temporadas       Temporada[]
+  procesos         Proceso[]
 }
 
 model Sponsor {
@@ -96,6 +105,7 @@ model Sponsor {
 
   users            User[]
   documentSponsors DocumentSponsor[]
+  procesos         Proceso[]
 }
 
 model OptionProgram {
@@ -110,6 +120,8 @@ model OptionProgram {
 
   users User[]
 
+  procesos Proceso[]
+
   @@unique([programId, shortDatabase])
 }
 
@@ -121,7 +133,9 @@ model Temporada {
   createAt  DateTime @default(now())
   updateAt  DateTime @updatedAt
 
-  program Program @relation(fields: [programId], references: [id])
+  program          Program           @relation(fields: [programId], references: [id])
+  documentPrograms DocumentProgram[]
+  procesos         Proceso[]
 
   @@index([programId])
 }
@@ -154,6 +168,56 @@ model Person {
   updatedAt DateTime @updatedAt @map("updated_at")
 }
 
+/**
+ * Una participación del alumno en un ciclo. Todo el expediente documental cuelga de aquí y no
+ * de la persona: cuando alguien vuelve, se abre un proceso nuevo y el anterior queda intacto,
+ * en vez de pisar la misma fila y heredar los archivos del año pasado.
+ * Nota sobre los tipos: `participante_id` y `finalizado_by_id` son VarChar(36) porque User.id
+ * lo es, pero programa, opción, sponsor, país y temporada NO lo son — esos modelos usan el
+ * String por defecto de Prisma (VARCHAR(191)). MariaDB exige que la clave foránea coincida
+ * exactamente con la columna referenciada, así que la diferencia es obligatoria.
+ */
+model Proceso {
+  id              String  @id @default(uuid()) @db.VarChar(36)
+  participanteId  String  @map("participante_id") @db.VarChar(36)
+  programId       String  @map("program_id")
+  optionProgramId String  @map("option_program_id")
+  sponsorId       String? @map("sponsor_id")
+  countryId       String  @map("country_id")
+  temporadaId     String? @map("temporada_id")
+
+  fechaIngreso     DateTime      @default(now()) @map("fecha_ingreso")
+  estado           ProcesoEstado @default(EN_PROCESO)
+  statusDocumental UserStatus    @default(SIN_DOCUMENTOS) @map("status_documental")
+
+  /// Espejo de `estado` que existe solo para la restricción de abajo: true mientras el proceso
+  /// está EN_PROCESO y NULL cuando se finaliza — nunca false. Como en MySQL los NULL no
+  /// colisionan en un índice único, la base admite N procesos finalizados y como mucho uno
+  /// abierto. No se escribe a mano en ningún lado: lo mantiene el repositorio junto con `estado`.
+  activo Boolean?
+
+  finalizadoAt   DateTime? @map("finalizado_at")
+  finalizadoById String?   @map("finalizado_by_id") @db.VarChar(36)
+  crmProcesoId   String?   @map("crm_proceso_id") @db.VarChar(64)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  participante  User          @relation("ProcesoParticipante", fields: [participanteId], references: [id])
+  finalizadoBy  User?         @relation("ProcesoFinalizadoBy", fields: [finalizadoById], references: [id], onDelete: Restrict)
+  program       Program       @relation(fields: [programId], references: [id])
+  optionProgram OptionProgram @relation(fields: [optionProgramId], references: [id])
+  sponsor       Sponsor?      @relation(fields: [sponsorId], references: [id], onDelete: Restrict)
+  country       Country       @relation(fields: [countryId], references: [id])
+  temporada     Temporada?    @relation(fields: [temporadaId], references: [id], onDelete: Restrict)
+
+  // Máximo un proceso abierto por participante. MariaDB no soporta índices únicos parciales;
+  // esto se apoya en que los NULL no colisionan (ver `activo`).
+  @@unique([participanteId, activo], map: "uq_proceso_activo")
+  @@index([participanteId, fechaIngreso], map: "idx_procesos_participante")
+  @@index([estado], map: "idx_procesos_estado")
+  @@map("procesos")
+}
+
 model User {
   id                    String     @id @default(uuid()) @db.VarChar(36)
   username              String?
@@ -184,6 +248,8 @@ model User {
   optionProgram OptionProgram? @relation(fields: [optionProgramId], references: [id])
 
   documentsCreated        Documents[]       @relation("DocumentsCreatedBy")
+  procesos                Proceso[]         @relation("ProcesoParticipante")
+  procesosFinalizados     Proceso[]         @relation("ProcesoFinalizadoBy")
   documentsUpdated        Documents[]       @relation("DocumentsUpdatedBy")
   documentSponsorsCreated DocumentSponsor[] @relation("DocumentSponsorCreatedBy")
   documentSponsorsUpdated DocumentSponsor[] @relation("DocumentSponsorUpdatedBy")
@@ -321,21 +387,28 @@ model DocumentSponsor {
 }
 
 model DocumentProgram {
-  id         String   @id @default(uuid()) @db.VarChar(36)
-  documentId String   @map("document_id") @db.VarChar(36)
-  programId  String   @map("program_id") @db.VarChar(36)
-  status     Boolean  @default(true)
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  documentId  String   @map("document_id") @db.VarChar(36)
+  programId   String   @map("program_id") @db.VarChar(36)
+  // Dato informativo: NO participa en la regla de aplicabilidad del participante
+  // (ver findApplicableForParticipant). El User todavia no tiene temporada asignada,
+  // asi que no hay con que compararla. Sin tipo @db.VarChar(36) a proposito: debe
+  // coincidir con Temporada.id, que es VARCHAR(191), o MariaDB rechaza la FK.
+  temporadaId String?  @map("temporada_id")
+  status      Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   document             Documents                           @relation(fields: [documentId], references: [id])
   program              Program                             @relation(fields: [programId], references: [id])
+  temporada            Temporada?                          @relation(fields: [temporadaId], references: [id], onDelete: Restrict)
   descriptions         DocumentProgramDescription[]
   descriptionCountries DocumentProgramDescriptionCountry[]
 
   @@unique([documentId, programId], map: "uq_document_program")
   @@index([documentId], map: "idx_document_programs_document")
   @@index([programId], map: "idx_document_programs_program")
+  @@index([temporadaId], map: "idx_document_programs_temporada")
   @@map("document_programs")
 }
 
@@ -389,25 +462,26 @@ model UserDocuments {
 
   userDocumentHistory UserDocumentHistory[]
 
-  // Un participante no puede tener dos registros ACTIVOS del mismo documento: statusDocument
-  // forma parte de la clave para que los registros históricos (statusDocument = false) sigan
-  // conviviendo con el vigente sin restricción. Cierra la condición de carrera del sync, que
-  // creaba el mismo vínculo dos veces cuando dos ejecuciones concurrían.
-  // Las filas con NULL no colisionan en MySQL/MariaDB: cada registro cae solo en el índice
-  // que le corresponde según si el documento está ligado a un sponsor o es global.
-  @@unique([userId, documentSponsorId, statusDocument], map: "uq_user_documents_sponsor_active")
-  @@unique([userId, documentId, statusDocument], map: "uq_user_documents_document_active")
+  // NO reintroducir un @@unique que incluya statusDocument en la clave. Se intentó
+  // (20260730120000_add_user_documents_active_unique) para cerrar la condición de carrera del
+  // sync, y rompía el guardado de documentos: con la clave (userId, documentId, statusDocument)
+  // conviven un registro activo y uno histórico, pero en cuanto la aplicación desactiva el
+  // activo quedan DOS filas históricas idénticas y el índice falla. Le pasa a cualquier
+  // participante que ya tenga un histórico de ese documento — 104 casos al revertirlo.
+  // Para volver a intentarlo hace falta un índice parcial "solo sobre los activos", que
+  // MariaDB no tiene: se emula con una columna que valga 1 si está activo y NULL si no,
+  // manteniéndola sincronizada en TODOS los puntos que tocan statusDocument.
 }
 
 model UserDocumentHistory {
-  id                  String   @id @default(uuid()) @db.VarChar(36)
-  userDocumentsId     String
-  status              DocumentSponsorStatus
-  url                 String? @db.Text
-  observation         String? @db.Text
-  createdById         String?  @map("created_by_id") @db.VarChar(36)
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  id              String                @id @default(uuid()) @db.VarChar(36)
+  userDocumentsId String
+  status          DocumentSponsorStatus
+  url             String?               @db.Text
+  observation     String?               @db.Text
+  createdById     String?               @map("created_by_id") @db.VarChar(36)
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
 
   createdBy     User?         @relation("UserDocumentHistoryCreatedBy", fields: [createdById], references: [id])
   userDocuments UserDocuments @relation(fields: [userDocumentsId], references: [id])

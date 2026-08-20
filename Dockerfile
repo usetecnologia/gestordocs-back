@@ -41,9 +41,17 @@ RUN npm ci --only=production && npm cache clean --force
 # Copiar archivos necesarios desde builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+# prisma.config.ts es donde vive la URL de conexion del CLI: sin el, "migrate deploy" no sabe
+# a que base conectarse. Se carga como TypeScript sin ts-node, via el loader que trae
+# @prisma/config (c12/jiti), ambos ya incluidos al estar "prisma" en dependencies.
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 # Exponer puerto
 EXPOSE 3011
 
-# Iniciar app (Prisma Client ya viene generado desde el builder en prisma/generated/prisma)
-CMD ["node", "dist/src/main"]
+# Aplicar las migraciones pendientes antes de levantar la app. Sin este paso la base queda
+# atras del schema en cada despliegue: fue lo que dejo tres migraciones sin aplicar entre
+# julio y agosto de 2026. Si una migracion falla, el contenedor no arranca — es deliberado:
+# es preferible a servir la aplicacion contra una base con la estructura equivocada.
+# El Prisma Client ya viene generado desde el builder en prisma/generated/prisma.
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]

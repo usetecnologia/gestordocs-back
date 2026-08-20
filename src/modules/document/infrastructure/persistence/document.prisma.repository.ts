@@ -9,6 +9,7 @@ import {
   DocumentProgramInputData,
   DocumentCountryItem,
   ParticipantDocumentFilter,
+  TemporadaProgramRef,
 } from '../../domain/document.repository';
 import { Document } from '../../domain/document.entity';
 import { TypeDocument } from '../../domain/document.enums';
@@ -27,7 +28,12 @@ export class DocumentPrismaRepository implements IDocumentRepository {
   ): Promise<void> {
     for (const p of programs) {
       const documentProgram = await tx.documentProgram.create({
-        data: { documentId, programId: p.programId, status: p.status ?? true },
+        data: {
+          documentId,
+          programId: p.programId,
+          temporadaId: p.temporadaId ?? null,
+          status: p.status ?? true,
+        },
       });
 
       const descriptions = p.descriptions ?? [];
@@ -271,6 +277,14 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       include: { country: { select: { id: true, code: true, name: true } } },
     });
     return rows.map((r) => r.country);
+  }
+
+  async findTemporadaRefs(temporadaIds: string[]): Promise<TemporadaProgramRef[]> {
+    if (temporadaIds.length === 0) return [];
+    return this.prisma.temporada.findMany({
+      where: { id: { in: temporadaIds } },
+      select: { id: true, programId: true },
+    });
   }
 
   async create(data: CreateDocumentData): Promise<Document> {

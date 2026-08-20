@@ -28,6 +28,12 @@ export interface ITemporadaRepository {
   findById(id: string): Promise<Temporada | null>;
   // Valida que no exista otra temporada con el mismo nombre dentro del mismo programa.
   isNameTaken(name: string, programId: string, excludeId?: string): Promise<boolean>;
+  /**
+   * Cuantos vinculos documento-programa la tienen asignada. Se consulta desde el modulo de
+   * temporada y no desde el de documentos para no cruzar los dos modulos entre si: el de
+   * documentos ya depende de este para validar, y la dependencia inversa cerraria el ciclo.
+   */
+  countDocumentProgramsUsing(id: string): Promise<number>;
   create(data: CreateTemporadaData): Promise<Temporada>;
   update(id: string, data: UpdateTemporadaData): Promise<Temporada>;
   delete(id: string): Promise<void>;

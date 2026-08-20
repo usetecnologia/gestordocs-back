@@ -27,6 +27,14 @@ export interface DocumentProgramItem {
   id: string;
   programId: string;
   program: { id: string; code: string; name: string };
+  /**
+   * Temporada del programa. Es informativa: no interviene en `findApplicableForParticipant`
+   * porque el participante todavia no tiene temporada asignada y no habria con que compararla.
+   * Se expone `status` para que el formulario pueda seguir mostrando una temporada que fue
+   * desactivada despues de asignarse, en vez de perderla en silencio al guardar.
+   */
+  temporadaId: string | null;
+  temporada: { id: string; name: string; status: boolean } | null;
   status: boolean;
   descriptions: DocumentProgramDescriptionItem[];
 }

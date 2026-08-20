@@ -11,12 +11,20 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { TypeDocument, TypeHired } from '../../../domain/document.enums';
 
 export const emptyToUndefined = ({ value }: { value: unknown }) => (value === '' ? undefined : value);
+
+/**
+ * El select de temporada manda '' cuando el usuario elige "Sin temporada". Se normaliza a null
+ * y no a undefined: undefined dejaria el valor anterior intacto en el update, y el usuario
+ * que la quita esperaria que se quite.
+ */
+export const emptyToNull = ({ value }: { value: unknown }) => (value === '' ? null : value);
 
 export class DocumentSponsorInputDto {
   @ApiProperty({ example: 'uuid-sponsor' })
@@ -61,6 +69,19 @@ export class DocumentProgramInputDto {
   @ApiProperty({ example: 'uuid-programa' })
   @IsUUID()
   programId!: string;
+
+  @ApiPropertyOptional({
+    example: 'uuid-temporada',
+    nullable: true,
+    description:
+      'Temporada del programa (informativa). Debe pertenecer al programa indicado. ' +
+      'Enviar null para desvincularla.',
+  })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsUUID()
+  temporadaId?: string | null;
 
   @ApiPropertyOptional({ example: true, default: true })
   @IsOptional()

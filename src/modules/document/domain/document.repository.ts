@@ -30,8 +30,16 @@ export interface DocumentProgramDescriptionInputData {
 
 export interface DocumentProgramInputData {
   programId: string;
+  /** Opcional. `null` desvincula la temporada; `undefined` en create equivale a null. */
+  temporadaId?: string | null;
   status?: boolean;
   descriptions?: DocumentProgramDescriptionInputData[];
+}
+
+/** Par temporada -> programa al que pertenece, para validar que la asignacion sea coherente. */
+export interface TemporadaProgramRef {
+  id: string;
+  programId: string;
 }
 
 export interface DocumentCountryItem {
@@ -91,6 +99,8 @@ export interface IDocumentRepository {
   findInformativeBySponsorIds(sponsorIds: string[]): Promise<Document[]>;
   findById(id: string): Promise<Document | null>;
   findCountriesByDocumentId(documentId: string): Promise<DocumentCountryItem[]>;
+  /** Resuelve a que programa pertenece cada temporada. Las que no existen no vienen en la respuesta. */
+  findTemporadaRefs(temporadaIds: string[]): Promise<TemporadaProgramRef[]>;
   create(data: CreateDocumentData): Promise<Document>;
   update(id: string, data: UpdateDocumentData): Promise<Document>;
   updateOrder(id: string, order: number | null): Promise<Document | null>;
@@ -120,4 +130,40 @@ export function findDuplicateCountryIds(program: DocumentProgramInputData): stri
     }
   }
   return [...duplicates];
+}
+
+/**
+ * Temporadas asignadas a un programa que no les corresponde, o que ya no existen.
+ * La clave foranea solo garantiza que la temporada exista: nada a nivel de base de datos
+ * impide asignarle a "WAT USA" una temporada que pertenece a "Internship USA".
+ */
+export interface InvalidTemporadaAssignment {
+  temporadaId: string;
+  programId: string;
+  reason: 'NOT_FOUND' | 'WRONG_PROGRAM';
+}
+
+export function findInvalidTemporadaAssignments(
+  programs: DocumentProgramInputData[],
+  refs: TemporadaProgramRef[],
+): InvalidTemporadaAssignment[] {
+  const programIdByTemporadaId = new Map(refs.map((r) => [r.id, r.programId]));
+  const invalid: InvalidTemporadaAssignment[] = [];
+
+  for (const p of programs) {
+    if (!p.temporadaId) continue;
+    const owner = programIdByTemporadaId.get(p.temporadaId);
+    if (owner === undefined) {
+      invalid.push({ temporadaId: p.temporadaId, programId: p.programId, reason: 'NOT_FOUND' });
+    } else if (owner !== p.programId) {
+      invalid.push({ temporadaId: p.temporadaId, programId: p.programId, reason: 'WRONG_PROGRAM' });
+    }
+  }
+
+  return invalid;
+}
+
+/** Temporadas referenciadas por la solicitud, sin repetidos y sin nulos. */
+export function collectTemporadaIds(programs: DocumentProgramInputData[]): string[] {
+  return [...new Set(programs.map((p) => p.temporadaId).filter((id): id is string => !!id))];
 }

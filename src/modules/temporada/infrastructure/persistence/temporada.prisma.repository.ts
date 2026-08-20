@@ -64,6 +64,10 @@ export class TemporadaPrismaRepository implements ITemporadaRepository {
     return !!row;
   }
 
+  async countDocumentProgramsUsing(id: string): Promise<number> {
+    return this.prisma.documentProgram.count({ where: { temporadaId: id } });
+  }
+
   async create(data: CreateTemporadaData): Promise<Temporada> {
     const row = await this.prisma.temporada.create({
       data,

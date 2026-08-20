@@ -17,6 +17,9 @@ export const DOCUMENT_FULL_INCLUDE = {
   documentPrograms: {
     include: {
       program: { select: { id: true, name: true, code: true } },
+      // Sin filtrar por status: una temporada desactivada despues de haberse asignado tiene
+      // que seguir viajando al formulario, o el primer guardado la borraria sin avisar.
+      temporada: { select: { id: true, name: true, status: true } },
       descriptions: {
         include: {
           countries: {
@@ -61,6 +64,8 @@ export class DocumentMapper {
         id: dp.id,
         programId: dp.programId,
         program: dp.program,
+        temporadaId: dp.temporadaId,
+        temporada: dp.temporada,
         status: dp.status,
         descriptions,
       };

@@ -49,10 +49,19 @@ class DocumentProgramDescriptionItemDto {
   countries!: DocumentProgramDescriptionCountryItemDto[];
 }
 
+class TemporadaRefDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() name!: string;
+  @ApiProperty({ description: 'Una temporada desactivada sigue viajando si ya estaba asignada.' })
+  status!: boolean;
+}
+
 class DocumentProgramItemDto {
   @ApiProperty() id!: string;
   @ApiProperty() programId!: string;
   @ApiProperty({ type: ProgramRefDto }) program!: ProgramRefDto;
+  @ApiProperty({ nullable: true, example: 'uuid-temporada' }) temporadaId!: string | null;
+  @ApiProperty({ type: TemporadaRefDto, nullable: true }) temporada!: TemporadaRefDto | null;
   @ApiProperty() status!: boolean;
   @ApiProperty({ type: [DocumentProgramDescriptionItemDto] })
   descriptions!: DocumentProgramDescriptionItemDto[];

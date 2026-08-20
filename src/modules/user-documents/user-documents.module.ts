@@ -4,6 +4,7 @@ import { AppJwtModule } from '@shared/jwt/jwt.module';
 import { AwsS3Module } from '@shared/aws/aws-s3.module';
 import { ResendModule } from '@shared/resend/resend.module';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { RolesGuard } from '@common/guards/roles.guard';
 import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
 import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-action.repository';
@@ -66,6 +67,7 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },
     JwtAuthGuard,
+    RolesGuard,
   ],
 })
 export class UserDocumentsModule {}
