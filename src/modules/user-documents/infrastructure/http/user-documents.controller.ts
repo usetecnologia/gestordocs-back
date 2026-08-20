@@ -129,12 +129,14 @@ export class UserDocumentsController {
   @ApiOperation({
     summary: 'Descargar de forma masiva los documentos de varios participantes, agrupados por sponsor',
     description:
-      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con cinco carpetas: ASPIRE (un PDF combinado y ' +
+      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con seis carpetas: ASPIRE (un PDF combinado y ' +
       'sellado por participante), UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante con PROOF, ' +
       'ULETTER, PBC, PASSPORT y JO), INTRAX (una subcarpeta {dni} - {apellidos, nombres} por participante con ' +
       'ULETTER, TRANSLATION, PASSPORT y PEF), CENET (una subcarpeta {dni} - {apellidos, nombres} por participante ' +
       'con ULETTER, PASSPORT, ENGLISH, FEE, JO y PHOTO — este último en su formato de imagen original) y AAG ' +
-      '(una subcarpeta {dni} - {apellidos, nombres} por participante con ULETTER y PASSPORT). El campo ' +
+      '(una subcarpeta {dni} - {apellidos, nombres} por participante con ULETTER y PASSPORT) e INTEREXCHANGE ' +
+      '(una subcarpeta {dni} - {apellidos, nombres} por participante con PASSPORT, ULETTER, TRANSLATION e ' +
+      'INTERVIEW). El campo ' +
       '`vacationLetter` es un único PDF que se reutiliza para todos los participantes AAG del lote — si no se ' +
       'adjunta, esos DNIs se listan como omitidos. Los DNIs no encontrados, sin sponsor soportado o sin ' +
       'documentos NO detienen el proceso: se omiten y se listan en el header X-Skipped-Participants como JSON ' +
@@ -202,7 +204,9 @@ export class UserDocumentsController {
       'y PHOTO (PHOTO, se entrega tal cual en su formato de imagen original, sin convertir a PDF). ' +
       'AAG: requiere adjuntar el campo `vacationLetter` (PDF) — se sube a S3 como VacationLetter.pdf sin ' +
       'persistir su referencia, y se combina en memoria dentro de ULETTER.pdf junto a ULETTER y TRANSLATION. ' +
-      'Genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf y PASSPORT.pdf.',
+      'Genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo ULETTER.pdf y PASSPORT.pdf. ' +
+      'INTEREXCHANGE: genera un .zip con una carpeta {dni} - {apellidos, nombres} conteniendo PASSPORT.pdf, ' +
+      'ULETTER.pdf, TRANSLATION.pdf e INTERVIEW.pdf (IEXENGLISH).',
   })
   @ApiParam({ name: 'userId', description: 'UUID del participante' })
   @ApiBody({
@@ -218,11 +222,14 @@ export class UserDocumentsController {
     },
   })
   @ApiProduces('application/pdf', 'application/zip')
-  @ApiOkResponse({ description: 'Archivo PDF (ASPIRE) o ZIP (UNITED/INTRAX/CENET/AAG) con los documentos.' })
+  @ApiOkResponse({
+    description: 'Archivo PDF (ASPIRE) o ZIP (UNITED/INTRAX/CENET/AAG/INTEREXCHANGE) con los documentos.',
+  })
   @ApiNotFoundResponse({ description: 'Participante no encontrado o sin documentos subidos.' })
   @ApiBadRequestResponse({
     description:
-      'El participante no pertenece a un sponsor soportado (ASPIRE, UNITED, INTRAX, CENET o AAG), o falta el ' +
+      'El participante no pertenece a un sponsor soportado (ASPIRE, UNITED, INTRAX, CENET, AAG o ' +
+      'INTEREXCHANGE), o falta el ' +
       'PDF de VacationLetter cuando el sponsor es AAG.',
   })
   async downloadBySponsor(
