@@ -14,6 +14,7 @@ export const UNITED_SPONSOR_CODE = 'UNITED';
 export const INTRAX_SPONSOR_CODE = 'INTRAX';
 export const CENET_SPONSOR_CODE = 'CENET';
 export const AAG_SPONSOR_CODE = 'AAG';
+export const INTEREXCHANGE_SPONSOR_CODE = 'INTEREXCHANGE';
 
 const ASPIRE_SIGLAS_ORDER = ['PASSPORT', 'JOASPIRE', 'ULETTER', 'TRANSLATION'] as const;
 const TRANSLATION_SIGLAS = 'TRANSLATION';
@@ -52,6 +53,13 @@ const CENET_OUTPUTS: UnitedOutputSpec[] = [
   { filename: 'FEE', siglasList: ['CENETFEE'] },
   { filename: 'PHOTO', siglasList: ['PHOTO'], asImage: true },
   { filename: 'JO', siglasList: ['JOCENET'] },
+];
+
+const INTEREXCHANGE_OUTPUTS: UnitedOutputSpec[] = [
+  { filename: 'PASSPORT', siglasList: ['PASSPORT'] },
+  { filename: 'ULETTER', siglasList: ['ULETTER'] },
+  { filename: 'TRANSLATION', siglasList: ['TRANSLATION'] },
+  { filename: 'INTERVIEW', siglasList: ['IEXENGLISH'] },
 ];
 
 const OTHER_IMAGE_EXTENSIONS = new Set(['gif', 'bmp', 'tiff', 'tif']);
@@ -172,6 +180,10 @@ export class SponsorDocumentBuilder {
 
   async buildCenetOutputs(userId: string): Promise<NamedPdf[]> {
     return this.buildOutputsFor(userId, CENET_SPONSOR_CODE, CENET_OUTPUTS);
+  }
+
+  async buildInterexchangeOutputs(userId: string): Promise<NamedPdf[]> {
+    return this.buildOutputsFor(userId, INTEREXCHANGE_SPONSOR_CODE, INTEREXCHANGE_OUTPUTS);
   }
 
   /**

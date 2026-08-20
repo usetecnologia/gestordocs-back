@@ -9,6 +9,7 @@ import {
   AAG_SPONSOR_CODE,
   ASPIRE_SPONSOR_CODE,
   CENET_SPONSOR_CODE,
+  INTEREXCHANGE_SPONSOR_CODE,
   INTRAX_SPONSOR_CODE,
   NamedPdf,
   SponsorDocumentBuilder,
@@ -64,6 +65,12 @@ export class DownloadDocumentsBySponsorUseCase {
       return this.buildZipResult(participant, outputs);
     }
 
+    if (participant.sponsorCode === INTEREXCHANGE_SPONSOR_CODE) {
+      const outputs = await this.sponsorDocumentBuilder.buildInterexchangeOutputs(userId);
+      if (!outputs.length) throw new NotFoundException(NO_DOCUMENTS_MESSAGE);
+      return this.buildZipResult(participant, outputs);
+    }
+
     if (participant.sponsorCode === AAG_SPONSOR_CODE) {
       if (!vacationLetter) {
         throw new BadRequestException(
@@ -78,7 +85,7 @@ export class DownloadDocumentsBySponsorUseCase {
 
     throw new BadRequestException(
       `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE}, ` +
-        `${INTRAX_SPONSOR_CODE}, ${CENET_SPONSOR_CODE} o ${AAG_SPONSOR_CODE}).`,
+        `${INTRAX_SPONSOR_CODE}, ${CENET_SPONSOR_CODE}, ${AAG_SPONSOR_CODE} o ${INTEREXCHANGE_SPONSOR_CODE}).`,
     );
   }
 
