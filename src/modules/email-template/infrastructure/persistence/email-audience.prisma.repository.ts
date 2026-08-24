@@ -44,8 +44,16 @@ export class EmailAudiencePrismaRepository implements IEmailAudienceRepository {
   }
 
   async findByDocumentStatus(status: string): Promise<EmailAudienceRecipient[]> {
+    // Solo documentos de un proceso ABIERTO. Un ciclo finalizado esta congelado: mandarle un correo
+    // a alguien por un documento de un proceso que ya cerro seria pedirle que actue sobre algo que
+    // no puede cambiar. Es la diferencia con el export, que si muestra el proceso visible aunque
+    // este finalizado.
     const rows = await this.prisma.userDocuments.findMany({
-      where: { status: status as $Enums.DocumentSponsorStatus, statusDocument: true },
+      where: {
+        status: status as $Enums.DocumentSponsorStatus,
+        statusDocument: true,
+        proceso: { activo: true },
+      },
       distinct: ['userId'],
       orderBy: { updatedAt: 'desc' },
       select: {

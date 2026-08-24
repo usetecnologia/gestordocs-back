@@ -16,6 +16,8 @@ const CONTEOS: Record<string, string> = {
   document_program_descriptions: 'SELECT COUNT(*) n FROM document_program_descriptions',
   User: 'SELECT COUNT(*) n FROM User',
   Temporada: 'SELECT COUNT(*) n FROM Temporada',
+  procesos: 'SELECT COUNT(*) n FROM procesos',
+  'procesos abiertos': 'SELECT COUNT(*) n FROM procesos WHERE activo = 1',
 };
 
 async function main() {

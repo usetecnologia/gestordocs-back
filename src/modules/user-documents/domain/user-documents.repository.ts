@@ -8,21 +8,14 @@ export interface ExistingUserDocument {
   updatedAt: Date;
 }
 
-export interface CloneDocumentForSponsorData {
-  userId: string;
-  documentSponsorId: string;
-  status: string;
-  url: string | null;
-}
-
-export interface RefreshDocumentFromLatestData {
-  userDocumentId: string;
-  status: string;
-  url: string | null;
-}
-
 export interface CreateUserDocumentWithHistoryData {
   userId: string;
+  /**
+   * Proceso al que pertenece el documento. Lo pasa quien crea, no lo adivina el repositorio: el
+   * sync ya sabe en qué proceso está trabajando, y que el dato viaje explícito es lo que impide
+   * que un documento termine colgado del proceso equivocado.
+   */
+  procesoId: string;
   documentSponsorId?: string | null;
   documentId?: string | null;
 }
@@ -171,13 +164,15 @@ export interface PassportDocumentCandidate {
 }
 
 export interface IUserDocumentsRepository {
-  findByUserId(userId: string): Promise<ExistingUserDocument[]>;
+  /**
+   * Expediente de UN proceso. El sync trabaja siempre dentro de un proceso: un ciclo nuevo no
+   * hereda nada del anterior, así que mirar por `userId` mezclaría dos historias distintas.
+   */
+  findByProcesoId(procesoId: string): Promise<ExistingUserDocument[]>;
   findUserApplicabilityContext(userId: string): Promise<UserApplicabilityContext | null>;
   findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]>;
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;
-  cloneDocumentForNewSponsor(data: CloneDocumentForSponsorData): Promise<void>;
-  refreshDocumentFromLatest(data: RefreshDocumentFromLatestData): Promise<void>;
   updateStatusDocument(id: string, statusDocument: boolean): Promise<void>;
   addHistory(userDocumentsId: string, status: string, url: string, createdById: string): Promise<void>;
   countRequiredDocs(userId: string): Promise<RequiredDocsCount>;

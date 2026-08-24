@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { Prisma } from 'prisma/generated/prisma/client';
+import { espejarStatusDocumental } from '@modules/proceso/infrastructure/persistence/espejar-status-documental';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import {
   IUserRepository,
@@ -766,7 +767,14 @@ export class UserPrismaRepository implements IUserRepository {
       await this.prisma.person.update({ where: { id }, data: personData });
     }
     if (Object.keys(userData).length > 0) {
-      await this.prisma.user.update({ where: { id }, data: userData });
+      // El estado va junto con su espejo en el proceso, en una sola transacción: si se separaran,
+      // un fallo intermedio dejaría los dos valores en desacuerdo.
+      await this.prisma.$transaction(async (tx) => {
+        await tx.user.update({ where: { id }, data: userData });
+        if (typeof userData.status === 'string') {
+          await espejarStatusDocumental(tx, id, userData.status);
+        }
+      });
     }
 
     return (await this.findById(id))!;
@@ -786,10 +794,18 @@ export class UserPrismaRepository implements IUserRepository {
   }
 
   async createObservation({ participantId, observation, createdById, etiquetaIds, files }: CreateObservationData): Promise<ObservationResult> {
+    // La observación pertenece al ciclo en el que se levanta: cuando ese ciclo se cierre, deja de
+    // opinar sobre el estado del siguiente.
+    const abierto = await this.prisma.proceso.findFirst({
+      where: { participanteId: participantId, activo: true },
+      select: { id: true },
+    });
+
     return this.prisma.$transaction(async (tx) => {
       const obs = await tx.userObservations.create({
         data: {
           userId: participantId,
+          procesoId: abierto?.id ?? null,
           observation,
           createdById,
           ...(etiquetaIds?.length && {
@@ -829,6 +845,8 @@ export class UserPrismaRepository implements IUserRepository {
       await tx.userHistoryStatus.create({
         data: { userId: participantId, status: nuevoEstado as never, createdById },
       });
+
+      await espejarStatusDocumental(tx, participantId, nuevoEstado);
 
       const creatorPerson = createdById
         ? await tx.person.findUnique({

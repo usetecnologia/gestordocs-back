@@ -8,8 +8,7 @@ import {
   IDocumentRepository,
   DOCUMENT_REPOSITORY,
 } from '@modules/document/domain/document.repository';
-
-const PENDIENTE_STATUS = 'PENDIENTE';
+import { EnsureProcesoInicialUseCase } from '@modules/proceso/application/use-cases/ensure-proceso-inicial.use-case';
 
 @Injectable()
 export class SyncUserDocumentsUseCase {
@@ -20,12 +19,29 @@ export class SyncUserDocumentsUseCase {
     private readonly userDocumentsRepo: IUserDocumentsRepository,
     @Inject(DOCUMENT_REPOSITORY)
     private readonly documentRepo: IDocumentRepository,
+    private readonly ensureProcesoInicial: EnsureProcesoInicialUseCase,
   ) {}
 
   /**
+   * Pone el expediente del proceso abierto al día con el catálogo: crea en `PENDIENTE` lo que
+   * corresponde y todavía no está, desactiva lo que dejó de aplicar, y no toca lo que el
+   * participante ya subió y sigue aplicando.
+   *
    * El contexto de aplicabilidad (sponsor + programa) se resuelve aquí a partir del `userId`,
    * no se recibe por parámetro: hay siete caminos que sincronizan un expediente y así ninguno
    * puede quedar pasando datos distintos ni desactualizarse cuando se agregue una dimensión.
+   *
+   * **Trabaja siempre dentro del proceso abierto.** Un ciclo no hereda nada del anterior: si el
+   * participante ya pasó por otro sponsor en un proceso finalizado, los documentos de ese proceso
+   * se quedan ahí. Antes existía esa herencia —se clonaba el avance de un sponsor a otro y se
+   * refrescaba el registro con el archivo más nuevo de cualquier vínculo— y se eliminó a
+   * propósito: el proceso es el dueño histórico de su avance, y mezclar dos ciclos hacía que un
+   * expediente cerrado pudiera cambiar por la espalda.
+   *
+   * De ahí sale el congelado del ciclo cerrado, y sale **por construcción**: se lee y se escribe
+   * únicamente sobre las filas del proceso abierto, así que las del finalizado no están al
+   * alcance. Y si el participante no tiene ninguno abierto porque USE le cerró el anterior,
+   * `EnsureProcesoInicial` le abre el siguiente solo — no hay nada que administrar.
    */
   async execute(userId: string): Promise<void> {
     const context = await this.userDocumentsRepo.findUserApplicabilityContext(userId);
@@ -42,140 +58,86 @@ export class SyncUserDocumentsUseCase {
       return;
     }
 
-    const { sponsorCode } = context;
-    const documents = await this.documentRepo.findApplicableForParticipant(context);
-    const existing = await this.userDocumentsRepo.findByUserId(userId);
-
-    // Mapea cada vínculo documento-sponsor (DocumentSponsor.id) al documento padre al que
-    // pertenece. Un mismo documento (p. ej. "SPONSOR") puede tener un vínculo distinto por
-    // cada sponsor que lo requiere — este mapa permite reconocer que todos esos vínculos
-    // representan el MISMO documento físico, sin importar cuál sponsor lo exige.
-    const parentDocByLinkId = new Map<string, string>();
-    for (const doc of documents) {
-      for (const link of doc.sponsors) {
-        parentDocByLinkId.set(link.id, doc.id);
-      }
+    // El expediente cuelga de un proceso: `UserDocuments.procesoId` es lo que los une. Si el
+    // participante todavía no tiene ninguno se le abre acá — este es su primer sync — y si no se
+    // le puede abrir, no se sincroniza. Mismo criterio que el corte de arriba: dejarle el
+    // expediente intacto es mejor que crearle documentos que no cuelgan de ningún proceso.
+    const proceso = await this.ensureProcesoInicial.execute(userId);
+    if (!proceso) {
+      this.logger.warn(
+        `Sync omitido para el usuario ${userId}: no se le pudo abrir un proceso. ` +
+          'Su expediente queda intacto.',
+      );
+      return;
     }
 
-    // `existing` viene ordenado por última actividad real (updatedAt) del más reciente al
-    // más antiguo (ver repositorio) — por lo que el primer valor que se guarda por clave es
-    // siempre el de actividad más reciente.
+    // Red de seguridad, no el mecanismo principal: `EnsureProcesoInicial` devuelve siempre un
+    // proceso abierto, así que esta rama no debería alcanzarse. Se deja porque el día que alguien
+    // la haga alcanzable —devolviendo el proceso visible en vez del abierto, por ejemplo— el sync
+    // empezaría a editar un ciclo cerrado sin que nada fallara a la vista.
+    if (proceso.estado === 'FINALIZADO') {
+      this.logger.log(
+        `Sync omitido para el usuario ${userId}: su proceso ${proceso.id} está finalizado.`,
+      );
+      return;
+    }
+
+    const { sponsorCode } = context;
+    const documents = await this.documentRepo.findApplicableForParticipant(context);
+    const existing = await this.userDocumentsRepo.findByProcesoId(proceso.id);
+
+    // `existing` viene ordenado por última actividad real (updatedAt) del más reciente al más
+    // antiguo, así que el primer valor que se guarda por clave es el de actividad más reciente.
     const existingByDocSponsorId = new Map<string, ExistingUserDocument>();
     const existingByDocId = new Map<string, ExistingUserDocument>();
-    const existingByParentDocId = new Map<string, ExistingUserDocument[]>();
 
     for (const e of existing) {
       if (e.documentSponsorId) {
         if (!existingByDocSponsorId.has(e.documentSponsorId)) {
           existingByDocSponsorId.set(e.documentSponsorId, e);
         }
-        const parentDocId = parentDocByLinkId.get(e.documentSponsorId);
-        if (parentDocId) {
-          const group = existingByParentDocId.get(parentDocId);
-          if (group) group.push(e);
-          else existingByParentDocId.set(parentDocId, [e]);
-        }
       } else if (e.documentId && !existingByDocId.has(e.documentId)) {
         existingByDocId.set(e.documentId, e);
       }
     }
 
-    // Track which identifiers are still valid for this user in this sync pass
+    // Qué identificadores siguen siendo válidos para este participante en esta pasada.
     const validDocSponsorIds = new Set<string>();
     const validDocIds = new Set<string>();
-    const alreadyDeactivatedIds = new Set<string>();
 
     for (const doc of documents) {
       if (doc.sponsors.length > 0) {
+        // Documento exigido por sponsor: solo aplica el vínculo del sponsor actual. Si el
+        // participante no está con ninguno de los que lo exigen, el documento no le toca.
         const matchingDs = doc.sponsors.find((s) => s.sponsor.code === sponsorCode);
         if (!matchingDs) continue;
 
         validDocSponsorIds.add(matchingDs.id);
-
-        const currentLinkRecord = existingByDocSponsorId.get(matchingDs.id);
-
-        // El registro con progreso real (no PENDIENTE) más reciente entre TODOS los
-        // sponsors que alguna vez tuvieron este documento — no solo el sponsor actual.
-        // El grupo ya viene ordenado por última actividad (updatedAt) descendente.
-        const group = existingByParentDocId.get(doc.id) ?? [];
-        const bestRecord = group.find((r) => r.status !== PENDIENTE_STATUS);
-
-        if (currentLinkRecord) {
-          if (!bestRecord || bestRecord.id === currentLinkRecord.id) {
-            // El registro del sponsor actual ya es el más reciente (o no hay nada mejor
-            // que heredar): solo se sincroniza si el documento sigue vigente.
-            if (currentLinkRecord.statusDocument !== doc.status) {
-              await this.userDocumentsRepo.updateStatusDocument(currentLinkRecord.id, doc.status);
-            }
-            continue;
-          }
-
-          // Otro sponsor tiene el avance MÁS RECIENTE de este mismo documento (p. ej. el
-          // participante volvió a un sponsor anterior, pero subió un archivo más nuevo
-          // mientras estaba con otro sponsor). Se refresca el registro del sponsor actual
-          // con ese estado/archivo y se desactiva el otro (sin borrar su historial).
-          const bestHistory = await this.userDocumentsRepo.findHistoryByUserAndTarget(
+        await this.crearOSincronizar(existingByDocSponsorId.get(matchingDs.id), doc.status, () =>
+          this.userDocumentsRepo.createWithHistory({
             userId,
-            null,
-            bestRecord.documentSponsorId,
-          );
-          const lastUrl = bestHistory[bestHistory.length - 1]?.url ?? null;
-
-          await this.userDocumentsRepo.refreshDocumentFromLatest({
-            userDocumentId: currentLinkRecord.id,
-            status: bestRecord.status,
-            url: lastUrl,
-          });
-          await this.userDocumentsRepo.updateStatusDocument(bestRecord.id, false);
-          alreadyDeactivatedIds.add(bestRecord.id);
-          continue;
-        }
-
-        if (!doc.status) continue;
-
-        if (bestRecord) {
-          // El participante nunca tuvo este documento bajo el sponsor actual, pero sí bajo
-          // otro con progreso real: se clona ese estado/archivo para el sponsor actual y se
-          // desactiva el registro de origen (se conserva como histórico, no se borra).
-          const bestHistory = await this.userDocumentsRepo.findHistoryByUserAndTarget(
-            userId,
-            null,
-            bestRecord.documentSponsorId,
-          );
-          const lastUrl = bestHistory[bestHistory.length - 1]?.url ?? null;
-
-          await this.userDocumentsRepo.updateStatusDocument(bestRecord.id, false);
-          alreadyDeactivatedIds.add(bestRecord.id);
-
-          await this.userDocumentsRepo.cloneDocumentForNewSponsor({
-            userId,
+            procesoId: proceso.id,
             documentSponsorId: matchingDs.id,
-            status: bestRecord.status,
-            url: lastUrl,
-          });
-        } else {
-          await this.userDocumentsRepo.createWithHistory({ userId, documentSponsorId: matchingDs.id });
-        }
+          }),
+        );
       } else {
         validDocIds.add(doc.id);
-
-        const existingRecord = existingByDocId.get(doc.id);
-        if (existingRecord) {
-          if (existingRecord.statusDocument !== doc.status) {
-            await this.userDocumentsRepo.updateStatusDocument(existingRecord.id, doc.status);
-          }
-        } else {
-          if (!doc.status) continue;
-          await this.userDocumentsRepo.createWithHistory({ userId, documentId: doc.id });
-        }
+        await this.crearOSincronizar(existingByDocId.get(doc.id), doc.status, () =>
+          this.userDocumentsRepo.createWithHistory({
+            userId,
+            procesoId: proceso.id,
+            documentId: doc.id,
+          }),
+        );
       }
     }
 
-    // Deactivate records that are no longer valid for this user.
-    // This covers cases where a document's structure changed (e.g. moved from "visible to ALL"
-    // to "sponsor-specific") and the user's sponsor no longer qualifies.
+    // Desactiva los registros que ya no corresponden a este participante. Cubre el cambio de
+    // sponsor o de programa con el proceso abierto, y el documento que pasó de "visible para
+    // todos" a "exigido por sponsor" y ahora el sponsor del participante no califica. Nunca se
+    // borra nada: la fila queda inactiva y su historial intacto.
     for (const record of existing) {
-      if (!record.statusDocument || alreadyDeactivatedIds.has(record.id)) continue;
+      if (!record.statusDocument) continue;
 
       if (record.documentSponsorId) {
         if (!validDocSponsorIds.has(record.documentSponsorId)) {
@@ -186,6 +148,28 @@ export class SyncUserDocumentsUseCase {
           await this.userDocumentsRepo.updateStatusDocument(record.id, false);
         }
       }
+      // Una fila sin ninguno de los dos punteros no se toca: no hay con qué decidir si aplica.
     }
+  }
+
+  /**
+   * Si el documento ya está en el expediente del proceso, solo se alinea su vigencia con la del
+   * catálogo — **el estado y el archivo del participante no se tocan**, que es lo que hace que un
+   * cambio de catálogo no le borre lo que ya subió. Si no está, se crea (en `PENDIENTE`, con su
+   * primer historial), salvo que el documento esté dado de baja en el catálogo.
+   */
+  private async crearOSincronizar(
+    record: ExistingUserDocument | undefined,
+    vigenteEnCatalogo: boolean,
+    crear: () => Promise<void>,
+  ): Promise<void> {
+    if (record) {
+      if (record.statusDocument !== vigenteEnCatalogo) {
+        await this.userDocumentsRepo.updateStatusDocument(record.id, vigenteEnCatalogo);
+      }
+      return;
+    }
+    if (!vigenteEnCatalogo) return;
+    await crear();
   }
 }

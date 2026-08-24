@@ -97,6 +97,11 @@ export class UserResponseDto {
   @ApiPropertyOptional({ type: SimpleRefDto }) sponsor?: SimpleRefDto | null;
   @ApiPropertyOptional({ type: SimpleRefDto }) program?: SimpleRefDto | null;
   @ApiPropertyOptional({ type: OptionProgramRefDto }) optionProgram?: OptionProgramRefDto | null;
+  @ApiPropertyOptional({
+    description: 'Proceso que el participante ve. Determina qué acción de USE aplica: continuar sobre un FINALIZADO, finalizar sobre un EN_PROCESO.',
+    example: { id: 'uuid-del-proceso', estado: 'EN_PROCESO', fechaIngreso: '2026-01-01T00:00:00.000Z' },
+  })
+  procesoVisible?: { id: string; estado: string; fechaIngreso: Date } | null;
   @ApiPropertyOptional({ type: [UserObservationDto] }) observations?: UserObservationDto[] | null;
   @ApiPropertyOptional({ type: [UserHistoryStatusItemDto] }) historyStatus?: UserHistoryStatusItemDto[] | null;
   @ApiPropertyOptional({ type: [UserEmailLogItemDto] }) emailHistory?: UserEmailLogItemDto[] | null;

@@ -21,6 +21,10 @@ import { USER_DOCUMENTS_REPOSITORY } from '@modules/user-documents/domain/user-d
 import { UserDocumentsPrismaRepository } from '@modules/user-documents/infrastructure/persistence/user-documents.prisma.repository';
 import { USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
 import { UserStatusPrisma } from '@modules/user-documents/infrastructure/persistence/user-status.prisma';
+import { PROCESO_REPOSITORY } from '@modules/proceso/domain/proceso.repository';
+import { ProcesoPrismaRepository } from '@modules/proceso/infrastructure/persistence/proceso.prisma.repository';
+import { EnsureProcesoInicialUseCase } from '@modules/proceso/application/use-cases/ensure-proceso-inicial.use-case';
+import { CrearNuevoProcesoUseCase } from '@modules/proceso/application/use-cases/crear-nuevo-proceso.use-case';
 import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
 import { EMAIL_ACTION_REPOSITORY } from '@modules/email-action/domain/email-action.repository';
@@ -37,6 +41,8 @@ const useCases = [
   RefreshTokenUseCase,
   AutoLoginUseCase,
   SyncUserDocumentsUseCase,
+  EnsureProcesoInicialUseCase,
+  CrearNuevoProcesoUseCase,
   TerminarRevisionUseCase,
 ];
 
@@ -54,6 +60,7 @@ const useCases = [
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
+    { provide: PROCESO_REPOSITORY, useClass: ProcesoPrismaRepository },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },

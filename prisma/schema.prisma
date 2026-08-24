@@ -202,6 +202,10 @@ model Proceso {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
+  userDocuments     UserDocuments[]
+  userObservations  UserObservations[]
+  vistoPor          User[]             @relation("UserProcesoVisible")
+
   participante  User          @relation("ProcesoParticipante", fields: [participanteId], references: [id])
   finalizadoBy  User?         @relation("ProcesoFinalizadoBy", fields: [finalizadoById], references: [id], onDelete: Restrict)
   program       Program       @relation(fields: [programId], references: [id])
@@ -238,10 +242,19 @@ model User {
   statusSolRetiro       String?
   statusExternal        String?
   status                UserStatus @default(ACTIVO)
+
+  /// Proceso que el participante ve: el que tiene abierto y, si no tiene ninguno abierto, el más
+  /// reciente. Nunca ve los anteriores. Es un puntero desnormalizado a propósito — los listados,
+  /// exports y el embudo lo necesitan para acotar el expediente sin una subconsulta por fila.
+  /// Lo escribe el repositorio de proceso en los tres momentos en que puede cambiar: al abrir uno,
+  /// al finalizarlo y al reabrirlo. `null` para el staff de USE, que no tiene procesos.
+  procesoVisibleId      String?    @map("proceso_visible_id") @db.VarChar(36)
+
   createdAt             DateTime   @default(now()) @map("created_at")
   updatedAt             DateTime   @updatedAt @map("updated_at")
 
-  role          Role           @relation(fields: [roleId], references: [id])
+  role           Role     @relation(fields: [roleId], references: [id])
+  procesoVisible Proceso? @relation("UserProcesoVisible", fields: [procesoVisibleId], references: [id], onDelete: Restrict)
   country       Country?       @relation(fields: [countryId], references: [id])
   sponsor       Sponsor?       @relation(fields: [sponsorId], references: [id])
   program       Program?       @relation(fields: [programId], references: [id])
@@ -266,11 +279,17 @@ model User {
   emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
   emailLogs             EmailLog[]
+
+  @@index([procesoVisibleId], map: "idx_user_proceso_visible")
 }
 
 model UserObservations {
   id          String    @id @default(uuid()) @db.VarChar(36)
   userId      String
+  /// Ciclo en el que se levantó la observación. Es lo que impide que una observación abierta del
+  /// ciclo anterior mande al participante a OBSERVADO en el ciclo nuevo, sin que haya subido nada:
+  /// la regla de estado solo mira las del ciclo visible. Nullable porque el staff no tiene procesos.
+  procesoId   String?   @map("proceso_id") @db.VarChar(36)
   observation String    @db.Text
   status      Boolean   @default(true)
   createdAt   DateTime  @default(now()) @map("created_at")
@@ -279,9 +298,12 @@ model UserObservations {
   createdById String?   @map("created_by_id") @db.VarChar(36)
 
   users                    User                       @relation(fields: [userId], references: [id])
+  proceso                  Proceso?                   @relation(fields: [procesoId], references: [id], onDelete: Restrict)
   createdBy                User?                      @relation("UserObservationsCreatedBy", fields: [createdById], references: [id])
   userObservationEtiquetas UserObservationEtiquetas[]
   userObservationFiles     UserObservationFiles[]
+
+  @@index([procesoId], map: "idx_user_observations_proceso")
 }
 
 model UserObservationFiles {
@@ -451,6 +473,13 @@ model UserDocuments {
   documentSponsorId String?
   documentId        String?
   userId            String
+
+  /// Proceso al que pertenece el documento. Obligatorio: un documento sin proceso no tendría
+  /// dueño histórico, y el proceso es lo que permite que un ciclo finalizado quede congelado.
+  /// Lo garantiza `EnsureProcesoInicial`, que el sync ejecuta antes de tocar el expediente: si al
+  /// participante no se le puede abrir un proceso, no se le crean documentos.
+  procesoId String @map("proceso_id") @db.VarChar(36)
+
   status            DocumentSponsorStatus
   statusDocument    Boolean               @default(true) @map("status_document")
   createdAt         DateTime              @default(now()) @map("created_at")
@@ -459,9 +488,11 @@ model UserDocuments {
   documentSponsors DocumentSponsor? @relation(fields: [documentSponsorId], references: [id])
   documents        Documents?       @relation(fields: [documentId], references: [id])
   users            User             @relation(fields: [userId], references: [id])
+  proceso          Proceso          @relation(fields: [procesoId], references: [id], onDelete: Restrict)
 
   userDocumentHistory UserDocumentHistory[]
 
+  @@index([procesoId], map: "idx_user_documents_proceso")
   // NO reintroducir un @@unique que incluya statusDocument en la clave. Se intentó
   // (20260730120000_add_user_documents_active_unique) para cerrar la condición de carrera del
   // sync, y rompía el guardado de documentos: con la clave (userId, documentId, statusDocument)

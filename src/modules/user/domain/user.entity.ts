@@ -61,6 +61,17 @@ export class User {
     public readonly sponsor?: { id: string; name: string; code: string } | null,
     public readonly program?: { id: string; name: string; code: string } | null,
     public readonly optionProgram?: { id: string; shortDatabase: string } | null,
+    /**
+     * Proceso que el participante ve. Va en los listados para que la pantalla de USE sepa qué
+     * acción ofrecerle: continuar solo tiene sentido sobre un ciclo `FINALIZADO`, y finalizar solo
+     * sobre uno `EN_PROCESO`. Sin este dato la pantalla tendría que ofrecer las dos siempre y
+     * dejar que el backend rechace la que no aplica.
+     */
+    public readonly procesoVisible?: {
+      id: string;
+      estado: string;
+      fechaIngreso: Date;
+    } | null,
     public readonly observations?: UserObservation[] | null,
     public readonly historyStatus?: UserHistoryStatusItem[] | null,
     public readonly emailHistory?: UserEmailLogItem[] | null,

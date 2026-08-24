@@ -337,7 +337,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
       if (fields.status !== undefined) {
         // Siempre sincronizar registros vinculados vía documentSponsorId (sponsor-específicos)
         await tx.userDocuments.updateMany({
-          where: { documentSponsors: { documentId: id } },
+          where: { documentSponsors: { documentId: id }, proceso: { activo: true } },
           data: { statusDocument: fields.status },
         });
 
@@ -353,7 +353,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
 
         if (!willHaveSponsors || fields.status === false) {
           await tx.userDocuments.updateMany({
-            where: { documentId: id, documentSponsorId: null },
+            where: { documentId: id, documentSponsorId: null, proceso: { activo: true } },
             data: { statusDocument: fields.status },
           });
         }
@@ -377,7 +377,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
         // El sync en el próximo autologin re-activará solo los usuarios con el sponsor correcto.
         if (sponsors.length > 0) {
           await tx.userDocuments.updateMany({
-            where: { documentId: id, documentSponsorId: null },
+            where: { documentId: id, documentSponsorId: null, proceso: { activo: true } },
             data: { statusDocument: false },
           });
         }
@@ -419,7 +419,7 @@ export class DocumentPrismaRepository implements IDocumentRepository {
           // Se desactiva (nunca se borra) el UserDocuments de los usuarios vinculados al
           // sponsor retirado — su historial se conserva íntegro.
           await tx.userDocuments.updateMany({
-            where: { documentSponsorId: { in: removedSponsorIds } },
+            where: { documentSponsorId: { in: removedSponsorIds }, proceso: { activo: true } },
             data: { statusDocument: false },
           });
         }

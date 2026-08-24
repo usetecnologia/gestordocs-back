@@ -15,6 +15,10 @@ import { EMAIL_LOG_REPOSITORY } from '@modules/email-template/domain/email-log.r
 import { EmailLogPrismaRepository } from '@modules/email-template/infrastructure/persistence/email-log.prisma.repository';
 import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 import { EmailLogService } from '@modules/email-template/application/services/email-log.service';
+import { PROCESO_REPOSITORY } from '@modules/proceso/domain/proceso.repository';
+import { ProcesoPrismaRepository } from '@modules/proceso/infrastructure/persistence/proceso.prisma.repository';
+import { EnsureProcesoInicialUseCase } from '@modules/proceso/application/use-cases/ensure-proceso-inicial.use-case';
+import { CrearNuevoProcesoUseCase } from '@modules/proceso/application/use-cases/crear-nuevo-proceso.use-case';
 import { USER_DOCUMENTS_REPOSITORY } from './domain/user-documents.repository';
 import { USER_STATUS_PORT } from './domain/user-status.port';
 import { PASSPORT_EXTRACTOR_PORT } from './domain/passport-extractor.port';
@@ -45,6 +49,8 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     UploadFileDocumentUseCase,
     FindUserDocumentsUseCase,
     SyncUserDocumentsUseCase,
+    EnsureProcesoInicialUseCase,
+  CrearNuevoProcesoUseCase,
     AceptarDocumentUseCase,
     ObservarDocumentUseCase,
     BulkUploadByFilenameUseCase,
@@ -61,6 +67,7 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     EmailLogService,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
+    { provide: PROCESO_REPOSITORY, useClass: ProcesoPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     { provide: PASSPORT_EXTRACTOR_PORT, useClass: OpenAiPassportExtractorClient },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },

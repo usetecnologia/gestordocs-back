@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { $Enums, Prisma } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import {
@@ -22,8 +22,6 @@ import {
   ParticipantSponsorInfo,
   UserEmailContext,
   UserDocumentTargetHistoryItem,
-  CloneDocumentForSponsorData,
-  RefreshDocumentFromLatestData,
   PassportDocumentCandidate,
   UserApplicabilityContext,
 } from '../../domain/user-documents.repository';
@@ -282,12 +280,58 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     this.logger.warn(`Sincronización concurrente: se omite ${description}.`);
   }
 
-  async findByUserId(userId: string): Promise<ExistingUserDocument[]> {
-    // Ordenado por última actividad real (updatedAt), no por fecha de creación del vínculo:
-    // así se puede identificar el avance más reciente de un documento entre TODOS los
-    // sponsors que alguna vez lo tuvieron, sin importar cuál vínculo es más antiguo.
+  /**
+   * Proceso al que se cuelga un documento que se está creando: el abierto del participante y, si
+   * no tiene ninguno abierto, el más reciente. Es la regla de "proceso visible", la misma que usó
+   * el backfill de `proceso_id`, para que la base y el código no puedan discrepar.
+   *
+   * `UserDocuments.procesoId` es NOT NULL: un documento sin proceso no tendría dueño histórico. La
+   * sincronización abre el proceso con `EnsureProcesoInicial` antes de llegar acá, y se abstiene de
+   * tocar el expediente si no puede abrirlo — así que llegar sin proceso significa que otro camino
+   * está creando documentos para un participante que no debería tenerlos todavía. Se corta con un
+   * error en vez de escribir a medias.
+   */
+  private async resolveProcesoId(userId: string): Promise<string> {
+    const proceso = await this.prisma.proceso.findFirst({
+      where: { participanteId: userId },
+      orderBy: [{ activo: 'desc' }, { fechaIngreso: 'desc' }],
+      select: { id: true },
+    });
+    if (!proceso) {
+      throw new ConflictException(
+        `El participante ${userId} no tiene un proceso abierto: no se le puede crear el documento.`,
+      );
+    }
+    return proceso.id;
+  }
+
+  /**
+   * Proceso visible del participante, con el que se acota TODA lectura de su expediente.
+   *
+   * Sin esto, una consulta por `userId` devuelve los documentos de todos los ciclos que el
+   * participante haya tenido: en su pantalla verría los del ciclo nuevo y los del archivado
+   * mezclados, y el recálculo de estado los contaría a todos —un OBSERVADO del ciclo anterior lo
+   * sacaría de SIN_DOCUMENTOS sin que haya subido nada—. El participante nunca ve procesos
+   * anteriores.
+   *
+   * Devuelve `null` cuando no tiene proceso visible: el staff, que no tiene expediente, y el caso
+   * de datos roto. Quien llama responde vacío, no "todo".
+   */
+  private async procesoVisibleId(userId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { procesoVisibleId: true },
+    });
+    return user?.procesoVisibleId ?? null;
+  }
+
+  async findByProcesoId(procesoId: string): Promise<ExistingUserDocument[]> {
+    // Acotado al proceso: el expediente de un ciclo no se mezcla con el de otro. Sigue ordenado
+    // por última actividad real (updatedAt) para que, si dentro del mismo proceso hubiera dos
+    // filas del mismo documento, la que el sync tome como vigente sea la de actividad más
+    // reciente y no una cualquiera.
     const rows = await this.prisma.userDocuments.findMany({
-      where: { userId },
+      where: { procesoId },
       orderBy: { updatedAt: 'desc' },
     });
     return rows.map((r) => ({
@@ -315,6 +359,10 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
+    // Solo el ciclo que el participante ve. Sin proceso no hay expediente que mostrar.
+    const procesoId = await this.procesoVisibleId(userId);
+    if (!procesoId) return [];
+
     // El contexto se resuelve antes de consultar porque ahora alimenta dos cosas: el alcance
     // (programa + país) de la consulta y los textos por país del mapeo.
     const context = await this.findUserApplicabilityContext(userId);
@@ -336,7 +384,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     }
 
     const where: Prisma.UserDocumentsWhereInput = {
-      userId,
+      procesoId,
       statusDocument: true,
       AND: conditions,
       ...(filter === UserDocumentFilter.OBSERVED
@@ -375,6 +423,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       await this.prisma.userDocuments.create({
         data: {
           userId: data.userId,
+          procesoId: data.procesoId,
           documentSponsorId: data.documentSponsorId ?? null,
           documentId: data.documentId ?? null,
           status: 'PENDIENTE',
@@ -387,57 +436,6 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     } catch (error) {
       const target = data.documentSponsorId ?? data.documentId;
       this.skipIfConcurrentSync(error, `la creación del documento ${target}`);
-    }
-  }
-
-  async cloneDocumentForNewSponsor({
-    userId,
-    documentSponsorId,
-    status,
-    url,
-  }: CloneDocumentForSponsorData): Promise<void> {
-    const castedStatus = status as $Enums.DocumentSponsorStatus;
-    try {
-      await this.prisma.userDocuments.create({
-        data: {
-          userId,
-          documentSponsorId,
-          status: castedStatus,
-          statusDocument: true,
-          userDocumentHistory: {
-            create: { status: castedStatus, url },
-          },
-        },
-      });
-    } catch (error) {
-      this.skipIfConcurrentSync(
-        error,
-        `el clonado del documento ${documentSponsorId}`,
-      );
-    }
-  }
-
-  async refreshDocumentFromLatest({
-    userDocumentId,
-    status,
-    url,
-  }: RefreshDocumentFromLatestData): Promise<void> {
-    const castedStatus = status as $Enums.DocumentSponsorStatus;
-    try {
-      await this.prisma.$transaction([
-        this.prisma.userDocuments.update({
-          where: { id: userDocumentId },
-          data: { status: castedStatus, statusDocument: true },
-        }),
-        this.prisma.userDocumentHistory.create({
-          data: { userDocumentsId: userDocumentId, status: castedStatus, url },
-        }),
-      ]);
-    } catch (error) {
-      this.skipIfConcurrentSync(
-        error,
-        `la puesta al día del documento ${userDocumentId}`,
-      );
     }
   }
 
@@ -531,6 +529,11 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     // expediente: si se contara sobre todas sus filas activas, un documento de otro país que
     // quedó sin desactivar lo dejaría eternamente en DOCUMENTOS_INCOMPLETOS pese a haber
     // subido todo lo que la vista le pide.
+    // Acotado tambien al ciclo visible: contar los documentos del ciclo archivado dejaria al
+    // participante con un avance que no es el suyo.
+    const procesoId = await this.procesoVisibleId(userId);
+    if (!procesoId) return { totalRequired: 0, submittedRequired: 0 };
+
     const context = await this.findUserApplicabilityContext(userId);
     const scope = programCountryScopeFilter(context ?? EMPTY_APPLICABILITY_CONTEXT);
 
@@ -559,14 +562,14 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     const [totalRequired, submittedRequired] = await this.prisma.$transaction([
       this.prisma.userDocuments.count({
         where: {
-          userId,
+          procesoId,
           statusDocument: true,
           AND: conditions,
         },
       }),
       this.prisma.userDocuments.count({
         where: {
-          userId,
+          procesoId,
           statusDocument: true,
           status: {
             in: [
@@ -651,8 +654,12 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }: BulkUploadFileData): Promise<void> {
     const castedStatus = status as $Enums.DocumentSponsorStatus;
 
+    // Se busca dentro del proceso al que se va a colgar el archivo, no en todo el historial del
+    // participante: si existiera la misma fila en un ciclo archivado, se actualizaria esa.
+    const procesoId = await this.resolveProcesoId(userId);
+
     const existing = await this.prisma.userDocuments.findFirst({
-      where: { userId, ...(documentSponsorId ? { documentSponsorId } : { documentId }) },
+      where: { procesoId, ...(documentSponsorId ? { documentSponsorId } : { documentId }) },
       select: { id: true },
     });
 
@@ -670,6 +677,7 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       await this.prisma.userDocuments.create({
         data: {
           userId,
+          procesoId,
           documentId,
           documentSponsorId,
           status: castedStatus,
@@ -684,8 +692,24 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
 
   async findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]> {
     if (!userIds.length) return [];
+
+    // Acotado al proceso visible de cada participante: el export muestra el ciclo que el
+    // participante ve, no la suma de todos los que tuvo. Se resuelve con los punteros ya guardados
+    // en `User.procesoVisibleId` en vez de una subconsulta por fila — para eso existe la columna.
+    //
+    // A diferencia de `email-audience`, acá el proceso visible puede estar finalizado y se incluye
+    // igual: el export tiene que mostrar el último estado conocido, no una fila vacía.
+    const visibles = await this.prisma.user.findMany({
+      where: { id: { in: userIds }, procesoVisibleId: { not: null } },
+      select: { procesoVisibleId: true },
+    });
+    const procesoIds = visibles
+      .map((u) => u.procesoVisibleId)
+      .filter((id): id is string => id !== null);
+    if (!procesoIds.length) return [];
+
     const rows = await this.prisma.userDocuments.findMany({
-      where: { userId: { in: userIds }, statusDocument: true },
+      where: { procesoId: { in: procesoIds }, statusDocument: true },
       select: { userId: true, documentId: true, documentSponsorId: true, status: true },
     });
     return rows.map((r) => ({
@@ -697,9 +721,14 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   }
 
   async hasObservedDocument(userId: string): Promise<boolean> {
+    // Un OBSERVADO del ciclo archivado no dice nada del ciclo en curso: este era el camino por el
+    // que un participante recien reabierto salia de SIN_DOCUMENTOS sin haber subido nada.
+    const procesoId = await this.procesoVisibleId(userId);
+    if (!procesoId) return false;
+
     const count = await this.prisma.userDocuments.count({
       where: {
-        userId,
+        procesoId,
         statusDocument: true,
         status: $Enums.DocumentSponsorStatus.OBSERVADO,
       },
@@ -797,9 +826,12 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     documentId: string | null,
     documentSponsorId: string | null,
   ): Promise<UserDocumentTargetHistoryItem[]> {
+    const procesoId = await this.procesoVisibleId(userId);
+    if (!procesoId) return [];
+
     const userDoc = await this.prisma.userDocuments.findFirst({
       where: {
-        userId,
+        procesoId,
         ...(documentSponsorId ? { documentSponsorId } : { documentId }),
       },
       select: {
@@ -817,6 +849,11 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     documentId: string,
     sponsorId: string | null,
   ): Promise<string | null> {
+    // La accion cae sobre la fila del ciclo en curso. Sin esto, una revision masiva podria aterrizar
+    // en el expediente archivado, que por diseno no vuelve a cambiar.
+    const procesoId = await this.procesoVisibleId(userId);
+    if (!procesoId) return null;
+
     if (sponsorId) {
       const link = await this.prisma.documentSponsor.findFirst({
         where: { documentId, sponsorId, status: true },
@@ -825,14 +862,14 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
       if (!link) return null;
 
       const userDoc = await this.prisma.userDocuments.findFirst({
-        where: { userId, documentSponsorId: link.id },
+        where: { procesoId, documentSponsorId: link.id },
         select: { id: true },
       });
       return userDoc?.id ?? null;
     }
 
     const userDoc = await this.prisma.userDocuments.findFirst({
-      where: { userId, documentId },
+      where: { procesoId, documentId },
       select: { id: true },
     });
     return userDoc?.id ?? null;

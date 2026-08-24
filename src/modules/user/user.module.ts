@@ -7,6 +7,10 @@ import { AwsS3Module } from '@shared/aws/aws-s3.module';
 import { ResendModule } from '@shared/resend/resend.module';
 import { WorkuseModule } from '@shared/workuse/workuse.module';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
+import { PROCESO_REPOSITORY } from '@modules/proceso/domain/proceso.repository';
+import { ProcesoPrismaRepository } from '@modules/proceso/infrastructure/persistence/proceso.prisma.repository';
+import { EnsureProcesoInicialUseCase } from '@modules/proceso/application/use-cases/ensure-proceso-inicial.use-case';
+import { CrearNuevoProcesoUseCase } from '@modules/proceso/application/use-cases/crear-nuevo-proceso.use-case';
 import { DOCUMENT_REPOSITORY } from '@modules/document/domain/document.repository';
 import { DocumentPrismaRepository } from '@modules/document/infrastructure/persistence/document.prisma.repository';
 import { USER_DOCUMENTS_REPOSITORY } from '@modules/user-documents/domain/user-documents.repository';
@@ -69,6 +73,8 @@ const useCases = [
   ExportParticipantsDocumentsUseCase,
   TerminarRevisionUseCase,
   SyncUserDocumentsUseCase,
+  EnsureProcesoInicialUseCase,
+  CrearNuevoProcesoUseCase,
 ];
 
 @Module({
@@ -84,6 +90,7 @@ const useCases = [
     { provide: PASSWORD_VERIFIER, useClass: BcryptService },
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
+    { provide: PROCESO_REPOSITORY, useClass: ProcesoPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     { provide: AUTOLOGIN_REPOSITORY, useClass: AutoLoginPrismaRepository },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },

@@ -13,6 +13,7 @@ import { EmailTemplateModule } from '@modules/email-template/email-template.modu
 import { EtiquetaModule } from '@modules/etiqueta/etiqueta.module';
 import { MailTestModule } from '@modules/mail-test/mail-test.module';
 import { OptionProgramModule } from '@modules/option-program/option-program.module';
+import { ProcesoModule } from '@modules/proceso/proceso.module';
 import { ProgramModule } from '@modules/program/program.module';
 import { RoleModule } from '@modules/role/role.module';
 import { SponsorModule } from '@modules/sponsor/sponsor.module';
@@ -45,6 +46,7 @@ import { UserDocumentsModule } from '@modules/user-documents/user-documents.modu
     EtiquetaModule,
     MailTestModule,
     OptionProgramModule,
+    ProcesoModule,
     ProgramModule,
     RoleModule,
     SponsorModule,

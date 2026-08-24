@@ -8,6 +8,7 @@ export const USER_INCLUDE = {
   sponsor: { select: { id: true, name: true, code: true } },
   program: { select: { id: true, name: true, code: true } },
   optionProgram: { select: { id: true, shortDatabase: true } },
+  procesoVisible: { select: { id: true, estado: true, fechaIngreso: true } },
 } as const;
 
 export const USER_DETAIL_INCLUDE = {
@@ -95,6 +96,7 @@ export class UserMapper {
       user.sponsor ?? null,
       user.program ?? null,
       user.optionProgram ?? null,
+      user.procesoVisible ?? null,
     );
   }
 
@@ -130,6 +132,7 @@ export class UserMapper {
       user.sponsor ?? null,
       user.program ?? null,
       user.optionProgram ?? null,
+      user.procesoVisible ?? null,
       null,
       user.userHistories.map((h) => ({
         id: h.id,
@@ -177,6 +180,7 @@ export class UserMapper {
       user.sponsor ?? null,
       user.program ?? null,
       user.optionProgram ?? null,
+      user.procesoVisible ?? null,
       user.userObservations.map((obs) => ({
         id: obs.id,
         observation: obs.observation,

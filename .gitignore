@@ -65,3 +65,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 /reversion-ia
 /reversion-ia-2
 /reparacion-datos
+
+# Censos de filas: son la foto de una base concreta, no del repo
+/prisma/censo-*.json

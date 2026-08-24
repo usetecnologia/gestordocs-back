@@ -40,14 +40,21 @@ function failingPrisma(error: unknown): PrismaService {
   return {
     userDocuments: { create: lazyReject, update: lazyReject },
     userDocumentHistory: { create: lazyReject },
+    proceso: { findFirst: () => Promise.resolve({ id: 'p1' }) },
     $transaction: lazyReject,
   } as unknown as PrismaService;
 }
 
-/** Prisma simulado que registra las escrituras recibidas y siempre tiene éxito. */
-function recordingPrisma() {
+/**
+ * Prisma simulado que registra las escrituras recibidas y siempre tiene éxito.
+ *
+ * `proceso` devuelve lo que se le indique: `{ id: 'p1' }` por defecto, o `null` para el
+ * participante que todavía no tiene proceso.
+ */
+function recordingPrisma(proceso: { id: string } | null = { id: 'p1' }) {
   const created: unknown[] = [];
   const updated: unknown[] = [];
+  const procesoQueries: unknown[] = [];
   const prisma = {
     userDocuments: {
       create: (args: unknown) => {
@@ -58,14 +65,25 @@ function recordingPrisma() {
         updated.push(args);
         return Promise.resolve({});
       },
+      findFirst: () => Promise.resolve(null),
     },
     userDocumentHistory: { create: () => Promise.resolve({}) },
+    proceso: {
+      findFirst: (args: unknown) => {
+        procesoQueries.push(args);
+        return Promise.resolve(proceso);
+      },
+    },
     $transaction: () => Promise.resolve([]),
   } as unknown as PrismaService;
-  return { prisma, created, updated };
+  return { prisma, created, updated, procesoQueries };
 }
 
-/** Las cuatro escrituras que ejecuta la sincronización. */
+/**
+ * Las dos escrituras que ejecuta la sincronización. Antes eran cuatro:
+ * `cloneDocumentForNewSponsor` y `refreshDocumentFromLatest` se eliminaron con la herencia entre
+ * procesos — un ciclo ya no copia el avance de otro.
+ */
 const SYNC_WRITES: {
   name: string;
   run: (repo: UserDocumentsPrismaRepository) => Promise<void>;
@@ -73,26 +91,7 @@ const SYNC_WRITES: {
   {
     name: 'createWithHistory',
     run: (repo) =>
-      repo.createWithHistory({ userId: 'u1', documentSponsorId: 'ds1' }),
-  },
-  {
-    name: 'cloneDocumentForNewSponsor',
-    run: (repo) =>
-      repo.cloneDocumentForNewSponsor({
-        userId: 'u1',
-        documentSponsorId: 'ds1',
-        status: 'SUBIDO',
-        url: null,
-      }),
-  },
-  {
-    name: 'refreshDocumentFromLatest',
-    run: (repo) =>
-      repo.refreshDocumentFromLatest({
-        userDocumentId: 'ud1',
-        status: 'SUBIDO',
-        url: null,
-      }),
+      repo.createWithHistory({ userId: 'u1', procesoId: 'p1', documentSponsorId: 'ds1' }),
   },
   {
     name: 'updateStatusDocument',
@@ -156,12 +155,13 @@ describe('UserDocumentsPrismaRepository — escrituras de la sincronización', (
     const { prisma, created } = recordingPrisma();
     const repo = new UserDocumentsPrismaRepository(prisma);
 
-    await repo.createWithHistory({ userId: 'u1', documentSponsorId: 'ds1' });
+    await repo.createWithHistory({ userId: 'u1', procesoId: 'p1', documentSponsorId: 'ds1' });
 
     expect(created).toHaveLength(1);
     expect(created[0]).toEqual({
       data: {
         userId: 'u1',
+        procesoId: 'p1',
         documentSponsorId: 'ds1',
         documentId: null,
         status: 'PENDIENTE',
@@ -170,6 +170,56 @@ describe('UserDocumentsPrismaRepository — escrituras de la sincronización', (
       },
     });
     expect(warn).not.toHaveBeenCalled();
+  });
+
+  /**
+   * La carga masiva por nombre de archivo no pasa por el sync, así que es el único camino que
+   * todavía resuelve el proceso por su cuenta. Tiene que colgarse del proceso ABIERTO: si la
+   * consulta dejara de ordenar por `activo`, un participante con ciclos anteriores podría recibir
+   * un documento en uno ya finalizado, que por diseño está congelado.
+   */
+  it('upsertUserDocumentWithStatus busca el proceso abierto, y el más reciente como respaldo', async () => {
+    const { prisma, procesoQueries } = recordingPrisma();
+    const repo = new UserDocumentsPrismaRepository(prisma);
+
+    await repo.upsertUserDocumentWithStatus({
+      userId: 'u1',
+      documentId: 'doc1',
+      documentSponsorId: null,
+      status: 'SUBIDO',
+      url: 'https://archivo',
+      createdById: 'staff-1',
+    });
+
+    expect(procesoQueries).toEqual([
+      {
+        where: { participanteId: 'u1' },
+        orderBy: [{ activo: 'desc' }, { fechaIngreso: 'desc' }],
+        select: { id: true },
+      },
+    ]);
+  });
+
+  /**
+   * `procesoId` es NOT NULL en base. Llegar sin proceso significa que se está creando un documento
+   * para un participante que todavía no debería tenerlos: se corta con un error en vez de dejar el
+   * expediente a medias.
+   */
+  it('upsertUserDocumentWithStatus falla si el participante no tiene proceso, sin escribir nada', async () => {
+    const { prisma, created } = recordingPrisma(null);
+    const repo = new UserDocumentsPrismaRepository(prisma);
+
+    await expect(
+      repo.upsertUserDocumentWithStatus({
+        userId: 'nuevo',
+        documentId: 'doc1',
+        documentSponsorId: null,
+        status: 'SUBIDO',
+        url: 'https://archivo',
+        createdById: 'staff-1',
+      }),
+    ).rejects.toThrow('no tiene un proceso abierto');
+    expect(created).toHaveLength(0);
   });
 
   it('updateStatusDocument cambia la vigencia del registro indicado', async () => {
@@ -193,8 +243,12 @@ function readingPrisma(context: {
   programId: string | null;
   countryId: string | null;
   sponsorCode?: string | null;
+  /** `null` simula al participante sin proceso visible. */
+  procesoVisibleId?: string | null;
 }) {
   const queries: { where: unknown }[] = [];
+  const procesoVisibleId =
+    context.procesoVisibleId === undefined ? 'p-visible' : context.procesoVisibleId;
   const prisma = {
     user: {
       findUnique: () =>
@@ -202,6 +256,7 @@ function readingPrisma(context: {
           programId: context.programId,
           countryId: context.countryId,
           sponsor: context.sponsorCode ? { code: context.sponsorCode } : null,
+          procesoVisibleId,
         }),
     },
     userDocuments: {
@@ -218,6 +273,74 @@ function readingPrisma(context: {
   } as unknown as PrismaService;
   return { prisma, queries };
 }
+
+/**
+ * Toda lectura del expediente va acotada al **proceso visible**, no al `userId`. Es lo que impide el
+ * fallo que se vio en producción de pruebas: un participante al que le cerraron el ciclo y volvió a
+ * ingresar veía los documentos del ciclo nuevo y los del archivado mezclados (19 filas en vez de 8),
+ * y el recálculo de estado contaba los dos — lo sacaba de SIN_DOCUMENTOS sin que hubiera subido nada.
+ *
+ * Si alguna de estas consultas volviera a filtrar por `userId`, el fallo vuelve sin que nada avise.
+ */
+describe('UserDocumentsPrismaRepository — el expediente se lee por proceso, no por usuario', () => {
+  const procesoDe = (where: unknown): unknown => (where as { procesoId?: unknown }).procesoId;
+
+  it('findByUserIdWithHistory consulta el proceso visible y no el userId', async () => {
+    const { prisma, queries } = readingPrisma({ programId: 'prog-1', countryId: 'pe' });
+    const repo = new UserDocumentsPrismaRepository(prisma);
+
+    await repo.findByUserIdWithHistory('u1');
+
+    expect(procesoDe(queries[0].where)).toBe('p-visible');
+    expect(queries[0].where).not.toHaveProperty('userId');
+  });
+
+  it('countRequiredDocs cuenta solo dentro del proceso visible', async () => {
+    const { prisma, queries } = readingPrisma({ programId: 'prog-1', countryId: 'pe' });
+    const repo = new UserDocumentsPrismaRepository(prisma);
+
+    await repo.countRequiredDocs('u1');
+
+    expect(queries).toHaveLength(2);
+    for (const q of queries) {
+      expect(procesoDe(q.where)).toBe('p-visible');
+      expect(q.where).not.toHaveProperty('userId');
+    }
+  });
+
+  it('hasObservedDocument mira solo el proceso visible', async () => {
+    // Este era el camino exacto por el que un OBSERVADO del ciclo archivado movía el estado del
+    // ciclo nuevo.
+    const { prisma, queries } = readingPrisma({ programId: 'prog-1', countryId: 'pe' });
+    const repo = new UserDocumentsPrismaRepository(prisma);
+
+    await repo.hasObservedDocument('u1');
+
+    expect(procesoDe(queries[0].where)).toBe('p-visible');
+    expect(queries[0].where).not.toHaveProperty('userId');
+  });
+
+  /**
+   * Sin proceso visible se responde vacío, no "todo". Es el staff, que no tiene expediente, y el
+   * caso de datos roto: devolver todas las filas del usuario sería reintroducir el fallo.
+   */
+  it('sin proceso visible no consulta nada y responde vacío', async () => {
+    const { prisma, queries } = readingPrisma({
+      programId: 'prog-1',
+      countryId: 'pe',
+      procesoVisibleId: null,
+    });
+    const repo = new UserDocumentsPrismaRepository(prisma);
+
+    await expect(repo.findByUserIdWithHistory('u1')).resolves.toEqual([]);
+    await expect(repo.countRequiredDocs('u1')).resolves.toEqual({
+      totalRequired: 0,
+      submittedRequired: 0,
+    });
+    await expect(repo.hasObservedDocument('u1')).resolves.toBe(false);
+    expect(queries).toHaveLength(0);
+  });
+});
 
 /**
  * El país del participante forma parte del criterio de lectura, no solo del sync: si el expediente
