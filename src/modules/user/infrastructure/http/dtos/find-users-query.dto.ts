@@ -1,7 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
 import { UserStatus } from '../../../domain/user.enums';
+import { toIdList } from '@common/utils/query-list.util';
 
 export class FindUsersQueryDto {
   @ApiPropertyOptional({ example: 1 })
@@ -55,6 +56,18 @@ export class FindUsersQueryDto {
   @IsOptional()
   @IsUUID()
   programId?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: 'uuid-del-programa-1,uuid-del-programa-2',
+    description:
+      'Uno o varios programas, separados por coma. Si se envía, tiene prioridad sobre `programId`.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => toIdList(value))
+  @IsArray()
+  @IsUUID('all', { each: true })
+  programIds?: string[];
 
   @ApiPropertyOptional({ example: 'uuid-de-la-opcion' })
   @IsOptional()

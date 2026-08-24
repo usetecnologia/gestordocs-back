@@ -14,6 +14,7 @@ export class GetStatusFunnelUseCase {
     return this.userRepository.countByStatus(FUNNEL_STATUSES, {
       sponsorId: query.sponsorId,
       programId: query.programId,
+      programIds: query.programIds,
       countryId: query.countryId,
       createdFrom: from,
       createdTo: to,

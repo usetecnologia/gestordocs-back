@@ -22,6 +22,7 @@ export class FindAllUserUseCase {
       sponsorId: query.sponsorId,
       hasSponsor: query.hasSponsor,
       programId: query.programId,
+      programIds: query.programIds,
       optionProgramId: query.optionProgramId,
       statusSolRetiro: query.statusSolRetiro,
       generalStatus: query.generalStatus,

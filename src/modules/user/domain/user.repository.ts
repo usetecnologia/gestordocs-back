@@ -46,6 +46,8 @@ export interface UserFilters {
   sponsorId?: string;
   hasSponsor?: boolean;
   programId?: string;
+  /** Filtro de programa múltiple. Si viene, manda sobre `programId`. */
+  programIds?: string[];
   optionProgramId?: string;
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
   generalStatus?: 'ACTIVO' | 'INACTIVO';
@@ -67,6 +69,8 @@ export interface UserFilters {
 export interface PreviousStatusFilters {
   sponsorId?: string;
   programId?: string;
+  /** Filtro de programa múltiple. Si viene, manda sobre `programId`. */
+  programIds?: string[];
   countryId?: string;
   createdFrom?: Date;
   createdTo?: Date;
@@ -75,6 +79,8 @@ export interface PreviousStatusFilters {
 export interface UserStatusFunnelFilters {
   sponsorId?: string;
   programId?: string;
+  /** Filtro de programa múltiple. Si viene, manda sobre `programId`. */
+  programIds?: string[];
   countryId?: string;
   createdFrom?: Date;
   createdTo?: Date;
@@ -90,6 +96,8 @@ export interface FunnelExportFilters {
   status: UserStatus;
   sponsorId?: string;
   programId?: string;
+  /** Filtro de programa múltiple. Si viene, manda sobre `programId`. */
+  programIds?: string[];
   countryId?: string;
   createdFrom?: Date;
   createdTo?: Date;
@@ -200,6 +208,8 @@ export interface ExportUsersFilters {
   sponsorId?: string;
   hasSponsor?: boolean;
   programId?: string;
+  /** Filtro de programa múltiple. Si viene, manda sobre `programId`. */
+  programIds?: string[];
   optionProgramId?: string;
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
   generalStatus?: 'ACTIVO' | 'INACTIVO';

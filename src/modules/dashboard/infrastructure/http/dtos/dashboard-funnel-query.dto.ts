@@ -1,6 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsIn, IsOptional, IsUUID, ValidateIf } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsArray, IsDateString, IsEnum, IsIn, IsOptional, IsUUID, ValidateIf } from 'class-validator';
 import { NO_SPONSOR_FILTER_VALUE, WITH_SPONSOR_FILTER_VALUE } from '@modules/user/domain/user.repository';
+import { toIdList } from '@common/utils/query-list.util';
 import { DateRangePreset } from '../../../domain/date-range-preset.enum';
 
 const SPONSOR_SENTINEL_VALUES: string[] = [NO_SPONSOR_FILTER_VALUE, WITH_SPONSOR_FILTER_VALUE];
@@ -21,6 +23,18 @@ export class DashboardFunnelQueryDto {
   @IsOptional()
   @IsUUID()
   programId?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: 'uuid-del-programa-1,uuid-del-programa-2',
+    description:
+      'Uno o varios programas, separados por coma. Si se envía, tiene prioridad sobre `programId`.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => toIdList(value))
+  @IsArray()
+  @IsUUID('all', { each: true })
+  programIds?: string[];
 
   @ApiPropertyOptional({ example: 'uuid-del-pais' })
   @IsOptional()

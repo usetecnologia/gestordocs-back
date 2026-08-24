@@ -27,6 +27,7 @@ export class ExportFunnelParticipantsUseCase {
       status: query.status,
       sponsorId: query.sponsorId,
       programId: query.programId,
+      programIds: query.programIds,
       countryId: query.countryId,
       createdFrom: from,
       createdTo: to,

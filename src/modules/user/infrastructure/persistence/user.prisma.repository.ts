@@ -99,6 +99,30 @@ export class UserPrismaRepository implements IUserRepository {
     return Prisma.sql`u.sponsorId = ${sponsorId}`;
   }
 
+  // El filtro de programa acepta varios a la vez. `programIds` es el que usa el listado de
+  // participantes; `programId` se mantiene para los consumidores que siguen mandando uno solo.
+  private programWhereFragment(
+    programId?: string,
+    programIds?: string[],
+  ): { programId?: string | { in: string[] } } {
+    if (programIds?.length) return { programId: { in: programIds } };
+    if (programId) return { programId };
+    return {};
+  }
+
+  // Misma lectura del filtro de programa, pero para las consultas del funnel, que se arman en SQL
+  // crudo (`u` es siempre el alias de `User`).
+  private programSqlCondition(
+    programId?: string,
+    programIds?: string[],
+  ): Prisma.Sql | undefined {
+    if (programIds?.length) {
+      return Prisma.sql`u.programId IN (${Prisma.join(programIds.map((id) => Prisma.sql`${id}`))})`;
+    }
+    if (programId) return Prisma.sql`u.programId = ${programId}`;
+    return undefined;
+  }
+
   // SI = tiene fecha de envío al sponsor (fechadeenvioalsponsor con valor). NO = vacío/nulo.
   // Todos los flujos de escritura (autologin, bulk-load, updateByDni) normalizan el campo con
   // `|| null`, así que nunca queda un string vacío guardado — solo se necesita chequear null.
@@ -262,6 +286,7 @@ export class UserPrismaRepository implements IUserRepository {
     sponsorId,
     hasSponsor,
     programId,
+    programIds,
     optionProgramId,
     statusSolRetiro,
     generalStatus,
@@ -293,7 +318,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...this.sponsorWhereFragment(sponsorId),
       ...(hasSponsor === true && { sponsorId: { not: null } }),
       ...(hasSponsor === false && { sponsorId: null }),
-      ...(programId && { programId }),
+      ...this.programWhereFragment(programId, programIds),
       ...(optionProgramId && { optionProgramId }),
       participante: {
         ...(roleId && { roleId }),
@@ -399,6 +424,7 @@ export class UserPrismaRepository implements IUserRepository {
     sponsorId,
     hasSponsor,
     programId,
+    programIds,
     optionProgramId,
     statusSolRetiro,
     generalStatus,
@@ -464,7 +490,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...this.sponsorWhereFragment(sponsorId),
       ...(hasSponsor === true && { sponsorId: { not: null } }),
       ...(hasSponsor === false && { sponsorId: null }),
-      ...(programId && { programId }),
+      ...this.programWhereFragment(programId, programIds),
       ...(optionProgramId && { optionProgramId }),
       ...this.fechaEnvioSponsorWhereFragment(fechaEnvioSponsor),
       ...(combinedIds !== undefined && { id: { in: combinedIds } }),
@@ -624,7 +650,15 @@ export class UserPrismaRepository implements IUserRepository {
 
   async countByStatus(
     statuses: UserStatus[],
-    { sponsorId, programId, countryId, createdFrom, createdTo, generalStatus }: UserStatusFunnelFilters,
+    {
+      sponsorId,
+      programId,
+      programIds,
+      countryId,
+      createdFrom,
+      createdTo,
+      generalStatus,
+    }: UserStatusFunnelFilters,
   ): Promise<UserStatusCount[]> {
     // INACTIVO no es un status del funnel — en vez de dar 0 en todo, se reasigna cada
     // participante inactivo al estado que tenía justo ANTES de pasar a INACTIVO.
@@ -632,6 +666,7 @@ export class UserPrismaRepository implements IUserRepository {
       return this.countByPreviousStatusBeforeInactive(statuses, {
         sponsorId,
         programId,
+        programIds,
         countryId,
         createdFrom,
         createdTo,
@@ -646,7 +681,8 @@ export class UserPrismaRepository implements IUserRepository {
     ];
     const sponsorCondition = this.sponsorSqlCondition(sponsorId);
     if (sponsorCondition) conditions.push(sponsorCondition);
-    if (programId) conditions.push(Prisma.sql`u.programId = ${programId}`);
+    const programCondition = this.programSqlCondition(programId, programIds);
+    if (programCondition) conditions.push(programCondition);
     if (countryId) conditions.push(Prisma.sql`u.countryId = ${countryId}`);
     if (createdFrom) conditions.push(Prisma.sql`COALESCE(h.enteredAt, u.created_at) >= ${createdFrom}`);
     if (createdTo) conditions.push(Prisma.sql`COALESCE(h.enteredAt, u.created_at) <= ${createdTo}`);
@@ -681,6 +717,7 @@ export class UserPrismaRepository implements IUserRepository {
     {
       sponsorId,
       programId,
+      programIds,
       countryId,
       createdFrom,
       createdTo,
@@ -691,7 +728,8 @@ export class UserPrismaRepository implements IUserRepository {
     ];
     const sponsorCondition = this.sponsorSqlCondition(sponsorId);
     if (sponsorCondition) conditions.push(sponsorCondition);
-    if (programId) conditions.push(Prisma.sql`u.programId = ${programId}`);
+    const programCondition = this.programSqlCondition(programId, programIds);
+    if (programCondition) conditions.push(programCondition);
     if (countryId) conditions.push(Prisma.sql`u.countryId = ${countryId}`);
     // El rango de fecha filtra por cuándo el participante se volvió INACTIVO.
     if (createdFrom) conditions.push(Prisma.sql`cur.created_at >= ${createdFrom}`);
@@ -729,12 +767,20 @@ export class UserPrismaRepository implements IUserRepository {
   // para un único status — usado por la tabla y el Excel del funnel.
   async findInactiveIdsByPreviousStatus(
     status: UserStatus,
-    { sponsorId, programId, countryId, createdFrom, createdTo }: PreviousStatusFilters,
+    {
+      sponsorId,
+      programId,
+      programIds,
+      countryId,
+      createdFrom,
+      createdTo,
+    }: PreviousStatusFilters,
   ): Promise<string[]> {
     const conditions: Prisma.Sql[] = [Prisma.sql`prev.status = ${status}`];
     const sponsorCondition = this.sponsorSqlCondition(sponsorId);
     if (sponsorCondition) conditions.push(sponsorCondition);
-    if (programId) conditions.push(Prisma.sql`u.programId = ${programId}`);
+    const programCondition = this.programSqlCondition(programId, programIds);
+    if (programCondition) conditions.push(programCondition);
     if (countryId) conditions.push(Prisma.sql`u.countryId = ${countryId}`);
     if (createdFrom) conditions.push(Prisma.sql`cur.created_at >= ${createdFrom}`);
     if (createdTo) conditions.push(Prisma.sql`cur.created_at <= ${createdTo}`);
@@ -767,6 +813,7 @@ export class UserPrismaRepository implements IUserRepository {
     status,
     sponsorId,
     programId,
+    programIds,
     countryId,
     createdFrom,
     createdTo,
@@ -776,6 +823,7 @@ export class UserPrismaRepository implements IUserRepository {
       const ids = await this.findInactiveIdsByPreviousStatus(status, {
         sponsorId,
         programId,
+        programIds,
         countryId,
         createdFrom,
         createdTo,
@@ -789,7 +837,7 @@ export class UserPrismaRepository implements IUserRepository {
     const where = {
       ...this.statusWhereFragment(status, generalStatus),
       ...this.sponsorWhereFragment(sponsorId),
-      ...(programId && { programId }),
+      ...this.programWhereFragment(programId, programIds),
       ...(countryId && { countryId }),
       ...(historyDateIds !== undefined && { id: { in: historyDateIds } }),
     };
@@ -873,6 +921,7 @@ export class UserPrismaRepository implements IUserRepository {
     sponsorId,
     hasSponsor,
     programId,
+    programIds,
     optionProgramId,
     statusSolRetiro,
     generalStatus,
@@ -929,7 +978,7 @@ export class UserPrismaRepository implements IUserRepository {
       ...this.sponsorWhereFragment(sponsorId),
       ...(hasSponsor === true && { sponsorId: { not: null } }),
       ...(hasSponsor === false && { sponsorId: null }),
-      ...(programId && { programId }),
+      ...this.programWhereFragment(programId, programIds),
       ...(optionProgramId && { optionProgramId }),
       ...(combinedIds !== undefined && { id: { in: combinedIds } }),
     };
