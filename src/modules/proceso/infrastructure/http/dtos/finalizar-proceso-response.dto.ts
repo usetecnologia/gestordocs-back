@@ -1,10 +1,17 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class FinalizarProcesoErrorItemDto {
-  @ApiProperty({ example: '12345678' })
-  dni!: string;
+  @ApiProperty({ example: 'uuid-del-proceso' })
+  procesoId!: string;
 
-  @ApiProperty({ example: 'El participante no tiene un proceso abierto.' })
+  @ApiPropertyOptional({
+    example: '12345678',
+    nullable: true,
+    description: 'DNI del participante, para que el reporte se entienda',
+  })
+  dni!: string | null;
+
+  @ApiProperty({ example: 'Ese ciclo ya está finalizado.' })
   reason!: string;
 }
 

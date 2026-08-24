@@ -77,6 +77,17 @@ export class FindUsersQueryDto {
   generalStatus?: 'ACTIVO' | 'INACTIVO';
 
   @ApiPropertyOptional({
+    enum: ['EN_PROCESO', 'FINALIZADO'],
+    example: 'EN_PROCESO',
+    description:
+      'Estado del ciclo. El listado devuelve una fila por proceso, así que esto filtra las filas: ' +
+      'EN_PROCESO = solo los ciclos abiertos, FINALIZADO = solo los cerrados. Sin enviarlo, ambos.',
+  })
+  @IsOptional()
+  @IsIn(['EN_PROCESO', 'FINALIZADO'])
+  procesoEstado?: 'EN_PROCESO' | 'FINALIZADO';
+
+  @ApiPropertyOptional({
     enum: ['SI', 'NO'],
     example: 'SI',
     description:

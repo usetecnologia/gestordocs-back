@@ -102,6 +102,28 @@ export class UserResponseDto {
     example: { id: 'uuid-del-proceso', estado: 'EN_PROCESO', fechaIngreso: '2026-01-01T00:00:00.000Z' },
   })
   procesoVisible?: { id: string; estado: string; fechaIngreso: Date } | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Ciclo de esta fila. En el listado cada fila es un proceso, así que un participante con dos ' +
+      'ciclos aparece dos veces y cada aparición trae el suyo. `esVisible` indica si es el ciclo en curso.',
+    example: {
+      id: 'uuid-del-proceso',
+      estado: 'FINALIZADO',
+      statusDocumental: 'OBSERVADO_SPONSOR',
+      fechaIngreso: '2026-06-16T00:00:00.000Z',
+      finalizadoAt: '2026-08-24T22:14:00.000Z',
+      esVisible: false,
+    },
+  })
+  proceso?: {
+    id: string;
+    estado: string;
+    statusDocumental: string;
+    fechaIngreso: Date;
+    finalizadoAt: Date | null;
+    esVisible: boolean;
+  } | null;
   @ApiPropertyOptional({ type: [UserObservationDto] }) observations?: UserObservationDto[] | null;
   @ApiPropertyOptional({ type: [UserHistoryStatusItemDto] }) historyStatus?: UserHistoryStatusItemDto[] | null;
   @ApiPropertyOptional({ type: [UserEmailLogItemDto] }) emailHistory?: UserEmailLogItemDto[] | null;

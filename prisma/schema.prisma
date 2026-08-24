@@ -204,6 +204,8 @@ model Proceso {
 
   userDocuments     UserDocuments[]
   userObservations  UserObservations[]
+  emailLogs         EmailLog[]
+  userHistories     UserHistoryStatus[]
   vistoPor          User[]             @relation("UserProcesoVisible")
 
   participante  User          @relation("ProcesoParticipante", fields: [participanteId], references: [id])
@@ -325,14 +327,22 @@ model UserObservationEtiquetas {
 }
 
 model UserHistoryStatus {
-  id          String     @id @default(uuid()) @db.VarChar(36)
-  userId      String
-  status      UserStatus
+  id     String     @id @default(uuid()) @db.VarChar(36)
+  userId String
+  status UserStatus
+  /// Ciclo al que pertenece el cambio de estado. Un ciclo nuevo arranca con su línea de tiempo
+  /// limpia: los estados del ciclo anterior siguen existiendo, pero no se le muestran. Nullable
+  /// porque las primeras entradas de un participante son anteriores a su primer proceso — cuando
+  /// ese proceso se abre, las adopta (ver `crearProcesoAbierto`).
+  procesoId   String?    @map("proceso_id") @db.VarChar(36)
   createdById String?    @map("created_by_id") @db.VarChar(36)
   createdAt   DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime   @updatedAt @map("updated_at")
 
-  users User @relation(fields: [userId], references: [id])
+  users   User     @relation(fields: [userId], references: [id])
+  proceso Proceso? @relation(fields: [procesoId], references: [id], onDelete: Restrict)
+
+  @@index([procesoId], map: "idx_user_history_proceso")
 }
 
 model Etiquetas {
@@ -600,6 +610,10 @@ model EmailLog {
   templateId      String?           @map("template_id") @db.VarChar(36)
   templateCode    String?           @map("template_code") @db.VarChar(50)
   recipientUserId String?           @map("recipient_user_id") @db.VarChar(36)
+  /// Ciclo al que pertenece el correo. Un ciclo nuevo arranca sin historial: los correos del ciclo
+  /// anterior siguen existiendo, pero no se le muestran. Nullable porque hay registros a nivel de
+  /// plantilla (un OMITIDO sin audiencia) que no tienen destinatario y por lo tanto no tienen ciclo.
+  procesoId       String?           @map("proceso_id") @db.VarChar(36)
   recipientEmail  String?           @map("recipient_email") @db.VarChar(150)
   subject         String?           @db.VarChar(200)
   status          EmailLogStatus
@@ -610,11 +624,13 @@ model EmailLog {
   action    EmailAction?   @relation(fields: [actionId], references: [id], onDelete: SetNull)
   template  EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   recipient User?          @relation(fields: [recipientUserId], references: [id], onDelete: SetNull)
+  proceso   Proceso?       @relation(fields: [procesoId], references: [id], onDelete: Restrict)
 
   @@index([recipientUserId], map: "idx_email_log_recipient")
   @@index([actionId], map: "idx_email_log_action")
   @@index([templateId], map: "idx_email_log_template")
   @@index([status], map: "idx_email_log_status")
   @@index([sentAt], map: "idx_email_log_sent_at")
+  @@index([procesoId], map: "idx_email_log_proceso")
   @@map("historial_correos")
 }

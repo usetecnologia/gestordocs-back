@@ -11,6 +11,18 @@ export interface ParticipanteParaProceso {
   status: string;
 }
 
+/**
+ * Lo mínimo para decidir si una acción de USE aplica a un ciclo, y para poder reportarla. El DNI va
+ * incluido porque el resultado se le muestra a una persona: "no se pudo con 12345678" se entiende,
+ * "no se pudo con 389bc5c5-…" no.
+ */
+export interface ProcesoParaAccion {
+  id: string;
+  estado: string;
+  participanteId: string;
+  dni: string | null;
+}
+
 export interface CreateProcesoData {
   participanteId: string;
   programId: string;
@@ -62,8 +74,14 @@ export interface IProcesoRepository {
   /** El último proceso finalizado, que es el que reabre `ContinuarProceso`. */
   findUltimoFinalizadoByParticipante(participanteId: string): Promise<Proceso | null>;
   findParticipanteParaProceso(userId: string): Promise<ParticipanteParaProceso | null>;
-  /** Los endpoints de USE identifican al participante por DNI, como el resto de las acciones masivas. */
-  findParticipanteIdByDni(dni: string): Promise<string | null>;
+  /**
+   * Los ciclos sobre los que se va a actuar, buscados **por su id**.
+   *
+   * Las acciones de USE se dirigen al proceso y no al participante: la pantalla muestra una fila por
+   * ciclo, y "finalizar lo que estoy viendo" tiene que cerrar **ese** ciclo. Resolverlo por DNI
+   * cerraba el ciclo abierto del participante aunque no estuviera en la tabla.
+   */
+  findProcesosParaAccion(procesoIds: readonly string[]): Promise<ProcesoParaAccion[]>;
   /** Temporada activa del programa; la última creada si hay varias; `null` si no tiene ninguna. */
   findTemporadaActivaDeProgram(programId: string): Promise<string | null>;
   /**

@@ -1,6 +1,7 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '@shared/prisma/prisma.service';
+import { procesoVisibleDe } from '@modules/proceso/infrastructure/persistence/proceso-del-participante';
 import type { PersonModel } from 'prisma/generated/prisma/models';
 import { IAutoLoginRepository, UpsertByDniData } from '../../domain/autologin.repository';
 import { AuthCredentials } from '../../domain/auth-credentials';
@@ -225,9 +226,14 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
       ];
 
       if (data.userStatus) {
+        const procesoId = await procesoVisibleDe(this.prisma, existingPerson.id);
         ops.push(
           this.prisma.userHistoryStatus.create({
-            data: { userId: existingPerson.id, status: data.userStatus as never },
+            data: {
+              userId: existingPerson.id,
+              procesoId,
+              status: data.userStatus as never,
+            },
           }),
         );
       }
@@ -271,6 +277,8 @@ export class AutoLoginPrismaRepository implements IAutoLoginRepository {
             statusExternal: data.statusExternal ?? null,
           },
         }),
+        // Sin `procesoId`: el participante se esta creando ahora y su proceso lo abre el sync,
+        // mas adelante en la misma llamada. Esa apertura adopta las entradas huerfanas.
         this.prisma.userHistoryStatus.create({
           data: {
             userId: id,

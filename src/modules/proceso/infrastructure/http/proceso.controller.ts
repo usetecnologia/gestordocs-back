@@ -22,11 +22,12 @@ import {
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
-import { STAFF_ROLES } from '@common/enums/role-code.enum';
+import { RoleCode, STAFF_ROLES } from '@common/enums/role-code.enum';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import { FinalizarProcesoUseCase } from '../../application/use-cases/finalizar-proceso.use-case';
 import { ContinuarProcesoUseCase } from '../../application/use-cases/continuar-proceso.use-case';
+import { CrearNuevoProcesoUseCase } from '../../application/use-cases/crear-nuevo-proceso.use-case';
 import { ContinuarProcesoDto, FinalizarProcesoDto } from './dtos/finalizar-proceso.dto';
 import { FinalizarProcesoResponseDto } from './dtos/finalizar-proceso-response.dto';
 import { FindHistorialProcesosUseCase } from '../../application/use-cases/find-historial-procesos.use-case';
@@ -49,7 +50,33 @@ export class ProcesoController {
     private readonly finalizarProcesoUseCase: FinalizarProcesoUseCase,
     private readonly continuarProcesoUseCase: ContinuarProcesoUseCase,
     private readonly findHistorialProcesosUseCase: FindHistorialProcesosUseCase,
+    private readonly crearNuevoProcesoUseCase: CrearNuevoProcesoUseCase,
   ) {}
+
+  /**
+   * El participante abre su propio ciclo siguiente. Es lo que hace el botón que ve al entrar cuando
+   * su proceso está finalizado.
+   *
+   * No recibe a quién: el participante sale del JWT. Así no hay forma de abrirle un proceso a otro,
+   * que es lo que pasaría con un id en la ruta o en el cuerpo.
+   */
+  @Roles(RoleCode.PARTICIPANTE)
+  @Post('mio/nuevo')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Abrir el proceso siguiente (el propio participante)',
+    description:
+      'Crea el ciclo nuevo del participante autenticado y le arma el expediente con todos sus ' +
+      'documentos en PENDIENTE. No es automático: lo dispara el participante desde el aviso de ' +
+      '"proceso finalizado".',
+  })
+  @ApiOkResponse({ schema: { example: { message: 'Proceso nuevo abierto correctamente.' } } })
+  @ApiConflictResponse({ description: 'Ya tiene un proceso en curso, o le faltan datos.' })
+  @ApiNotFoundResponse({ description: 'No se encontró el participante.' })
+  async crearMiProcesoNuevo(@CurrentUser() user: JwtPayload) {
+    await this.crearNuevoProcesoUseCase.execute(user.sub);
+    return { message: 'Proceso nuevo abierto correctamente.' };
+  }
 
   @Roles(...STAFF_ROLES)
   @Get('participante/:participanteId/historial')
@@ -73,16 +100,17 @@ export class ProcesoController {
   @ApiOperation({
     summary: 'Finalizar el proceso de uno o varios participantes',
     description:
-      'Cierra el proceso abierto de cada DNI recibido: pasa a FINALIZADO y deja de ser el activo. ' +
-      'Los documentos no se tocan — el expediente queda como registro histórico de ese ciclo. ' +
-      'Un DNI que falla no detiene a los demás: se lista en errors.',
+      'Cierra los ciclos indicados por su id: pasan a FINALIZADO y dejan de ser el activo. Se ' +
+      'identifican por proceso y no por participante, así se cierra exactamente el ciclo que la ' +
+      'pantalla muestra. Los documentos no se tocan — el expediente queda como registro histórico. ' +
+      'Un ciclo que falla no detiene a los demás: se lista en errors.',
   })
   @ApiOkResponse({ type: FinalizarProcesoResponseDto })
   finalizar(
     @Body() dto: FinalizarProcesoDto,
     @CurrentUser() user: JwtPayload,
   ): Promise<FinalizarProcesoResponseDto> {
-    return this.finalizarProcesoUseCase.execute(dto.dnis, user.sub);
+    return this.finalizarProcesoUseCase.execute(dto.procesoIds, user.sub);
   }
 
   @Roles(...STAFF_ROLES)
@@ -91,14 +119,16 @@ export class ProcesoController {
   @ApiOperation({
     summary: 'Continuar el proceso de un participante',
     description:
-      'Reabre el último proceso finalizado del participante — el mismo registro, con todo su ' +
-      'avance intacto. Es el "deshacer" de una finalización por error, no un ciclo nuevo.',
+      'Reabre el ciclo indicado — el mismo registro, con todo su avance intacto. Es el "deshacer" ' +
+      'de una finalización por error, no un ciclo nuevo.',
   })
   @ApiOkResponse({ schema: { example: { message: 'Proceso reabierto correctamente.' } } })
-  @ApiNotFoundResponse({ description: 'El participante no existe o no tiene procesos finalizados.' })
-  @ApiConflictResponse({ description: 'El participante ya tiene un proceso abierto.' })
+  @ApiNotFoundResponse({ description: 'El proceso no existe.' })
+  @ApiConflictResponse({
+    description: 'Ese ciclo no está finalizado, o el participante ya tiene otro abierto.',
+  })
   async continuar(@Body() dto: ContinuarProcesoDto) {
-    await this.continuarProcesoUseCase.execute(dto.dni);
+    await this.continuarProcesoUseCase.execute(dto.procesoId);
     return { message: 'Proceso reabierto correctamente.' };
   }
 }

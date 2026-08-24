@@ -32,6 +32,7 @@ import {
   ApiConsumes,
   ApiBody,
   ApiParam,
+  ApiQuery,
   ApiProduces,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
@@ -383,8 +384,18 @@ export class UserController {
   @ApiParam({ name: 'id', description: 'UUID del usuario' })
   @ApiOkResponse({ type: UserResponseDto })
   @ApiNotFoundResponse({ description: 'Usuario no encontrado.' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.findOneUser.execute(id);
+  @ApiQuery({
+    name: 'procesoId',
+    required: false,
+    description:
+      'Acota el detalle a un ciclo del participante: sus documentos, observaciones, correos e ' +
+      'historial. Sin él se devuelve el ciclo en curso. Un id que no sea de ese participante se ignora.',
+  })
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('procesoId') procesoId?: string,
+  ) {
+    return this.findOneUser.execute(id, procesoId);
   }
 
   @Patch(':id')

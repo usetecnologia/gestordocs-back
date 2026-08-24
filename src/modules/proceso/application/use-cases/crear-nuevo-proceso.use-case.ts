@@ -1,8 +1,15 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { RoleCode } from '@common/enums/role-code.enum';
+import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import type { Proceso } from '../../domain/proceso.entity';
 import {
   IProcesoRepository,
-  ParticipanteParaProceso,
   PROCESO_REPOSITORY,
 } from '../../domain/proceso.repository';
 
@@ -16,41 +23,54 @@ export class CrearNuevoProcesoUseCase {
   constructor(
     @Inject(PROCESO_REPOSITORY)
     private readonly procesoRepo: IProcesoRepository,
+    private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
   ) {}
 
   /**
-   * Abre el **siguiente** ciclo de un participante que ya tuvo procesos y no tiene ninguno abierto.
+   * Abre el **siguiente** ciclo del participante. Lo dispara **él**, pulsando el botón que ve al
+   * entrar cuando su proceso está finalizado.
    *
-   * **No tiene endpoint ni pantalla: ocurre solo.** Lo llama `EnsureProcesoInicial`, que a su vez lo
-   * llama la sincronización de documentos — es decir, la primera vez que el participante aparece
-   * después de que USE le cerrara el ciclo anterior (su login, o cualquier camino que abra su
-   * expediente). No hay botón que pulsar ni módulo que administrar.
+   * ⛔ **No es automático, y no debe volver a serlo.** Se probó colgándolo de `EnsureProcesoInicial`
+   * —que llama la sincronización de documentos— y el resultado fue que abrir el expediente de un
+   * participante desde el panel de USE le creaba un ciclo nuevo. Abrir un ciclo es una decisión, no
+   * un efecto secundario de mirar una pantalla.
    *
-   * Los datos salen del último refresco de Workuse: `autologin` e `info-participant` hacen el POST y
-   * actualizan al participante **antes** de sincronizar, así que las dimensiones que se copian acá
-   * ya son las que Workuse acaba de reportar. Si ese POST falla, el camino se corta antes de llegar
-   * hasta acá y no se crea nada — que es la condición que pedía el plan.
-   *
-   * Diferencias con el primer proceso del participante:
+   * Diferencias con el primer proceso del participante (`EnsureProcesoInicial`):
    *
    * - `statusDocumental` nace en `SIN_DOCUMENTOS` en vez de copiar `User.status`. El ciclo nuevo no
-   *   hereda el avance del anterior: eso es justamente lo que lo hace un ciclo nuevo.
+   *   hereda el avance del anterior: eso es lo que lo hace un ciclo nuevo.
    * - `User.status` se pone en `SIN_DOCUMENTOS` con su fila de historial, porque es el espejo del
    *   proceso activo. Va en la misma transacción que la creación: si se separaran, el participante
-   *   quedaría con un proceso nuevo y el estado del ciclo viejo.
+   *   quedaría con un proceso nuevo y el estado del viejo.
    *
-   * Los documentos no se crean acá. Los crea la sincronización, que al encontrar el proceso nuevo
-   * vacío da de alta todos los aplicables en `PENDIENTE`.
+   * Al final se sincroniza: el ciclo nuevo nace vacío, y el sync le da de alta todos los documentos
+   * aplicables en `PENDIENTE`. Así el participante vuelve a su expediente y ya lo encuentra armado.
    */
-  async execute(participante: ParticipanteParaProceso): Promise<Proceso | null> {
+  async execute(userId: string): Promise<Proceso> {
+    // Un participante no puede tener dos ciclos abiertos: la base lo impide y acá se corta antes,
+    // con un mensaje que se entienda.
+    const abierto = await this.procesoRepo.findAbiertoByParticipante(userId);
+    if (abierto) {
+      throw new ConflictException('Ya tienes un proceso en curso.');
+    }
+
+    const participante = await this.procesoRepo.findParticipanteParaProceso(userId);
+    if (!participante) {
+      throw new NotFoundException('No se encontró el participante.');
+    }
+    if (participante.roleCode !== RoleCode.PARTICIPANTE) {
+      throw new ConflictException('Solo un participante puede abrir un proceso.');
+    }
+
     const { programId, optionProgramId, countryId } = participante;
     if (!programId || !optionProgramId || !countryId) {
       const falta = !programId ? 'programa' : !optionProgramId ? 'opción' : 'país';
       this.logger.warn(
-        `No se puede abrir un ciclo nuevo para el participante ${participante.id}: ` +
-          `no tiene ${falta} asignado.`,
+        `No se puede abrir un ciclo nuevo para el participante ${userId}: no tiene ${falta} asignado.`,
       );
-      return null;
+      throw new ConflictException(
+        'Tus datos están incompletos para abrir un proceso nuevo. Comunícate con USE.',
+      );
     }
 
     const temporadaId = await this.procesoRepo.findTemporadaActivaDeProgram(programId);
@@ -69,9 +89,13 @@ export class CrearNuevoProcesoUseCase {
     });
 
     this.logger.log(
-      `Ciclo nuevo: proceso ${proceso.id} abierto automáticamente para el participante ` +
-        `${participante.id} (temporada: ${temporadaId ?? 'ninguna'}).`,
+      `Ciclo nuevo: proceso ${proceso.id} abierto por el participante ${userId} ` +
+        `(temporada: ${temporadaId ?? 'ninguna'}).`,
     );
+
+    // El expediente del ciclo nuevo se arma acá mismo, para que el participante lo encuentre listo.
+    await this.syncUserDocumentsUseCase.execute(userId);
+
     return proceso;
   }
 }

@@ -5,7 +5,6 @@ import {
   IProcesoRepository,
   ParticipanteParaProceso,
 } from '../../domain/proceso.repository';
-import { CrearNuevoProcesoUseCase } from './crear-nuevo-proceso.use-case';
 import { EnsureProcesoInicialUseCase } from './ensure-proceso-inicial.use-case';
 
 /**
@@ -13,14 +12,10 @@ import { EnsureProcesoInicialUseCase } from './ensure-proceso-inicial.use-case';
  * depende que `UserDocuments.procesoId` pueda ser NOT NULL: si dejara de abrirlo en algún caso, el
  * sync se abstendría y el participante se quedaría sin documentos.
  *
- * Cubre dos caminos que **no se pueden confundir**, y por eso se prueban junto con
- * `CrearNuevoProceso`:
- *
- * - Primer proceso → copia `User.status`, para no perderle el lugar en el embudo.
- * - Ciclo siguiente (ya tuvo uno y lo cerraron) → arranca en `SIN_DOCUMENTOS`, desde cero.
- *
- * Si el segundo caso copiara `User.status`, un ciclo nuevo nacería con el avance del anterior; si el
- * primero forzara `SIN_DOCUMENTOS`, los 2970 participantes actuales perderían su estado.
+ * Solo crea el **primero**. ⛔ No abre el ciclo siguiente, y el test de abajo lo fija: lo hacía, y
+ * como a este caso de uso lo llama la sincronización de documentos —que corre desde siete caminos,
+ * incluido abrir el expediente desde el panel de USE—, mirar a un participante con el ciclo cerrado
+ * le creaba uno nuevo. Abrir el ciclo siguiente es `CrearNuevoProceso`, con su propio endpoint.
  */
 
 const PARTICIPANTE: ParticipanteParaProceso = {
@@ -55,6 +50,7 @@ function fakeRepo(overrides: Partial<IProcesoRepository> = {}) {
   const nuevosCiclos: CreateProcesoData[] = [];
   const noUsado = () => Promise.reject(new Error('no se usa en estos tests'));
   const repo: IProcesoRepository = {
+    findVisibleByParticipante: () => Promise.resolve(null),
     findAbiertoByParticipante: () => Promise.resolve(null),
     findUltimoFinalizadoByParticipante: () => Promise.resolve(null),
     findParticipanteParaProceso: () => Promise.resolve(PARTICIPANTE),
@@ -67,14 +63,13 @@ function fakeRepo(overrides: Partial<IProcesoRepository> = {}) {
       nuevosCiclos.push(data);
       return Promise.resolve(unProceso('p-ciclo-2'));
     },
-    findVisibleByParticipante: noUsado,
     findHistorialByParticipante: noUsado,
-    findParticipanteIdByDni: noUsado,
+    findProcesosParaAccion: noUsado,
     finalizar: noUsado,
     reabrir: noUsado,
     ...overrides,
   };
-  const useCase = new EnsureProcesoInicialUseCase(repo, new CrearNuevoProcesoUseCase(repo));
+  const useCase = new EnsureProcesoInicialUseCase(repo);
   return { useCase, primeros, nuevosCiclos };
 }
 
@@ -92,7 +87,7 @@ describe('EnsureProcesoInicialUseCase', () => {
 
   it('devuelve el proceso abierto sin crear otro', async () => {
     const { useCase, primeros, nuevosCiclos } = fakeRepo({
-      findAbiertoByParticipante: () => Promise.resolve(unProceso('p-abierto')),
+      findVisibleByParticipante: () => Promise.resolve(unProceso('p-abierto')),
     });
 
     await expect(useCase.execute('u1')).resolves.toMatchObject({ id: 'p-abierto' });
@@ -142,51 +137,20 @@ describe('EnsureProcesoInicialUseCase', () => {
     });
   });
 
-  describe('ciclo siguiente, automático', () => {
-    const conCicloAnterior = {
-      findUltimoFinalizadoByParticipante: () => Promise.resolve(unProceso('p-viejo', 'FINALIZADO')),
-    };
+  describe('⛔ no abre el ciclo siguiente', () => {
+    it('devuelve el ciclo cerrado sin crear ninguno', async () => {
+      // Este es el fallo que se vio en pruebas: bastaba con abrir el expediente para que al
+      // participante se le creara un ciclo nuevo. Devolver el cerrado hace que el sync lo vea
+      // FINALIZADO y no toque nada, que es lo correcto — un ciclo cerrado está congelado.
+      const { useCase, primeros, nuevosCiclos } = fakeRepo({
+        findVisibleByParticipante: () => Promise.resolve(unProceso('p-viejo', 'FINALIZADO')),
+      });
 
-    it('abre un ciclo nuevo desde cero, sin heredar el avance del anterior', async () => {
-      const { useCase, primeros, nuevosCiclos } = fakeRepo(conCicloAnterior);
+      const devuelto = await useCase.execute('u1');
 
-      await expect(useCase.execute('u1')).resolves.toMatchObject({ id: 'p-ciclo-2' });
+      expect(devuelto).toMatchObject({ id: 'p-viejo', estado: 'FINALIZADO' });
       expect(primeros).toHaveLength(0);
-      expect(nuevosCiclos).toEqual([
-        {
-          participanteId: 'u1',
-          programId: 'prog-1',
-          optionProgramId: 'opt-1',
-          countryId: 'pais-1',
-          sponsorId: 'sp-1',
-          temporadaId: 'temp-activa',
-          statusDocumental: 'SIN_DOCUMENTOS',
-        },
-      ]);
-    });
-
-    it('no copia el estado del ciclo anterior aunque el participante viniera avanzado', async () => {
-      const { useCase, nuevosCiclos } = fakeRepo({
-        ...conCicloAnterior,
-        findParticipanteParaProceso: () =>
-          Promise.resolve({ ...PARTICIPANTE, status: 'APROBADO_SPONSOR' }),
-      });
-
-      await useCase.execute('u1');
-
-      expect(nuevosCiclos[0].statusDocumental).toBe('SIN_DOCUMENTOS');
-    });
-
-    it('no abre el ciclo nuevo, y avisa, si al participante le falta un dato obligatorio', async () => {
-      const { useCase, nuevosCiclos } = fakeRepo({
-        ...conCicloAnterior,
-        findParticipanteParaProceso: () =>
-          Promise.resolve({ ...PARTICIPANTE, optionProgramId: null }),
-      });
-
-      await expect(useCase.execute('u1')).resolves.toBeNull();
       expect(nuevosCiclos).toHaveLength(0);
-      expect(warn).toHaveBeenCalledWith(expect.stringContaining('opción'));
     });
   });
 

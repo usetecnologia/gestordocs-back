@@ -358,9 +358,20 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     };
   }
 
-  async findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]> {
-    // Solo el ciclo que el participante ve. Sin proceso no hay expediente que mostrar.
-    const procesoId = await this.procesoVisibleId(userId);
+  async findByUserIdWithHistory(
+    userId: string,
+    filter?: UserDocumentFilter,
+    procesoIdPedido?: string,
+  ): Promise<UserDocumentWithHistory[]> {
+    // Por defecto, el ciclo que el participante ve. Si se pide uno concreto —para revisar un ciclo
+    // archivado— se verifica que sea de este participante: el id viene de la URL y no debe poder
+    // mostrar el expediente de otro.
+    const procesoId = procesoIdPedido
+      ? (await this.prisma.proceso.findFirst({
+          where: { id: procesoIdPedido, participanteId: userId },
+          select: { id: true },
+        }))?.id
+      : await this.procesoVisibleId(userId);
     if (!procesoId) return [];
 
     // El contexto se resuelve antes de consultar porque ahora alimenta dos cosas: el alcance

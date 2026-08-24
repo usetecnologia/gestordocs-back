@@ -7,6 +7,7 @@ import {
   IProcesoRepository,
   ParticipanteParaProceso,
   ProcesoHistorialItem,
+  ProcesoParaAccion,
 } from '../../domain/proceso.repository';
 import { ProcesoMapper } from './proceso.mapper';
 
@@ -163,15 +164,29 @@ export class ProcesoPrismaRepository implements IProcesoRepository {
     };
   }
 
-  async findParticipanteIdByDni(dni: string): Promise<string | null> {
-    // `Person` y `User` comparten el id, igual que en `findUserIdByDni` del módulo de documentos.
-    const person = await this.prisma.person.findFirst({ where: { dni }, select: { id: true } });
-    if (!person) return null;
-    const user = await this.prisma.user.findUnique({
-      where: { id: person.id },
-      select: { id: true },
+  async findProcesosParaAccion(procesoIds: readonly string[]): Promise<ProcesoParaAccion[]> {
+    if (procesoIds.length === 0) return [];
+
+    const procesos = await this.prisma.proceso.findMany({
+      where: { id: { in: [...procesoIds] } },
+      select: { id: true, estado: true, participanteId: true },
     });
-    return user?.id ?? null;
+    if (procesos.length === 0) return [];
+
+    // El DNI se busca aparte: `Person` y `User` comparten el id pero no hay relación declarada
+    // entre los modelos (deuda 3.1 del plan). Una consulta para todos, no una por ciclo.
+    const personas = await this.prisma.person.findMany({
+      where: { id: { in: [...new Set(procesos.map((p) => p.participanteId))] } },
+      select: { id: true, dni: true },
+    });
+    const dniPorId = new Map(personas.map((p) => [p.id, p.dni]));
+
+    return procesos.map((p) => ({
+      id: p.id,
+      estado: p.estado,
+      participanteId: p.participanteId,
+      dni: dniPorId.get(p.participanteId) ?? null,
+    }));
   }
 
   async findTemporadaActivaDeProgram(programId: string): Promise<string | null> {
@@ -204,6 +219,16 @@ export class ProcesoPrismaRepository implements IProcesoRepository {
           where: { id: data.participanteId },
           data: { procesoVisibleId: creado.id },
         });
+
+        // Este es el PRIMER proceso del participante, así que las entradas de historial que quedaron
+        // sin ciclo son las de su alta: se escriben antes de que exista el proceso, porque el sync lo
+        // abre más tarde en la misma llamada. Se las adopta para que no queden invisibles en su
+        // línea de tiempo. Solo pasa acá: en un ciclo siguiente, un huérfano pertenecería al primero.
+        await tx.userHistoryStatus.updateMany({
+          where: { userId: data.participanteId, procesoId: null },
+          data: { procesoId: creado.id },
+        });
+
         return creado;
       });
       return ProcesoMapper.toDomain(row);
@@ -249,6 +274,7 @@ export class ProcesoPrismaRepository implements IProcesoRepository {
       await tx.userHistoryStatus.create({
         data: {
           userId: data.participanteId,
+          procesoId: creado.id,
           status: data.statusDocumental as $Enums.UserStatus,
         },
       });

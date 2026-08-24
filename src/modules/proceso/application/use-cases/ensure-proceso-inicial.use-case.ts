@@ -5,7 +5,6 @@ import {
   IProcesoRepository,
   PROCESO_REPOSITORY,
 } from '../../domain/proceso.repository';
-import { CrearNuevoProcesoUseCase } from './crear-nuevo-proceso.use-case';
 
 @Injectable()
 export class EnsureProcesoInicialUseCase {
@@ -14,34 +13,30 @@ export class EnsureProcesoInicialUseCase {
   constructor(
     @Inject(PROCESO_REPOSITORY)
     private readonly procesoRepo: IProcesoRepository,
-    private readonly crearNuevoProceso: CrearNuevoProcesoUseCase,
   ) {}
 
   /**
-   * Devuelve el proceso **abierto** del participante, abriéndoselo si no tiene ninguno. Es el punto
-   * único por el que un participante obtiene un proceso: lo llama la sincronización de documentos,
-   * que es por donde pasan todos los caminos que arman un expediente (autologin, info del
-   * participante, carga masiva y los listados que sincronizan al vuelo).
+   * Devuelve el proceso visible del participante, y **solo le crea uno si no tiene ninguno**.
    *
-   * Cubre los dos casos, y **los dos son automáticos** — no hay endpoint ni pantalla para ninguno:
+   * ⛔ **No abre el ciclo siguiente.** Lo hacía, y estaba mal: a este caso de uso lo llama la
+   * sincronización de documentos, que corre desde siete caminos —incluido que alguien de USE abra el
+   * expediente—, así que con solo mirar a un participante con el ciclo cerrado se le abría el
+   * siguiente. Se vio en pruebas: entrar al detalle de un ciclo finalizado le creaba un ciclo nuevo.
    *
-   * - **Primer proceso**: el participante no tiene ninguno. Se le abre copiando `User.status`, para
-   *   no perderle el lugar en el embudo.
-   * - **Ciclo siguiente**: ya tuvo procesos y USE le cerró el último. Se le abre uno nuevo desde
-   *   cero (`CrearNuevoProceso`), y la sincronización le da de alta todos los documentos en
-   *   `PENDIENTE`.
+   * Abrir el ciclo siguiente es una decisión del participante: entra, ve que su proceso terminó y
+   * pulsa el botón. Eso es `CrearNuevoProceso`, que tiene su propio endpoint.
    *
-   * El ciclo cerrado **no se toca en ningún caso**: sus documentos cuelgan de su propio proceso y la
-   * sincronización solo mira los del abierto. El congelado es una propiedad del modelo, no una
-   * condición que haya que recordar chequear.
+   * Cuando el participante tiene solo ciclos cerrados devuelve el más reciente —el visible— sin
+   * crear nada. El sync ve que está `FINALIZADO` y no toca el expediente, que es lo correcto: un
+   * ciclo cerrado está congelado.
    *
-   * Devuelve `null` cuando no se le puede abrir un proceso — no es participante, o le falta
-   * programa, opción o país, que en `procesos` son NOT NULL. Quien llama decide qué hacer con eso;
-   * el sync se abstiene de tocar el expediente, igual que ya hace cuando falta el programa.
+   * Devuelve `null` cuando no se le puede abrir el primero: no es participante, o le falta programa,
+   * opción o país, que en `procesos` son NOT NULL.
    */
   async execute(userId: string): Promise<Proceso | null> {
-    const abierto = await this.procesoRepo.findAbiertoByParticipante(userId);
-    if (abierto) return abierto;
+    // Cualquier proceso existente —abierto o cerrado— significa que acá no hay nada que crear.
+    const existente = await this.procesoRepo.findVisibleByParticipante(userId);
+    if (existente) return existente;
 
     const participante = await this.procesoRepo.findParticipanteParaProceso(userId);
     if (!participante) {
@@ -52,13 +47,6 @@ export class EnsureProcesoInicialUseCase {
     // El staff de USE no tiene proceso por diseño: los procesos son del participante.
     if (participante.roleCode !== RoleCode.PARTICIPANTE) {
       return null;
-    }
-
-    // Si ya tuvo un proceso y lo cerraron, lo que corresponde es un ciclo nuevo y no repetir el
-    // primero: el estado documental arranca de cero en vez de copiar el del ciclo anterior.
-    const anterior = await this.procesoRepo.findUltimoFinalizadoByParticipante(userId);
-    if (anterior) {
-      return this.crearNuevoProceso.execute(participante);
     }
 
     const { programId, optionProgramId, countryId } = participante;
@@ -78,8 +66,7 @@ export class EnsureProcesoInicialUseCase {
     //
     // `statusDocumental` copia `User.status` en vez de nacer en SIN_DOCUMENTOS: este caso cubre al
     // participante que ya existía y venía sin proceso, y ahí forzar SIN_DOCUMENTOS le borraría el
-    // avance del embudo. Para el recién creado, `User.status` es el que le acaba de calcular el
-    // alta. El ciclo siguiente sí arranca en SIN_DOCUMENTOS — ver `CrearNuevoProceso`.
+    // avance del embudo. El ciclo siguiente sí arranca en SIN_DOCUMENTOS — ver `CrearNuevoProceso`.
     const proceso = await this.procesoRepo.crearProcesoAbierto({
       participanteId: participante.id,
       programId,
@@ -91,7 +78,7 @@ export class EnsureProcesoInicialUseCase {
     });
 
     this.logger.log(
-      `Proceso ${proceso.id} abierto para el participante ${userId} ` +
+      `Primer proceso ${proceso.id} abierto para el participante ${userId} ` +
         `(temporada: ${temporadaId ?? 'ninguna'}).`,
     );
     return proceso;

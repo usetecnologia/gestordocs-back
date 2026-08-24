@@ -170,7 +170,15 @@ export interface IUserDocumentsRepository {
    */
   findByProcesoId(procesoId: string): Promise<ExistingUserDocument[]>;
   findUserApplicabilityContext(userId: string): Promise<UserApplicabilityContext | null>;
-  findByUserIdWithHistory(userId: string, filter?: UserDocumentFilter): Promise<UserDocumentWithHistory[]>;
+  /**
+   * `procesoId` acota el expediente a un ciclo concreto, para revisar uno archivado. Sin él se lee
+   * el ciclo visible. Un id que no sea de ese participante devuelve vacío.
+   */
+  findByUserIdWithHistory(
+    userId: string,
+    filter?: UserDocumentFilter,
+    procesoId?: string,
+  ): Promise<UserDocumentWithHistory[]>;
   findByIdWithHistory(id: string): Promise<UserDocumentWithHistory | null>;
   createWithHistory(data: CreateUserDocumentWithHistoryData): Promise<void>;
   updateStatusDocument(id: string, statusDocument: boolean): Promise<void>;

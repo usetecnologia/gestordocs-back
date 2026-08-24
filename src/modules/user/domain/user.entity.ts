@@ -75,5 +75,24 @@ export class User {
     public readonly observations?: UserObservation[] | null,
     public readonly historyStatus?: UserHistoryStatusItem[] | null,
     public readonly emailHistory?: UserEmailLogItem[] | null,
+    /**
+     * Ciclo **de esta fila**. En el listado de participantes cada fila es un proceso, así que un
+     * participante con dos ciclos aparece dos veces y cada aparición trae el suyo: su estado, su
+     * avance documental y sus dimensiones, que pueden diferir entre ciclos.
+     *
+     * En el detalle es el ciclo que se está mirando. Cuando coincide con `procesoVisible` es el
+     * ciclo en curso; cuando no, se está viendo uno archivado y no admite acciones.
+     *
+     * Va al final del constructor a propósito: son 29 argumentos posicionales y meter uno en medio
+     * desalinea todo lo que sigue.
+     */
+    public readonly proceso?: {
+      id: string;
+      estado: string;
+      statusDocumental: string;
+      fechaIngreso: Date;
+      finalizadoAt: Date | null;
+      esVisible: boolean;
+    } | null,
   ) {}
 }

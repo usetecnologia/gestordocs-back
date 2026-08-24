@@ -41,6 +41,7 @@ function recordingPrisma(createError?: unknown) {
   const creates: any[] = [];
   const updates: any[] = [];
   const userUpdates: any[] = [];
+  const adopciones: any[] = [];
   const cliente = {
     proceso: {
       create: (args: any) => {
@@ -60,12 +61,19 @@ function recordingPrisma(createError?: unknown) {
         return Promise.resolve({});
       },
     },
+    userHistoryStatus: {
+      create: () => Promise.resolve({}),
+      updateMany: (args: any) => {
+        adopciones.push(args);
+        return Promise.resolve({ count: 0 });
+      },
+    },
   };
   const prisma = {
     ...cliente,
     $transaction: (fn: (tx: unknown) => Promise<unknown>) => fn(cliente),
   } as unknown as PrismaService;
-  return { prisma, creates, updates, userUpdates };
+  return { prisma, creates, updates, userUpdates, adopciones };
 }
 
 describe('ProcesoPrismaRepository — el par estado/activo', () => {
@@ -101,6 +109,48 @@ describe('ProcesoPrismaRepository — el par estado/activo', () => {
     expect(userUpdates).toEqual([
       { where: { id: 'u1' }, data: { procesoVisibleId: 'p1' } },
     ]);
+  });
+
+  /**
+   * El primer proceso adopta las entradas de historial que quedaron sin ciclo: son las del alta del
+   * participante, escritas antes de que su proceso exista. Sin esto, su línea de tiempo arrancaría
+   * vacía — el filtro del mapper descarta lo que no tiene proceso.
+   */
+  it('crearProcesoAbierto adopta las entradas de historial huérfanas del participante', async () => {
+    const { prisma, adopciones } = recordingPrisma();
+
+    await new ProcesoPrismaRepository(prisma).crearProcesoAbierto({
+      participanteId: 'u1',
+      programId: 'prog-1',
+      optionProgramId: 'opt-1',
+      countryId: 'pais-1',
+      sponsorId: null,
+      temporadaId: null,
+      statusDocumental: 'SIN_DOCUMENTOS',
+    });
+
+    expect(adopciones).toEqual([
+      {
+        where: { userId: 'u1', procesoId: null },
+        data: { procesoId: 'p1' },
+      },
+    ]);
+  });
+
+  it('crearProcesoDeNuevoCiclo NO adopta huérfanos: pertenecerían al primer ciclo', async () => {
+    const { prisma, adopciones } = recordingPrisma();
+
+    await new ProcesoPrismaRepository(prisma).crearProcesoDeNuevoCiclo({
+      participanteId: 'u1',
+      programId: 'prog-1',
+      optionProgramId: 'opt-1',
+      countryId: 'pais-1',
+      sponsorId: null,
+      temporadaId: null,
+      statusDocumental: 'SIN_DOCUMENTOS',
+    });
+
+    expect(adopciones).toHaveLength(0);
   });
 
   it('finalizar escribe FINALIZADO con activo = null, y nunca false', async () => {

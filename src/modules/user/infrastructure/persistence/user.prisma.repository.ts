@@ -2,6 +2,7 @@ import { Injectable, InternalServerErrorException, NotFoundException } from '@ne
 import { randomUUID } from 'crypto';
 import { Prisma } from 'prisma/generated/prisma/client';
 import { espejarStatusDocumental } from '@modules/proceso/infrastructure/persistence/espejar-status-documental';
+import { procesoVisibleDe } from '@modules/proceso/infrastructure/persistence/proceso-del-participante';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import {
   IUserRepository,
@@ -32,6 +33,7 @@ import {
   PrismaUserFull,
   PrismaUserDetail,
   PrismaUserList,
+  type CicloDeLaFila,
 } from './user.mapper';
 import type { PersonModel } from 'prisma/generated/prisma/models';
 
@@ -56,6 +58,26 @@ const USER_FIELD_KEYS = [
   'optionProgramId',
   'status',
 ] as const;
+
+/**
+ * Ciclo que muestra el detalle: el que se pidió por URL o, si no se pidió ninguno, el visible del
+ * participante. `esVisible` es lo que le dice a la pantalla si admite acciones — un ciclo que no es
+ * el visible está archivado y está congelado.
+ */
+function cicloDelDetalle(
+  user: PrismaUserDetail,
+  pedido: {
+    id: string;
+    estado: string;
+    statusDocumental: string;
+    fechaIngreso: Date;
+    finalizadoAt: Date | null;
+  } | null,
+): CicloDeLaFila | null {
+  const ciclo = pedido ?? user.procesoVisible;
+  if (!ciclo) return null;
+  return { ...ciclo, esVisible: ciclo.id === user.procesoVisibleId };
+}
 
 @Injectable()
 export class UserPrismaRepository implements IUserRepository {
@@ -103,6 +125,269 @@ export class UserPrismaRepository implements IUserRepository {
     if (conditions.length === 0) return {};
     if (conditions.length === 1) return conditions[0];
     return { AND: conditions };
+  }
+
+  /**
+   * Filtros que se resuelven a una lista de ids de participante: la búsqueda por texto, la
+   * solicitud de retiro y el rango de fechas del historial de estados. Devuelve `undefined` cuando
+   * ninguno de esos filtros vino, y un array —posiblemente vacío— cuando sí.
+   */
+  private async resolveParticipantIdFilters({
+    search,
+    statusSolRetiro,
+    status,
+    createdFrom,
+    createdTo,
+    filterIds,
+  }: {
+    search?: string;
+    statusSolRetiro?: string;
+    status?: UserStatus;
+    createdFrom?: Date;
+    createdTo?: Date;
+    filterIds?: string[];
+  }): Promise<string[] | undefined> {
+    let searchIds: string[] | undefined;
+    if (search) {
+      const terms = search.split(/[\s+]+/).map((t) => t.trim()).filter(Boolean);
+      const conditions = terms.flatMap((t) => {
+        const like = `%${t.toLowerCase()}%`;
+        return [
+          Prisma.sql`LOWER(u.email) LIKE ${like}`,
+          Prisma.sql`LOWER(u.username) LIKE ${like}`,
+          Prisma.sql`LOWER(p.dni) LIKE ${like}`,
+          Prisma.sql`LOWER(p.firstname) LIKE ${like}`,
+          Prisma.sql`LOWER(p.middlename) LIKE ${like}`,
+          Prisma.sql`LOWER(p.lastfathername) LIKE ${like}`,
+          Prisma.sql`LOWER(p.lastmothername) LIKE ${like}`,
+        ];
+      });
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+        Prisma.sql`
+          SELECT DISTINCT u.id
+          FROM \`User\` u
+          LEFT JOIN \`Person\` p ON p.id = u.id
+          WHERE ${Prisma.join(conditions, ' OR ')}
+        `,
+      );
+      searchIds = rows.map((r) => r.id);
+    }
+
+    let statusSolRetiroIds: string[] | undefined;
+    if (statusSolRetiro) {
+      const normalized = statusSolRetiro.trim().toUpperCase();
+      const rows = await this.prisma.$queryRaw<{ id: string }[]>(
+        Prisma.sql`SELECT id FROM \`User\` WHERE UPPER(TRIM(statusSolRetiro)) = ${normalized}`,
+      );
+      statusSolRetiroIds = rows.map((r) => r.id);
+    }
+
+    const historyDateIds =
+      status && (createdFrom || createdTo)
+        ? await this.findStatusEntryDateIds(status, createdFrom, createdTo)
+        : undefined;
+
+    const idFilters = [searchIds, statusSolRetiroIds, historyDateIds, filterIds].filter(
+      (ids): ids is string[] => ids !== undefined,
+    );
+    return idFilters.length
+      ? idFilters.reduce((acc, ids) => acc.filter((id) => ids.includes(id)))
+      : undefined;
+  }
+
+  /** El mismo criterio de `statusWhereFragment`, aplicado al estado documental del proceso. */
+  private statusDocumentalWhereFragment(
+    status: UserStatus | undefined,
+    generalStatus: 'ACTIVO' | 'INACTIVO' | undefined,
+  ): Prisma.ProcesoWhereInput {
+    const conditions: Prisma.ProcesoWhereInput[] = [];
+    if (status) conditions.push({ statusDocumental: status as never });
+    if (generalStatus === 'INACTIVO') conditions.push({ statusDocumental: 'INACTIVO' as never });
+    if (generalStatus === 'ACTIVO') {
+      conditions.push({ statusDocumental: { not: 'INACTIVO' as never } });
+    }
+
+    if (conditions.length === 0) return {};
+    if (conditions.length === 1) return conditions[0];
+    return { AND: conditions };
+  }
+
+  /** Nombres de quienes crearon las entradas de historial, para el mapeo. */
+  private async buildHistoryCreatorMap(
+    users: { userHistories: { createdById: string | null }[] }[],
+  ): Promise<Map<string, string>> {
+    const ids = [
+      ...new Set(
+        users
+          .flatMap((u) => u.userHistories.map((h) => h.createdById))
+          .filter((id): id is string => id !== null),
+      ),
+    ];
+    if (ids.length === 0) return new Map();
+
+    const personas = await this.prisma.person.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, firstname: true, middlename: true, lastfathername: true, lastmothername: true },
+    });
+    return new Map(
+      personas.map((p) => [
+        p.id,
+        [p.firstname, p.middlename, p.lastfathername, p.lastmothername].filter(Boolean).join(' '),
+      ]),
+    );
+  }
+
+  /**
+   * Igual que `findAll` pero **una fila por proceso**: un participante con dos ciclos devuelve dos
+   * filas, cada una con su propio ciclo. Es el listado que ve USE.
+   *
+   * Los filtros se reparten según a quién pertenece el dato:
+   *
+   * - **Del ciclo** —estado documental, sponsor, programa, opción, país— se aplican al proceso de la
+   *   fila. Filtrar "sponsor = CIEE" devuelve los ciclos cuyo sponsor fue CIEE, no los participantes
+   *   que hoy lo tienen.
+   * - **Del participante** —búsqueda por nombre o DNI, solicitud de retiro, fecha de envío al
+   *   sponsor, rango de fechas— se aplican a la persona, y traen todos sus ciclos que además
+   *   cumplan los filtros de ciclo.
+   *
+   * No reemplaza a `findAll`: el dashboard lo usa para contar participantes por estado, y ahí una
+   * persona con dos ciclos contaría doble.
+   */
+  async findAllByProceso({
+    page,
+    limit,
+    status,
+    roleId,
+    countryId,
+    sponsorId,
+    hasSponsor,
+    programId,
+    optionProgramId,
+    statusSolRetiro,
+    generalStatus,
+    fechaEnvioSponsor,
+    procesoEstado,
+    search,
+    sortBy,
+    sortOrder,
+    createdFrom,
+    createdTo,
+    ids: filterIds,
+  }: UserFilters) {
+    const combinedIds = await this.resolveParticipantIdFilters({
+      search,
+      statusSolRetiro,
+      status,
+      createdFrom,
+      createdTo,
+      filterIds,
+    });
+
+    // Un `in` vacío no matchea nada: si algún filtro de participante no dejó a nadie, se corta acá.
+    if (combinedIds !== undefined && combinedIds.length === 0) return { data: [], total: 0 };
+
+    const whereProceso: Prisma.ProcesoWhereInput = {
+      ...(procesoEstado && { estado: procesoEstado }),
+      ...this.statusDocumentalWhereFragment(status, generalStatus),
+      ...(countryId && { countryId }),
+      ...this.sponsorWhereFragment(sponsorId),
+      ...(hasSponsor === true && { sponsorId: { not: null } }),
+      ...(hasSponsor === false && { sponsorId: null }),
+      ...(programId && { programId }),
+      ...(optionProgramId && { optionProgramId }),
+      participante: {
+        ...(roleId && { roleId }),
+        ...this.fechaEnvioSponsorWhereFragment(fechaEnvioSponsor),
+        ...(combinedIds !== undefined && { id: { in: combinedIds } }),
+      },
+    };
+
+    const include = { participante: { include: USER_LIST_INCLUDE } } as const;
+    type FilaProceso = Prisma.ProcesoGetPayload<{ include: typeof include }>;
+
+    let filas: FilaProceso[];
+    let total: number;
+
+    if (sortBy) {
+      // firstname/lastfathername viven en Person, sin relación Prisma, así que el orden y la
+      // paginación se resuelven en memoria — igual que en `findAll`, pero sobre filas de proceso.
+      const candidatas = await this.prisma.proceso.findMany({
+        where: whereProceso,
+        select: { id: true, participanteId: true, fechaIngreso: true },
+      });
+
+      const personIds = [...new Set(candidatas.map((p) => p.participanteId))];
+      const personas = personIds.length
+        ? await this.prisma.person.findMany({
+            where: { id: { in: personIds } },
+            select: { id: true, firstname: true, lastfathername: true },
+          })
+        : [];
+      const valorPorPersona = new Map<string, string>(
+        personas.map((p) => [p.id, (sortBy === 'firstname' ? p.firstname : p.lastfathername) ?? '']),
+      );
+
+      const direccion = sortOrder === 'desc' ? -1 : 1;
+      const ordenadas = [...candidatas].sort((a, b) => {
+        const va = valorPorPersona.get(a.participanteId) ?? '';
+        const vb = valorPorPersona.get(b.participanteId) ?? '';
+        const porNombre = direccion * va.localeCompare(vb, 'es', { sensitivity: 'base' });
+        // Los ciclos de una misma persona quedan juntos, del más reciente al más antiguo.
+        return porNombre !== 0 ? porNombre : b.fechaIngreso.getTime() - a.fechaIngreso.getTime();
+      });
+
+      total = ordenadas.length;
+      const idsPagina = ordenadas.slice((page - 1) * limit, (page - 1) * limit + limit).map((p) => p.id);
+
+      const sinOrden = idsPagina.length
+        ? await this.prisma.proceso.findMany({ where: { id: { in: idsPagina } }, include })
+        : [];
+      const porId = new Map(sinOrden.map((f) => [f.id, f]));
+      filas = idsPagina.map((id) => porId.get(id)).filter((f): f is FilaProceso => !!f);
+    } else {
+      const [filasRaw, totalCount] = await this.prisma.$transaction([
+        this.prisma.proceso.findMany({
+          where: whereProceso,
+          include,
+          skip: (page - 1) * limit,
+          take: limit,
+          // Se conserva el orden por antigüedad del participante que ya tenía el listado, y los
+          // ciclos de cada uno quedan juntos con el más reciente arriba.
+          orderBy: [{ participante: { createdAt: 'desc' } }, { fechaIngreso: 'desc' }],
+        }),
+        this.prisma.proceso.count({ where: whereProceso }),
+      ]);
+      filas = filasRaw;
+      total = totalCount;
+    }
+
+    const userIds = [...new Set(filas.map((f) => f.participanteId))];
+    const persons: PersonModel[] = userIds.length
+      ? await this.prisma.person.findMany({ where: { id: { in: userIds } } })
+      : [];
+    const personMap = new Map<string, PersonModel>(persons.map((p) => [p.id, p]));
+    const creatorPersonMap = await this.buildHistoryCreatorMap(
+      filas.map((f) => f.participante),
+    );
+
+    return {
+      data: filas.map((f) =>
+        UserMapper.toListDomain(
+          f.participante,
+          personMap.get(f.participanteId) ?? null,
+          creatorPersonMap,
+          {
+            id: f.id,
+            estado: f.estado,
+            statusDocumental: f.statusDocumental,
+            fechaIngreso: f.fechaIngreso,
+            finalizadoAt: f.finalizadoAt,
+            esVisible: f.id === f.participante.procesoVisibleId,
+          },
+        ),
+      ),
+      total,
+    };
   }
 
   async findAll({
@@ -696,12 +981,27 @@ export class UserPrismaRepository implements IUserRepository {
     });
   }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(id: string, procesoId?: string): Promise<User | null> {
     const [userRaw, person] = await this.prisma.$transaction([
       this.prisma.user.findUnique({ where: { id }, include: USER_DETAIL_INCLUDE }),
       this.prisma.person.findUnique({ where: { id } }),
     ]);
     if (!userRaw) return null;
+
+    // El `participanteId` en el where no es decorativo: el id del proceso llega por la URL, y sin
+    // esa condición se podría pedir el ciclo de otra persona.
+    const cicloPedido = procesoId
+      ? await this.prisma.proceso.findFirst({
+          where: { id: procesoId, participanteId: id },
+          select: {
+            id: true,
+            estado: true,
+            statusDocumental: true,
+            fechaIngreso: true,
+            finalizadoAt: true,
+          },
+        })
+      : null;
 
     const u = userRaw as PrismaUserDetail;
     const creatorIds = [...new Set([
@@ -721,7 +1021,12 @@ export class UserPrismaRepository implements IUserRepository {
       ]),
     );
 
-    return UserMapper.toDetailDomain(u, person as PersonModel | null, creatorPersonMap);
+    return UserMapper.toDetailDomain(u, person as PersonModel | null, creatorPersonMap,
+      // Sin ciclo pedido se muestra el visible, que es el ciclo en curso salvo que el participante
+      // no haya vuelto a entrar después de un cierre. Siempre viene alguno, así que la pantalla
+      // nunca queda sin saber si el ciclo está abierto o cerrado.
+      cicloDelDetalle(u, cicloPedido),
+    );
   }
 
   async create(data: CreateUserData): Promise<User> {
@@ -789,7 +1094,12 @@ export class UserPrismaRepository implements IUserRepository {
 
   async addStatusHistory(userId: string, status: string, createdById?: string): Promise<void> {
     await this.prisma.userHistoryStatus.create({
-      data: { userId, status: status as never, createdById },
+      data: {
+        userId,
+        procesoId: await procesoVisibleDe(this.prisma, userId),
+        status: status as never,
+        createdById,
+      },
     });
   }
 
@@ -843,7 +1153,12 @@ export class UserPrismaRepository implements IUserRepository {
       });
 
       await tx.userHistoryStatus.create({
-        data: { userId: participantId, status: nuevoEstado as never, createdById },
+        data: {
+          userId: participantId,
+          procesoId: await procesoVisibleDe(tx, participantId),
+          status: nuevoEstado as never,
+          createdById,
+        },
       });
 
       await espejarStatusDocumental(tx, participantId, nuevoEstado);
@@ -1069,6 +1384,8 @@ export class UserPrismaRepository implements IUserRepository {
           statusExternal: data.statusExternal ?? null,
         },
       }),
+      // Sin `procesoId`: el participante se esta creando y su proceso lo abre el sync mas tarde.
+      // `crearProcesoAbierto` adopta las entradas huerfanas al abrir el primer ciclo.
       this.prisma.userHistoryStatus.create({
         data: { userId: id, status: data.status as never },
       }),
@@ -1078,6 +1395,10 @@ export class UserPrismaRepository implements IUserRepository {
   async updateByDni(dni: string, data: UpdateExternalUserData): Promise<void> {
     const person = await this.prisma.person.findFirst({ where: { dni }, select: { id: true } });
     if (!person) throw new NotFoundException(`Usuario con DNI "${dni}" no encontrado.`);
+
+    // Se resuelve antes de armar la transacción: la forma de array de `$transaction` no admite
+    // await entre sus operaciones.
+    const procesoId = await procesoVisibleDe(this.prisma, person.id);
 
     await this.prisma.$transaction([
       this.prisma.person.update({
@@ -1111,7 +1432,7 @@ export class UserPrismaRepository implements IUserRepository {
         },
       }),
       this.prisma.userHistoryStatus.create({
-        data: { userId: person.id, status: data.status as never },
+        data: { userId: person.id, procesoId, status: data.status as never },
       }),
     ]);
   }

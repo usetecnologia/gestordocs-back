@@ -8,7 +8,15 @@ export const USER_INCLUDE = {
   sponsor: { select: { id: true, name: true, code: true } },
   program: { select: { id: true, name: true, code: true } },
   optionProgram: { select: { id: true, shortDatabase: true } },
-  procesoVisible: { select: { id: true, estado: true, fechaIngreso: true } },
+  procesoVisible: {
+    select: {
+      id: true,
+      estado: true,
+      statusDocumental: true,
+      fechaIngreso: true,
+      finalizadoAt: true,
+    },
+  },
 } as const;
 
 export const USER_DETAIL_INCLUDE = {
@@ -54,17 +62,61 @@ export type PrismaUserList = UserGetPayload<{
   include: typeof USER_LIST_INCLUDE;
 }>;
 
-function mapEmailLogs(emailLogs: PrismaUserList['emailLogs']) {
-  return emailLogs.map((log) => ({
+/**
+ * Deja solo lo que pertenece al **ciclo visible**. Sirve para el historial de estados y para las
+ * observaciones: las dos cosas cuelgan de un proceso, y un ciclo nuevo arranca limpio.
+ *
+ * Lo del ciclo anterior sigue existiendo colgado de su proceso — no se borra nada, solo deja de
+ * mostrarse en un ciclo que no es el suyo.
+ *
+ * Un registro sin proceso no pertenece a ningún ciclo y no aparece. En la práctica no quedan: las
+ * entradas de historial del alta —anteriores al primer proceso— las adopta `crearProcesoAbierto`
+ * al abrirlo.
+ */
+function historialDelCiclo<T extends { procesoId: string | null }>(
+  historial: readonly T[],
+  procesoVisibleId: string | null,
+): T[] {
+  return historial.filter((h) => h.procesoId !== null && h.procesoId === procesoVisibleId);
+}
+
+/**
+ * Historial de correos **del ciclo visible**. Un ciclo nuevo arranca sin historial: los correos del
+ * anterior siguen existiendo colgados de su proceso, pero no se muestran acá.
+ *
+ * El filtro va en el mapeo y no en el `include` porque Prisma no puede comparar un include contra
+ * una columna de la fila padre. Un correo sin proceso —los registros a nivel de plantilla, sin
+ * destinatario— no pertenece a ningún ciclo y no aparece.
+ */
+function mapEmailLogs(
+  emailLogs: PrismaUserList['emailLogs'],
+  procesoVisibleId: string | null,
+) {
+  return emailLogs
+    .filter((log) => log.procesoId !== null && log.procesoId === procesoVisibleId)
+    .map((log) => ({
     id: log.id,
     actionCode: log.actionCode,
     templateCode: log.templateCode,
     subject: log.subject,
     status: log.status as string,
     source: log.source as string,
-    errorMessage: log.errorMessage,
-    sentAt: log.sentAt,
-  }));
+      errorMessage: log.errorMessage,
+      sentAt: log.sentAt,
+    }));
+}
+
+/**
+ * Ciclo al que corresponde una fila del listado. Se pasa aparte y no se deduce del usuario porque en
+ * el listado por proceso una misma persona aparece varias veces, cada vez con un ciclo distinto.
+ */
+export interface CicloDeLaFila {
+  id: string;
+  estado: string;
+  statusDocumental: string;
+  fechaIngreso: Date;
+  finalizadoAt: Date | null;
+  esVisible: boolean;
 }
 
 export class UserMapper {
@@ -100,11 +152,18 @@ export class UserMapper {
     );
   }
 
+  /**
+   * `ciclo` es el proceso de esta fila. Cuando viene, el historial de estados, las observaciones y
+   * los correos se filtran por **ese** ciclo y no por el visible: la fila de un ciclo archivado tiene
+   * que mostrar lo que pasó en él, no lo que pasa en el ciclo en curso.
+   */
   static toListDomain(
     user: PrismaUserList,
     person: PersonModel | null,
     creatorPersonMap: Map<string, string> = new Map(),
+    ciclo: CicloDeLaFila | null = null,
   ): User {
+    const cicloId = ciclo?.id ?? user.procesoVisibleId;
     return new User(
       user.id,
       person?.firstname ?? '',
@@ -134,7 +193,7 @@ export class UserMapper {
       user.optionProgram ?? null,
       user.procesoVisible ?? null,
       null,
-      user.userHistories.map((h) => ({
+      historialDelCiclo(user.userHistories, cicloId).map((h) => ({
         id: h.id,
         status: h.status as string,
         createdById: h.createdById ?? null,
@@ -144,7 +203,8 @@ export class UserMapper {
         createdAt: h.createdAt,
         updatedAt: h.updatedAt,
       })),
-      mapEmailLogs(user.emailLogs),
+      mapEmailLogs(user.emailLogs, cicloId),
+      ciclo,
     );
   }
 
@@ -152,7 +212,12 @@ export class UserMapper {
     user: PrismaUserDetail,
     person: PersonModel | null,
     creatorPersonMap: Map<string, string> = new Map(),
+    ciclo: CicloDeLaFila | null = null,
   ): User {
+    // Sin `ciclo` explícito se muestra el ciclo en curso. Con uno, se está mirando un ciclo
+    // archivado y todo lo que cuelga de él —documentos, observaciones, correos, historial— se lee
+    // de ese ciclo.
+    const cicloId = ciclo?.id ?? user.procesoVisibleId;
     return new User(
       user.id,
       person?.firstname ?? '',
@@ -181,7 +246,7 @@ export class UserMapper {
       user.program ?? null,
       user.optionProgram ?? null,
       user.procesoVisible ?? null,
-      user.userObservations.map((obs) => ({
+      historialDelCiclo(user.userObservations, cicloId).map((obs) => ({
         id: obs.id,
         observation: obs.observation,
         status: obs.status,
@@ -195,7 +260,7 @@ export class UserMapper {
         etiquetas: obs.userObservationEtiquetas.map((e) => e.etiquetas),
         files: obs.userObservationFiles.map((f) => ({ id: f.id, file: f.file })),
       })),
-      user.userHistories.map((h) => ({
+      historialDelCiclo(user.userHistories, cicloId).map((h) => ({
         id: h.id,
         status: h.status as string,
         createdById: h.createdById ?? null,
@@ -205,7 +270,8 @@ export class UserMapper {
         createdAt: h.createdAt,
         updatedAt: h.updatedAt,
       })),
-      mapEmailLogs(user.emailLogs),
+      mapEmailLogs(user.emailLogs, cicloId),
+      ciclo,
     );
   }
 }

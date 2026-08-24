@@ -50,6 +50,12 @@ export interface UserFilters {
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
   generalStatus?: 'ACTIVO' | 'INACTIVO';
   fechaEnvioSponsor?: 'SI' | 'NO';
+  /**
+   * Estado del ciclo. Solo lo usa `findAllByProceso`, donde cada fila es un proceso: filtra las
+   * filas por si su ciclo está abierto o cerrado. `findAll` lo ignora — ahí una fila es una persona
+   * y no tiene un solo estado de ciclo.
+   */
+  procesoEstado?: 'EN_PROCESO' | 'FINALIZADO';
   search?: string;
   sortBy?: 'firstname' | 'lastfathername';
   sortOrder?: 'asc' | 'desc';
@@ -215,12 +221,32 @@ export interface ExportUserRow {
 }
 
 export interface IUserRepository {
+  /**
+   * Listado de participantes **por ciclo**: una fila por proceso, no por persona. Un participante
+   * con dos ciclos devuelve dos filas.
+   *
+   * Los filtros propios del ciclo —estado documental, sponsor, programa, país, opción— se aplican
+   * al proceso de la fila; los del participante —búsqueda por nombre o DNI, solicitud de retiro,
+   * fecha de envío al sponsor— siguen aplicándose a la persona.
+   *
+   * Es un método aparte de `findAll` a propósito: el dashboard usa `findAll` para contar
+   * participantes por estado, y ahí duplicar a alguien por tener dos ciclos sería un error.
+   */
+  findAllByProceso(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   findAll(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   findAllStaff(filters: UserFilters): Promise<{ data: User[]; total: number }>;
   countByStatus(statuses: UserStatus[], filters: UserStatusFunnelFilters): Promise<UserStatusCount[]>;
   findAllForFunnelExport(filters: FunnelExportFilters): Promise<FunnelExportRow[]>;
   findInactiveIdsByPreviousStatus(status: UserStatus, filters: PreviousStatusFilters): Promise<string[]>;
-  findById(id: string): Promise<User | null>;
+  /**
+   * `procesoId` acota el detalle a un ciclo concreto: sus documentos, observaciones, correos e
+   * historial. Sin él se muestra el ciclo en curso. Se usa para revisar un ciclo archivado desde el
+   * listado, que es de solo lectura — un ciclo cerrado está congelado.
+   *
+   * Un `procesoId` que no sea de ese participante se ignora y se cae al ciclo en curso: es un
+   * parámetro que viene de la URL y no debe poder mostrar el ciclo de otra persona.
+   */
+  findById(id: string, procesoId?: string): Promise<User | null>;
   create(data: CreateUserData): Promise<User>;
   update(id: string, data: UpdateUserData): Promise<User>;
   delete(id: string): Promise<void>;

@@ -5,13 +5,17 @@ import {
 } from '../../domain/proceso.repository';
 
 export interface FinalizarProcesoErrorItem {
-  dni: string;
+  /** El id del ciclo que no se pudo cerrar. */
+  procesoId: string;
+  /** DNI del participante, para que el reporte se entienda. `null` si no lo tiene cargado. */
+  dni: string | null;
   reason: string;
 }
 
 export interface FinalizarProcesoResult {
   totalSuccess: number;
   totalErrors: number;
+  /** DNIs de los participantes cuyos ciclos se cerraron, para mostrar en el resultado. */
   successes: string[];
   errors: FinalizarProcesoErrorItem[];
 }
@@ -26,35 +30,48 @@ export class FinalizarProcesoUseCase {
   ) {}
 
   /**
-   * Cierra el proceso abierto de cada participante. Es una acción de USE únicamente: el
-   * participante no puede finalizar el suyo, y de eso depende que no pueda abrir procesos en
-   * cadena — para abrir otro tendría que cerrar el actual, y no puede.
+   * Cierra **los ciclos indicados por su id**. Es una acción de USE únicamente: el participante no
+   * puede finalizar el suyo.
    *
-   * Un DNI que falla no detiene a los demás: se lista en `errors`, igual que el resto de las
-   * acciones masivas del proyecto. Finalizar de a uno es este mismo caso de uso con un solo DNI.
+   * ⛔ **Se dirige al proceso, no al participante.** Antes recibía DNIs y cerraba "el ciclo abierto
+   * de cada uno", y eso hacía algo que nadie pedía: con el listado filtrado a un ciclo finalizado,
+   * finalizar cerraba el ciclo **abierto** de ese participante, que no estaba en la tabla. Lo que se
+   * ve es lo que se cierra.
    *
-   * Lo que **no** hace: tocar los documentos. El expediente del proceso finalizado queda tal como
-   * está — es el registro histórico de ese ciclo. Que el sync deje de tocarlo es el paso 6.
+   * Un ciclo que falla no detiene a los demás: se lista en `errors` con su motivo, igual que el
+   * resto de las acciones masivas del proyecto. Finalizar de a uno es este mismo caso de uso con un
+   * solo id.
+   *
+   * Lo que **no** hace: tocar los documentos. El expediente del ciclo cerrado queda tal como está —
+   * es el registro histórico de ese ciclo.
    */
-  async execute(dnis: string[], finalizadoById: string): Promise<FinalizarProcesoResult> {
+  async execute(
+    procesoIds: readonly string[],
+    finalizadoById: string,
+  ): Promise<FinalizarProcesoResult> {
+    const encontrados = await this.procesoRepo.findProcesosParaAccion(procesoIds);
+    const porId = new Map(encontrados.map((p) => [p.id, p]));
+
     const successes: string[] = [];
     const errors: FinalizarProcesoErrorItem[] = [];
 
-    for (const dni of dnis) {
-      const participanteId = await this.procesoRepo.findParticipanteIdByDni(dni);
-      if (!participanteId) {
-        errors.push({ dni, reason: 'No existe un participante con ese DNI.' });
+    for (const procesoId of procesoIds) {
+      const proceso = porId.get(procesoId);
+      if (!proceso) {
+        errors.push({ procesoId, dni: null, reason: 'El proceso no existe.' });
+        continue;
+      }
+      if (proceso.estado !== 'EN_PROCESO') {
+        errors.push({
+          procesoId,
+          dni: proceso.dni,
+          reason: 'Ese ciclo ya está finalizado.',
+        });
         continue;
       }
 
-      const abierto = await this.procesoRepo.findAbiertoByParticipante(participanteId);
-      if (!abierto) {
-        errors.push({ dni, reason: 'El participante no tiene un proceso abierto.' });
-        continue;
-      }
-
-      await this.procesoRepo.finalizar(abierto.id, finalizadoById);
-      successes.push(dni);
+      await this.procesoRepo.finalizar(procesoId, finalizadoById);
+      successes.push(proceso.dni ?? procesoId);
     }
 
     this.logger.log(

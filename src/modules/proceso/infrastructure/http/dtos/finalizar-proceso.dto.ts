@@ -1,23 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ArrayNotEmpty, IsArray, IsString } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsUUID } from 'class-validator';
 
 export class FinalizarProcesoDto {
   @ApiProperty({
     type: [String],
-    example: ['12345678', '87654321'],
-    description: 'DNIs de los participantes cuyo proceso abierto se va a finalizar',
+    example: ['uuid-del-proceso-1', 'uuid-del-proceso-2'],
+    description:
+      'Ids de los ciclos a finalizar. Se identifican por proceso y no por participante: el listado ' +
+      'muestra una fila por ciclo, y se cierra exactamente el que se está viendo.',
   })
   @IsArray()
   @ArrayNotEmpty()
-  @IsString({ each: true })
-  dnis!: string[];
+  @IsUUID('all', { each: true })
+  procesoIds!: string[];
 }
 
 export class ContinuarProcesoDto {
   @ApiProperty({
-    example: '12345678',
-    description: 'DNI del participante cuyo último proceso finalizado se va a reabrir',
+    example: 'uuid-del-proceso',
+    description: 'Id del ciclo finalizado que se va a reabrir',
   })
-  @IsString()
-  dni!: string;
+  @IsUUID()
+  procesoId!: string;
 }

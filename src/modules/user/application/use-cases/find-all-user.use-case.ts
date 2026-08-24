@@ -7,8 +7,13 @@ import type { User } from '../../domain/user.entity';
 export class FindAllUserUseCase {
   constructor(@Inject(USER_REPOSITORY) private readonly repo: IUserRepository) {}
 
+  /**
+   * Una fila por **proceso**, no por participante: quien tuvo dos ciclos aparece dos veces, cada vez
+   * con el suyo. Los filtros de ciclo —estado, sponsor, programa, opción, país— se aplican al
+   * proceso de la fila; ver `findAllByProceso`.
+   */
   execute(query: FindUsersQueryDto): Promise<{ data: User[]; total: number }> {
-    return this.repo.findAll({
+    return this.repo.findAllByProceso({
       page: query.page ?? 1,
       limit: query.limit ?? 20,
       status: query.status,
@@ -20,6 +25,7 @@ export class FindAllUserUseCase {
       optionProgramId: query.optionProgramId,
       statusSolRetiro: query.statusSolRetiro,
       generalStatus: query.generalStatus,
+      procesoEstado: query.procesoEstado,
       fechaEnvioSponsor: query.fechaEnvioSponsor,
       search: query.search,
       sortBy: query.sortBy,

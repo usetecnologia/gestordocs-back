@@ -126,7 +126,7 @@ export class UserDocumentsController {
     @Param('userId', ParseUUIDPipe) userId: string,
     @Query() query: FindUserDocumentsQueryDto,
   ): Promise<UserDocumentWithHistoryDto[]> {
-    return this.findUserDocumentsUseCase.execute(userId, query.filter);
+    return this.findUserDocumentsUseCase.execute(userId, query.filter, query.procesoId);
   }
 
   @Roles(...STAFF_ROLES)

@@ -29,8 +29,8 @@
 **Los ocho pasos están hechos.** Lo que queda son las deudas de §8 y la decisión sobre M5 (§7),
 ninguna de las cuales bloquea los procesos.
 
-Estado de la base: `migrate status` → **up to date**, 36 migraciones, drift vacío.
-`tsc` limpio en backend y frontend. 130 tests pasando (`src/common src/modules/document`
+Estado de la base: `migrate status` → **up to date**, 38 migraciones, drift vacío.
+`tsc` limpio en backend y frontend. 183 tests pasando (`src/common src/modules/document`
 `src/modules/user-documents src/modules/proceso src/modules/user`, con `--runInBand`: ver §10). La
 aplicación arranca y expone tres endpoints de proceso: `POST /api/procesos/finalizar`,
 `POST /api/procesos/continuar` y `GET /api/procesos/participante/:id/historial`. Abrir un ciclo nuevo
@@ -48,17 +48,16 @@ Estas respuestas **modifican el plan original** y son las que valen:
 2. **Proceso finalizado + autologin: NO se bloquea el login.** El plan original decía
    "🚫 bloquea el login" — **eso quedó descartado**.
 
-   ⚠️ **Corregido el 2026-08-24 — abrir el ciclo nuevo es automático.** La versión anterior de esta
-   decisión decía que el frontend le mostraba al participante una página *"Su proceso finalizó,
-   ¿desea abrir uno nuevo?"* y que el botón lo creaba. **Eso queda descartado**: no hay pantalla, no
-   hay botón y no hay módulo administrable. El ciclo nuevo se abre solo, por detrás, la primera vez
-   que el participante aparece después del cierre (ver §5.9).
+   El participante entra y ve una pantalla: *"Tu proceso finalizó"*, con un botón **"Abrir un nuevo
+   proceso"** y el teléfono de USE como alternativa. El botón crea el ciclo, le arma el expediente y
+   lo deja en su dashboard como siempre.
 
-   **Consecuencia que conviene tener presente:** al desaparecer el botón desaparece la única puerta
-   que había entre cerrar un ciclo y abrir el siguiente. *Finalizar* pasa a significar "archivar
-   este ciclo y arrancar uno limpio la próxima vez que el participante aparezca" — si entra el mismo
-   día, ese mismo día empieza de cero. El ciclo archivado sigue intacto y consultable; lo que ya no
-   existe es un momento en que el participante queda "sin proceso" esperando una decisión.
+   ⚠️ **Historia de esta decisión, que conviene no repetir.** El 2026-08-24 se cambió a "automático,
+   sin pantalla ni botón" y el 2026-08-25 se volvió atrás, porque automático **no funcionó**: la
+   creación colgaba de `EnsureProcesoInicial`, al que llama la sincronización de documentos, y el
+   sync corre desde siete caminos. Resultado medido en pruebas: **abrir el detalle de un ciclo
+   finalizado desde el panel de USE le creaba al participante un ciclo nuevo.** Abrir un ciclo es una
+   decisión, no un efecto secundario de mirar una pantalla.
 
 3. **Se implementan las dos acciones de USE**, "Continuar" y "Finalizar":
    - *Continuar*: reabre el **mismo** registro conservando todo el avance. Es un
@@ -368,10 +367,25 @@ Las dos acciones de USE sobre un proceso ya abierto, más el módulo con su cont
 El participante no puede finalizar ni reabrir, y de eso depende que no pueda abrir procesos en
 cadena: para abrir otro tendría que cerrar el actual, y no puede.
 
-**Identifican al participante por DNI**, como el resto de las acciones masivas del proyecto
-(`bulk-aceptar-document`, `bulk-observar-document`): es el dato que la pantalla de USE tiene a mano.
-Un participante tiene como mucho un proceso abierto, así que "el proceso de este DNI" no es
-ambiguo.
+#### ⛔ Se dirigen al **proceso**, no al participante
+
+La primera versión recibía DNIs, como el resto de las acciones masivas, y cerraba "el ciclo abierto
+de cada uno". **Con una fila por ciclo eso dejó de ser correcto**, y se vio en pruebas: con el
+listado filtrado a `procesoEstado=FINALIZADO` aparecía una sola fila —el ciclo cerrado— y finalizar
+cerraba **el ciclo abierto** de ese participante, que no estaba en la tabla.
+
+Ahora los dos endpoints reciben ids de proceso: `{ procesoIds: string[] }` y `{ procesoId }`. **Lo
+que se ve es lo que se cierra.** Finalizar un ciclo ya cerrado devuelve el error correspondiente en
+vez de redirigirse a otro, y reabrir exige que *ese* ciclo esté finalizado.
+
+El reporte sigue mostrando DNIs para que se entienda —`findProcesosParaAccion` los trae junto al
+estado, en una consulta para todo el lote— pero la identidad de la acción es el proceso. El error
+lleva los dos: `{ procesoId, dni, reason }`.
+
+En el frontend, el listado manda `p.proceso.id` de cada fila. Antes filtraba por
+`p.procesoVisible.estado`, que es el ciclo **visible** del participante y no el de la fila: ese era
+el bug exacto. El resultado se muestra con `FinalizarProcesoResultDialog`, propio del módulo — dejó
+de poder reusar el de documentos porque el error ya no es `{ dni, reason }`.
 
 - **Finalizar es masivo y tolerante.** Un DNI que falla —no existe, o no tiene proceso abierto— se
   lista en `errors` y no detiene a los demás. Finalizar de a uno es el mismo endpoint con un solo
@@ -715,7 +729,260 @@ acciones del listado, botón con etiqueta en el detalle— y `HistorialProcesosC
 historial se carga **al abrir el diálogo**, no con el listado: traerlo para las cien filas de una
 página serían cien consultas que nadie pidió.
 
-### 5.13 Trabajo previo relacionado
+### 5.13 El historial de correos, también por ciclo
+
+Migración `20260824230000_add_email_log_proceso`. Mismo patrón que las observaciones: FK nullable,
+backfill por fecha, y la lectura acotada. Censo delta 0.
+
+**El problema:** el historial de correos se leía por participante, así que un ciclo nuevo nacía
+mostrando los correos del anterior. En el caso de prueba eran 5 correos, todos del primer ciclo, que
+aparecían en un ciclo recién abierto. Ahora ese ciclo muestra **0**.
+
+**La escritura tiene un solo cuello.** Hay siete lugares que registran correos —tres en
+`email-dispatch.service.ts`, cuatro en `email-schedule.service.ts`— y **ninguno se tocó**: el
+`procesoId` se resuelve dentro de `EmailLogPrismaRepository.create` a partir del `recipientUserId`.
+Es el mismo criterio que `espejarStatusDocumental`: la regla vive en un solo lugar y los puntos de
+envío no necesitan saber de procesos.
+
+Se usa el proceso **visible** del destinatario, no el abierto, porque es exactamente el mismo con el
+que se filtra al mostrar: así un correo registrado ahora se ve ahora, incluso en la ventana entre
+finalizar un ciclo y que el participante vuelva.
+
+**La lectura** se filtra en `mapEmailLogs` y no en el `include`, porque Prisma no puede comparar un
+include contra una columna de la fila padre. **El frontend no necesitó ningún cambio**: el historial
+ya venía dentro del participante.
+
+Nullable por dos razones reales: los registros a nivel de plantilla (un `OMITIDO` cuando la plantilla
+no tiene audiencia) no tienen destinatario y por lo tanto no tienen ciclo, y el destinatario podría no
+ser participante. Un correo sin proceso no aparece en el historial de nadie — que es donde estaba
+antes también, porque sin `recipientUserId` nunca se mostró.
+
+4 tests nuevos en `user.mapper.spec.ts`, incluido el que fija que **sin proceso visible no se muestra
+nada, en vez de mostrarlo todo**.
+
+Un caso vecino que **sí** conviene dejar como está: `User.fechadeenvioalsponsor`, que alimenta
+`hasBeenSentToSponsor`. Workuse la reescribe en cada upsert, así que refleja la realidad actual y no
+el ciclo viejo.
+
+### 5.14 Un ciclo nuevo arranca limpio: el cierre del patrón
+
+Migración `20260825000000_add_user_history_status_proceso`, más el filtro de las observaciones en la
+lectura. Con esto **las cuatro cosas** que forman el expediente de un participante pertenecen a un
+ciclo: documentos, historial de estados, observaciones y correos. Censo delta 0. **Nada se borra**:
+todo sigue colgado del ciclo donde ocurrió.
+
+Resultado en el caso de prueba, para el ciclo recién abierto:
+
+| | Antes | Ahora |
+|---|---|---|
+| Historial de estados | 168 | **2** (las suyas) |
+| Observaciones | 6 | **0** |
+| Correos | 5 | **0** |
+| Documentos | 19 | **8** (los suyos) |
+
+#### `UserHistoryStatus`: ocho puntos de escritura, una sola regla
+
+A diferencia de los correos, acá **no había un cuello único**: hay ocho lugares que escriben
+historial de estados, repartidos entre `autologin`, `user`, `user-documents` y `proceso`. La regla se
+puso en un helper —`procesoVisibleDe(tx, userId)`— que recibe la transacción, y cada sitio lo llama.
+125 631 filas backfilleadas, 0 sin proceso, 0 asignadas al proceso de otro.
+
+**El caso del alta, que es el interesante.** Dos de esos ocho sitios escriben la primera entrada de
+historial de un participante que **se está creando**: su proceso todavía no existe, porque lo abre el
+sync más adelante en la misma llamada. Esas entradas nacen sin ciclo, y el filtro del mapper descarta
+lo que no tiene ciclo — habrían quedado invisibles.
+
+Se resolvió donde corresponde: **`crearProcesoAbierto` adopta las entradas huérfanas** del
+participante al abrir su primer proceso, en la misma transacción. Es correcto solo ahí:
+`crearProcesoDeNuevoCiclo` **no** adopta, porque una huérfana en un ciclo posterior pertenecería al
+primero. Los dos comportamientos tienen su test.
+
+**`findLastStatusBeforeInactive`** también se acotó. Restaura el estado previo al reactivar a un
+participante; en un ciclo nuevo no hay nada que restaurar, y devolver el estado de un ciclo anterior
+le daría un avance que no tiene. Con `null`, quien llama recalcula por documentos.
+
+#### Las observaciones, ahora también en la lectura
+
+Cuando se acotó `hasActiveObservation` (§5.11) se dejó a propósito que el listado de observaciones
+siguiera mostrando todas. Se decidió cerrarlo: ahora el mapper las filtra por ciclo visible, igual
+que el historial y los correos. Las dos usan el mismo helper `historialDelCiclo`.
+
+#### El patrón, para lo que venga
+
+Cuatro tablas, cuatro veces la misma forma:
+
+1. FK `procesoId` **nullable** a `procesos`, `ON DELETE RESTRICT`, con índice.
+2. Backfill por fecha: el proceso vigente cuando ocurrió el registro.
+3. La escritura resuelve el proceso en **un** lugar, no en cada punto de uso.
+4. La lectura filtra por proceso visible y, sin proceso visible, **responde vacío en vez de todo**.
+
+Lo que **no** se hace: cerrar, borrar ni editar los registros del ciclo anterior. Un ciclo nuevo
+arranca limpio porque deja de mirarlos, no porque desaparezcan.
+
+### 5.15 El listado por ciclo, y el detalle de un ciclo archivado
+
+Con varios ciclos por participante, la tabla dejó de tener sentido como "una fila por persona".
+Ahora es **una fila por proceso**: quien tuvo dos ciclos aparece dos veces, cada vez con el suyo.
+
+#### El listado
+
+Método nuevo `findAllByProceso`, **separado de `findAll`**: el dashboard usa `findAll` para contar
+participantes por estado, y ahí una persona con dos ciclos contaría doble. Consulta sobre `procesos`
+con el participante incluido, paginando y contando sobre filas de proceso.
+
+**Los filtros se reparten según a quién pertenece el dato** (decisión del 2026-08-25):
+
+| Filtro | Se aplica a |
+|---|---|
+| **Estado del proceso** (`procesoEstado`: `EN_PROCESO` / `FINALIZADO`) | **El ciclo de la fila** |
+| Estado documental, sponsor, programa, opción, país | **El ciclo de la fila** |
+| Búsqueda por nombre o DNI, solicitud de retiro, fecha de envío al sponsor, rango de fechas | El participante |
+
+`procesoEstado` es el filtro propio del listado por ciclo: sin él se ven todas las filas, con
+`EN_PROCESO` solo los ciclos abiertos y con `FINALIZADO` solo los cerrados. Vive en `UserFilters` pero
+**solo lo usa `findAllByProceso`** — en `findAll`, donde una fila es una persona, no tendría sentido:
+alguien con dos ciclos no tiene un único estado de ciclo.
+
+En el frontend es el select "Proceso" de la barra de filtros, y como los demás viaja en la URL, así
+que un filtro aplicado se puede compartir por link.
+
+Es decir: filtrar "sponsor = CIEE" devuelve los ciclos cuyo sponsor **fue** CIEE, no los
+participantes que hoy lo tienen. Coherente con una tabla por ciclo, y es un cambio de resultados
+respecto del listado anterior.
+
+Orden por defecto: la antigüedad del participante que ya tenía el listado, y los ciclos de cada uno
+quedan juntos con el más reciente arriba. El orden por nombre sigue resolviéndose en memoria —
+`firstname`/`lastfathername` viven en `Person`, sin relación Prisma— pero ahora sobre filas de
+proceso.
+
+**La fila trae su ciclo.** `User.proceso` (`id`, `estado`, `statusDocumental`, `fechaIngreso`,
+`finalizadoAt`, `esVisible`) va **al final** del constructor de la entidad: son 29 argumentos
+posicionales y meter uno en medio desalinea todo lo que sigue — pasó al primer intento.
+
+Y lo que cuelga del ciclo se filtra por **el de la fila**, no por el visible: la fila de un ciclo
+archivado muestra su historial, sus observaciones y sus correos, no los del ciclo en curso.
+
+#### La tabla
+
+- Columna nueva **"Proceso"**: "En proceso" / "Finalizado", con un punto de color —anillado en el
+  ciclo abierto— en vez de texto suelto. Es distinta de la columna "Estado", que es el avance
+  documental: una dice si el ciclo está abierto, la otra en qué anda el expediente.
+
+  Un primer intento marcaba con *actual* el ciclo abierto que además era el visible. **Es
+  redundante**: solo puede haber un ciclo abierto y la regla del proceso visible siempre lo elige a
+  él, así que todo ciclo abierto es el visible. La marca informa en el caso inverso — un ciclo
+  **finalizado** que sigue siendo el visible significa que el participante no volvió a entrar, y por
+  eso ve un ciclo cerrado. Eso se señala con un ojo y su tooltip.
+
+  El chip vive en `features/proceso/components/ProcesoBadge.tsx` y **lo comparten el listado y la
+  cabecera del detalle** (con `size="md"` allá). Estaba local en la tabla; se extrajo al necesitarlo
+  en los dos lugares, porque dos copias son dos diseños que tarde o temprano se separan. En el
+  detalle reemplazó al texto suelto "Ciclo finalizado", que además solo aparecía cuando estaba
+  cerrado — ahora se ve el estado en los dos casos.
+
+  Para que el detalle pueda mostrarlo siempre, `findById` devuelve el ciclo visible cuando no se pidió
+  uno por URL (helper `cicloDelDetalle`), y el select de `procesoVisible` en el mapper se amplió con
+  `statusDocumental` y `finalizadoAt`.
+
+#### ⛔ El constructor de `User` tiene 29 argumentos posicionales
+
+Se desalineó **dos veces** con el mismo campo:
+
+1. Al agregar `proceso` en medio del constructor, corriendo todo lo que venía después. Se movió al
+   final.
+2. `toDetailDomain` se quedó **sin pasarlo**, así que el chip del detalle mostraba `—` en vez del
+   estado del ciclo. Sus correos además seguían filtrándose por el ciclo visible y no por el pedido.
+
+Los dos fallos son silenciosos: compilan, no lanzan, y solo se ven en la pantalla. Hay 3 tests en
+`user.mapper.spec.ts` que fijan que `proceso` llegue en su posición en los dos mapeos, y que el
+listado no traiga observaciones —si aparecieran, algo se corrió—. **Antes de tocar ese constructor,
+correr esos tests.**
+- La columna "Estado" ahora muestra el `statusDocumental` **del ciclo de la fila**.
+- Finalizar aparece solo en filas con el ciclo abierto.
+- **Se quitó el botón de historial de procesos**, junto con sus componentes: con una fila por ciclo,
+  la tabla *es* el historial. El endpoint `GET /procesos/participante/:id/historial` **queda
+  disponible** —trae además el conteo de documentos por ciclo y quién lo finalizó— pero ya no lo
+  consume nadie.
+
+#### El detalle de un ciclo archivado
+
+Entrar desde la fila de un ciclo finalizado abre `/participant/:id?proceso=<id>` y el detalle se pone
+en **solo lectura**: muestra los documentos, observaciones, correos e historial de *ese* ciclo, con un
+aviso arriba y **sin ninguna acción**. Un ciclo cerrado está congelado.
+
+Dos detalles que importan:
+
+- **El `procesoId` viene de la URL**, así que las dos consultas que lo aceptan
+  —`findById` y `findByUserIdWithHistory`— lo validan contra el participante
+  (`where: { id, participanteId }`). Sin esa condición se podría mirar el ciclo de otra persona
+  cambiando un id en la barra de direcciones.
+- **Con `procesoId` no se sincroniza.** `FindUserDocuments` se saltea el sync: trabaja siempre sobre
+  el ciclo abierto, y correrlo mientras se mira uno archivado no tendría sentido.
+- ⚠️ **El `procesoId` va declarado en el DTO de la query**, no como `@Query('procesoId')` suelto. El
+  `ValidationPipe` global corre con `forbidNonWhitelisted`, así que una propiedad que no esté en
+  `FindUserDocumentsQueryDto` tumba **toda** la consulta con
+  `"property procesoId should not exist"` — un 400 que no dice nada del problema real. Pasó y costó
+  un rato. En `/users/:id` no hace falta porque ahí el parámetro no se enlaza a una clase.
+
+#### Un ciclo archivado se ve completo, pero no se toca
+
+El requisito es ver **todo** del ciclo cerrado —documentos, historial, archivos— y no poder modificar
+nada. Dos filtraciones que había que cerrar, las dos por el mismo motivo: `participant.status` es el
+espejo del ciclo **activo**, no del que se está mirando.
+
+| Dónde | Qué mostraba | Ahora |
+|---|---|---|
+| El chip de estado de la cabecera | El avance del ciclo en curso | `proceso.statusDocumental` del ciclo mirado |
+| Las acciones de cada documento | Se habilitaban con `participantStatus === 'EN_REVISION'`, tomado del ciclo activo | Reciben el estado del ciclo mirado **y** un `soloLectura` explícito |
+
+El `soloLectura` se chequea **aparte** del estado a propósito: un ciclo archivado no admite acciones
+aunque hubiera quedado en `EN_REVISION`. Son 5 banderas de acción y las cinco lo llevan.
+
+### ⛔ 5.16 El ciclo que se creaba solo, y la vuelta al botón
+
+Encontrado probando: se finalizó el ciclo del DNI de prueba, se entró al detalle del ciclo
+archivado, y **se creó un ciclo nuevo sin que nadie lo pidiera**. Verificado en base: el proceso
+espurio se creó a las 01:46, el mismo minuto en que se abrió la pantalla.
+
+**La causa.** `EnsureProcesoInicial` abría el ciclo siguiente cuando el participante no tenía ninguno
+abierto. A ese caso de uso lo llama `SyncUserDocumentsUseCase`, y el sync corre desde **siete
+caminos** — autologin, info del participante, carga masiva y los listados que sincronizan al vuelo.
+Con solo mirar a un participante con el ciclo cerrado, se le abría el siguiente.
+
+#### Lo que se revirtió
+
+`EnsureProcesoInicial` volvió a hacer una sola cosa: **crear el primer proceso si no hay ninguno**.
+Cuando el participante tiene solo ciclos cerrados devuelve el más reciente sin crear nada, y el sync
+—que ya tenía el corte por `FINALIZADO`— no toca el expediente. Ese corte, que había quedado como red
+de seguridad, volvió a ser el camino real.
+
+#### La acción explícita
+
+`CrearNuevoProceso` pasó a tener su propio endpoint: **`POST /api/procesos/mio/nuevo`**,
+`@Roles(PARTICIPANTE)`. No recibe a quién — el participante sale del JWT, así que no hay forma de
+abrirle un proceso a otro. Verifica que no tenga uno en curso, crea el ciclo y **sincroniza en el
+mismo movimiento**, para que el participante encuentre su expediente ya armado.
+
+En el frontend, `ProcesoFinalizadoAviso`: el dashboard del participante detecta
+`proceso.estado === 'FINALIZADO'` y, en vez de su expediente, muestra el aviso con el botón y el
+teléfono de USE. Al abrir el ciclo recarga y sigue como siempre.
+
+⚠️ El teléfono es **provisional** (`TELEFONO_USE` en ese archivo): reemplazarlo por el real.
+
+Para que el participante lo sepa, `AuthUser.proceso` viaja en `/users/:id` — que ya devolvía el ciclo
+desde §5.15— y se mapea en `dashboard.repository.ts`.
+
+6 tests nuevos en `crear-nuevo-proceso.use-case.spec.ts` y uno en el de `EnsureProcesoInicial` que
+**fija que no abra el ciclo siguiente**. Ese es el que impide que esto vuelva.
+
+#### El dato espurio
+
+El ciclo que el bug creó se eliminó con respaldo en `backups/limpiar-proceso-espurio.json`: 8
+documentos y 8 historiales, **ninguno con archivo subido** —el script aborta si encuentra uno— más 1
+entrada de estado. El participante quedó con su ciclo `FINALIZADO` en `OBSERVADO_SPONSOR`, sus 11
+documentos y sus 75 historiales con archivo intactos.
+
+### 5.17 Trabajo previo relacionado
 
 - **Temporada informativa** en `document_programs.temporadaId`
   (`20260820120000_add_temporada_to_document_program`). Es del **catálogo** y **no** filtra

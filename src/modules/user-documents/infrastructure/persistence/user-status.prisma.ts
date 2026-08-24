@@ -3,6 +3,7 @@ import { $Enums } from 'prisma/generated/prisma/client';
 import { PrismaService } from '@shared/prisma/prisma.service';
 import { IUserStatusPort } from '../../domain/user-status.port';
 import { espejarStatusDocumental } from '@modules/proceso/infrastructure/persistence/espejar-status-documental';
+import { procesoVisibleDe } from '@modules/proceso/infrastructure/persistence/proceso-del-participante';
 
 @Injectable()
 export class UserStatusPrisma implements IUserStatusPort {
@@ -23,7 +24,12 @@ export class UserStatusPrisma implements IUserStatusPort {
         data: { status: status as $Enums.UserStatus },
       });
       await tx.userHistoryStatus.create({
-        data: { userId, status: status as $Enums.UserStatus, createdById },
+        data: {
+          userId,
+          procesoId: await procesoVisibleDe(tx, userId),
+          status: status as $Enums.UserStatus,
+          createdById,
+        },
       });
       // El proceso abierto guarda el mismo estado: es el que sobrevive al cierre del ciclo.
       await espejarStatusDocumental(tx, userId, status);
@@ -65,9 +71,20 @@ export class UserStatusPrisma implements IUserStatusPort {
     return count > 0;
   }
 
+  /**
+   * Último estado antes de pasar a INACTIVO, **dentro del ciclo visible**. Se usa para reactivar a
+   * un participante restaurándole el estado que tenía.
+   *
+   * Acotarlo al ciclo importa: en un ciclo nuevo no hay nada que restaurar, y devolver el estado de
+   * un ciclo anterior le daría un avance que no tiene. Con `null`, quien llama recalcula por
+   * documentos, que es lo correcto para un ciclo que arranca.
+   */
   async findLastStatusBeforeInactive(userId: string): Promise<string | null> {
+    const procesoId = await procesoVisibleDe(this.prisma, userId);
+    if (!procesoId) return null;
+
     const record = await this.prisma.userHistoryStatus.findFirst({
-      where: { userId, status: { not: 'INACTIVO' } },
+      where: { userId, procesoId, status: { not: 'INACTIVO' } },
       orderBy: { createdAt: 'desc' },
       select: { status: true },
     });

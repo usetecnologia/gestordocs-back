@@ -1,21 +1,30 @@
 import { Logger } from '@nestjs/common';
 import { Proceso } from '../../domain/proceso.entity';
-import { IProcesoRepository } from '../../domain/proceso.repository';
+import { IProcesoRepository, ProcesoParaAccion } from '../../domain/proceso.repository';
 import { FinalizarProcesoUseCase } from './finalizar-proceso.use-case';
 import { ContinuarProcesoUseCase } from './continuar-proceso.use-case';
 
 /**
- * Las dos acciones de USE sobre un proceso ya abierto. Lo que estos tests protegen:
+ * Las dos acciones de USE sobre un ciclo, **dirigidas por id de proceso**.
  *
- * - Finalizar es masivo y **tolerante**: un DNI que falla no puede arrastrar a los demás, igual que
- *   el resto de las acciones masivas del proyecto.
- * - Continuar reabre **el mismo** registro, y solo si hay uno finalizado y ninguno abierto. Reabrir
- *   con otro abierto violaría `uq_proceso_activo`; el corte previo existe para dar un mensaje que se
- *   entienda en vez de dejar salir el error de la base.
- * - Ninguna de las dos toca documentos.
+ * ⛔ El motivo de que sea por id y no por DNI se vio en pruebas: recibiendo DNIs, el caso de uso
+ * cerraba "el ciclo abierto del participante", así que con el listado filtrado a un ciclo
+ * *finalizado* la acción cerraba **otro** ciclo — uno que no estaba en la tabla. Lo que se ve es lo
+ * que se cierra.
+ *
+ * Lo demás que se protege: un ciclo que falla no arrastra a los demás, y reabrir exige que ese ciclo
+ * esté cerrado y que el participante no tenga otro abierto.
  */
 
-function proceso(id: string, estado: 'EN_PROCESO' | 'FINALIZADO'): Proceso {
+function paraAccion(
+  id: string,
+  estado: 'EN_PROCESO' | 'FINALIZADO',
+  dni: string | null = '12345678',
+): ProcesoParaAccion {
+  return { id, estado, participanteId: 'u1', dni };
+}
+
+function unProceso(id: string, estado: 'EN_PROCESO' | 'FINALIZADO'): Proceso {
   return new Proceso(
     id,
     'u1',
@@ -32,23 +41,28 @@ function proceso(id: string, estado: 'EN_PROCESO' | 'FINALIZADO'): Proceso {
 }
 
 /** Repositorio simulado que registra las finalizaciones y reaperturas pedidas. */
-function fakeRepo(overrides: Partial<IProcesoRepository> = {}) {
+function fakeRepo(
+  disponibles: ProcesoParaAccion[],
+  overrides: Partial<IProcesoRepository> = {},
+) {
   const finalizados: Array<{ procesoId: string; finalizadoById: string }> = [];
   const reabiertos: string[] = [];
   const noUsado = () => Promise.reject(new Error('no se usa en estos tests'));
+
   const repo: IProcesoRepository = {
-    findParticipanteIdByDni: (dni: string) => Promise.resolve(`user-${dni}`),
-    findAbiertoByParticipante: () => Promise.resolve(proceso('p-abierto', 'EN_PROCESO')),
-    findUltimoFinalizadoByParticipante: () => Promise.resolve(null),
+    findProcesosParaAccion: (ids: readonly string[]) =>
+      Promise.resolve(disponibles.filter((p) => ids.includes(p.id))),
+    findAbiertoByParticipante: () => Promise.resolve(null),
     finalizar: (procesoId: string, finalizadoById: string) => {
       finalizados.push({ procesoId, finalizadoById });
-      return Promise.resolve(proceso(procesoId, 'FINALIZADO'));
+      return Promise.resolve(unProceso(procesoId, 'FINALIZADO'));
     },
     reabrir: (procesoId: string) => {
       reabiertos.push(procesoId);
-      return Promise.resolve(proceso(procesoId, 'EN_PROCESO'));
+      return Promise.resolve(unProceso(procesoId, 'EN_PROCESO'));
     },
     findVisibleByParticipante: noUsado,
+    findUltimoFinalizadoByParticipante: noUsado,
     findHistorialByParticipante: noUsado,
     findParticipanteParaProceso: noUsado,
     findTemporadaActivaDeProgram: noUsado,
@@ -68,13 +82,13 @@ describe('FinalizarProcesoUseCase', () => {
     jest.restoreAllMocks();
   });
 
-  it('finaliza el proceso abierto de cada DNI, registrando quién lo hizo', async () => {
-    const { repo, finalizados } = fakeRepo({
-      findAbiertoByParticipante: (participanteId: string) =>
-        Promise.resolve(proceso(`p-${participanteId}`, 'EN_PROCESO')),
-    });
+  it('cierra exactamente los ciclos indicados, registrando quién lo hizo', async () => {
+    const { repo, finalizados } = fakeRepo([
+      paraAccion('p-1', 'EN_PROCESO', '111'),
+      paraAccion('p-2', 'EN_PROCESO', '222'),
+    ]);
 
-    const result = await new FinalizarProcesoUseCase(repo).execute(['111', '222'], 'staff-1');
+    const result = await new FinalizarProcesoUseCase(repo).execute(['p-1', 'p-2'], 'staff-1');
 
     expect(result).toEqual({
       totalSuccess: 2,
@@ -83,41 +97,56 @@ describe('FinalizarProcesoUseCase', () => {
       errors: [],
     });
     expect(finalizados).toEqual([
-      { procesoId: 'p-user-111', finalizadoById: 'staff-1' },
-      { procesoId: 'p-user-222', finalizadoById: 'staff-1' },
+      { procesoId: 'p-1', finalizadoById: 'staff-1' },
+      { procesoId: 'p-2', finalizadoById: 'staff-1' },
     ]);
   });
 
-  it('sigue con los demás DNIs cuando uno no tiene proceso abierto', async () => {
-    const { repo, finalizados } = fakeRepo({
-      findAbiertoByParticipante: (participanteId: string) =>
-        Promise.resolve(
-          participanteId === 'user-222' ? null : proceso('p-ok', 'EN_PROCESO'),
-        ),
-    });
+  /**
+   * El fallo que motivó el cambio: al pedir cerrar un ciclo ya finalizado, la versión por DNI
+   * cerraba el ciclo abierto de ese participante. Ahora no toca nada.
+   */
+  it('no toca ningún otro ciclo si el indicado ya está finalizado', async () => {
+    const { repo, finalizados } = fakeRepo([
+      paraAccion('p-cerrado', 'FINALIZADO'),
+      paraAccion('p-abierto', 'EN_PROCESO'),
+    ]);
 
-    const result = await new FinalizarProcesoUseCase(repo).execute(['111', '222', '333'], 'staff-1');
+    const result = await new FinalizarProcesoUseCase(repo).execute(['p-cerrado'], 'staff-1');
+
+    expect(finalizados).toHaveLength(0);
+    expect(result.totalSuccess).toBe(0);
+    expect(result.errors).toEqual([
+      { procesoId: 'p-cerrado', dni: '12345678', reason: 'Ese ciclo ya está finalizado.' },
+    ]);
+  });
+
+  it('sigue con los demás cuando uno del lote falla', async () => {
+    const { repo, finalizados } = fakeRepo([
+      paraAccion('p-1', 'EN_PROCESO', '111'),
+      paraAccion('p-2', 'FINALIZADO', '222'),
+      paraAccion('p-3', 'EN_PROCESO', '333'),
+    ]);
+
+    const result = await new FinalizarProcesoUseCase(repo).execute(
+      ['p-1', 'p-2', 'p-3'],
+      'staff-1',
+    );
 
     expect(result.totalSuccess).toBe(2);
     expect(result.successes).toEqual(['111', '333']);
-    expect(result.errors).toEqual([
-      { dni: '222', reason: 'El participante no tiene un proceso abierto.' },
-    ]);
-    expect(finalizados).toHaveLength(2);
+    expect(result.errors).toHaveLength(1);
+    expect(finalizados.map((f) => f.procesoId)).toEqual(['p-1', 'p-3']);
   });
 
-  it('reporta el DNI que no corresponde a ningún participante', async () => {
-    const { repo, finalizados } = fakeRepo({
-      findParticipanteIdByDni: () => Promise.resolve(null),
-    });
+  it('reporta el id que no corresponde a ningún proceso', async () => {
+    const { repo, finalizados } = fakeRepo([]);
 
     const result = await new FinalizarProcesoUseCase(repo).execute(['fantasma'], 'staff-1');
 
-    expect(result.totalErrors).toBe(1);
-    expect(result.errors[0]).toEqual({
-      dni: 'fantasma',
-      reason: 'No existe un participante con ese DNI.',
-    });
+    expect(result.errors).toEqual([
+      { procesoId: 'fantasma', dni: null, reason: 'El proceso no existe.' },
+    ]);
     expect(finalizados).toHaveLength(0);
   });
 });
@@ -131,43 +160,38 @@ describe('ContinuarProcesoUseCase', () => {
     jest.restoreAllMocks();
   });
 
-  it('reabre el último proceso finalizado', async () => {
-    const { repo, reabiertos } = fakeRepo({
-      findAbiertoByParticipante: () => Promise.resolve(null),
-      findUltimoFinalizadoByParticipante: () => Promise.resolve(proceso('p-viejo', 'FINALIZADO')),
-    });
+  it('reabre el ciclo indicado', async () => {
+    const { repo, reabiertos } = fakeRepo([paraAccion('p-viejo', 'FINALIZADO')]);
 
-    await expect(new ContinuarProcesoUseCase(repo).execute('111')).resolves.toBeUndefined();
+    await expect(new ContinuarProcesoUseCase(repo).execute('p-viejo')).resolves.toBeUndefined();
     expect(reabiertos).toEqual(['p-viejo']);
   });
 
-  it('rechaza continuar si el participante ya tiene un proceso abierto', async () => {
-    const { repo, reabiertos } = fakeRepo();
+  it('rechaza reabrir un ciclo que no está finalizado', async () => {
+    const { repo, reabiertos } = fakeRepo([paraAccion('p-abierto', 'EN_PROCESO')]);
 
-    await expect(new ContinuarProcesoUseCase(repo).execute('111')).rejects.toThrow(
+    await expect(new ContinuarProcesoUseCase(repo).execute('p-abierto')).rejects.toThrow(
+      'no está finalizado',
+    );
+    expect(reabiertos).toHaveLength(0);
+  });
+
+  it('rechaza reabrir si el participante ya tiene otro ciclo abierto', async () => {
+    const { repo, reabiertos } = fakeRepo([paraAccion('p-viejo', 'FINALIZADO')], {
+      findAbiertoByParticipante: () => Promise.resolve(unProceso('p-otro', 'EN_PROCESO')),
+    });
+
+    await expect(new ContinuarProcesoUseCase(repo).execute('p-viejo')).rejects.toThrow(
       'ya tiene un proceso abierto',
     );
     expect(reabiertos).toHaveLength(0);
   });
 
-  it('rechaza continuar si no hay ningún proceso finalizado', async () => {
-    const { repo, reabiertos } = fakeRepo({
-      findAbiertoByParticipante: () => Promise.resolve(null),
-    });
-
-    await expect(new ContinuarProcesoUseCase(repo).execute('111')).rejects.toThrow(
-      'ningún proceso finalizado',
-    );
-    expect(reabiertos).toHaveLength(0);
-  });
-
-  it('rechaza continuar si el DNI no corresponde a ningún participante', async () => {
-    const { repo, reabiertos } = fakeRepo({
-      findParticipanteIdByDni: () => Promise.resolve(null),
-    });
+  it('rechaza si el proceso no existe', async () => {
+    const { repo, reabiertos } = fakeRepo([]);
 
     await expect(new ContinuarProcesoUseCase(repo).execute('fantasma')).rejects.toThrow(
-      'No existe un participante con el DNI fantasma',
+      'El proceso no existe',
     );
     expect(reabiertos).toHaveLength(0);
   });
