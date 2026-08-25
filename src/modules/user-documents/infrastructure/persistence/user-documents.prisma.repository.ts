@@ -20,6 +20,7 @@ import {
   DocumentTargetResult,
   ActiveUserDocumentStatus,
   ParticipantSponsorInfo,
+  ProcesoAbiertoInfo,
   UserEmailContext,
   UserDocumentTargetHistoryItem,
   PassportDocumentCandidate,
@@ -704,19 +705,20 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
   async findActiveStatusesByUserIds(userIds: string[]): Promise<ActiveUserDocumentStatus[]> {
     if (!userIds.length) return [];
 
-    // Acotado al proceso visible de cada participante: el export muestra el ciclo que el
-    // participante ve, no la suma de todos los que tuvo. Se resuelve con los punteros ya guardados
-    // en `User.procesoVisibleId` en vez de una subconsulta por fila — para eso existe la columna.
+    // Acotado al proceso ABIERTO de cada participante: el export cubre solo ciclos en curso, no la
+    // suma de todos los que tuvo.
     //
-    // A diferencia de `email-audience`, acá el proceso visible puede estar finalizado y se incluye
-    // igual: el export tiene que mostrar el último estado conocido, no una fila vacía.
-    const visibles = await this.prisma.user.findMany({
-      where: { id: { in: userIds }, procesoVisibleId: { not: null } },
-      select: { procesoVisibleId: true },
+    // Antes se resolvía por `User.procesoVisibleId`, y estaba mal: ese puntero queda apuntando al
+    // proceso FINALIZADO en cuanto el ciclo se cierra —ver `ProcesoPrismaRepository.finalizar`—,
+    // así que el Excel terminaba mostrando el expediente archivado como si fuera el vigente.
+    //
+    // Se filtra por `activo` y no por `estado`: es la columna sobre la que la base garantiza que
+    // haya como mucho un proceso abierto por participante (`uq_proceso_activo`).
+    const abiertos = await this.prisma.proceso.findMany({
+      where: { participanteId: { in: userIds }, activo: true },
+      select: { id: true },
     });
-    const procesoIds = visibles
-      .map((u) => u.procesoVisibleId)
-      .filter((id): id is string => id !== null);
+    const procesoIds = abiertos.map((p) => p.id);
     if (!procesoIds.length) return [];
 
     const rows = await this.prisma.userDocuments.findMany({
@@ -855,16 +857,43 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     return userDoc?.userDocumentHistory ?? [];
   }
 
+  /**
+   * Id del proceso **abierto** del participante, o `null` si no tiene ninguno.
+   *
+   * Se filtra por `activo` y no por `estado` porque `activo` es la columna sobre la que la base
+   * garantiza que haya como mucho uno — ver `uq_proceso_activo`.
+   *
+   * No sirve `procesoVisibleId` para esto: al finalizar, el puntero visible queda apuntando al
+   * proceso FINALIZADO, así que preguntarle a él daría por bueno un ciclo cerrado.
+   */
+  async findProcesoAbiertoByUserId(userId: string): Promise<ProcesoAbiertoInfo | null> {
+    const proceso = await this.prisma.proceso.findFirst({
+      where: { participanteId: userId, activo: true },
+      select: {
+        id: true,
+        // Programa y país salen del proceso, no del `User`: son los del ciclo que se está
+        // descargando, y el participante pudo haber cambiado de programa después de abrirlo.
+        program: { select: { name: true } },
+        country: { select: { name: true } },
+      },
+    });
+    if (!proceso) return null;
+    return {
+      id: proceso.id,
+      programName: proceso.program?.name ?? null,
+      countryName: proceso.country?.name ?? null,
+    };
+  }
+
+  /**
+   * Recibe el `procesoId` ya resuelto en vez del `userId`: quien llama decide sobre qué ciclo cae
+   * la acción, y así una revisión masiva no puede aterrizar sin querer en un expediente archivado.
+   */
   async findUserDocumentIdForTarget(
-    userId: string,
+    procesoId: string,
     documentId: string,
     sponsorId: string | null,
   ): Promise<string | null> {
-    // La accion cae sobre la fila del ciclo en curso. Sin esto, una revision masiva podria aterrizar
-    // en el expediente archivado, que por diseno no vuelve a cambiar.
-    const procesoId = await this.procesoVisibleId(userId);
-    if (!procesoId) return null;
-
     if (sponsorId) {
       const link = await this.prisma.documentSponsor.findFirst({
         where: { documentId, sponsorId, status: true },

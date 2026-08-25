@@ -141,6 +141,8 @@ export class UserController {
   @ApiOperation({
     summary:
       'Sincroniza masivamente los participantes desde Workuse (userinfo2) — crea, actualiza y reactiva según corresponda, sin eliminar información existente. ' +
+      'A los participantes sin ciclo abierto se les actualizan los datos igual, pero NO se les recalcula el estado documental: ' +
+      'un proceso finalizado está congelado. El conteo va en el correo al admin. ' +
       'Corre en segundo plano: la respuesta HTTP no espera a que termine (puede tardar varios minutos) para evitar timeouts de proxy/gateway. ' +
       'El resultado final se loguea y se notifica por correo al admin.',
   })
@@ -222,6 +224,10 @@ export class UserController {
   @Get('export')
   @ApiOperation({
     summary: 'Exportar a Excel el estado de documentos de los usuarios — sin paginación, por defecto rol Participante',
+    description:
+      'Cubre únicamente ciclos EN CURSO: los participantes que solo tienen procesos FINALIZADOS no ' +
+      'aparecen en el Excel, y los estados de documentos se leen del proceso abierto. Acepta los mismos ' +
+      'filtros que la tabla de /participant; con `procesoEstado=FINALIZADO` el archivo sale vacío.',
   })
   @ApiProduces('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
   @ApiOkResponse({ description: 'Archivo Excel (.xlsx) con el estado de documentos por usuario.' })
@@ -240,6 +246,7 @@ export class UserController {
       optionProgramId: query.optionProgramId,
       statusSolRetiro: query.statusSolRetiro,
       generalStatus: query.generalStatus,
+      procesoEstado: query.procesoEstado,
       search: query.search,
       sortBy: query.sortBy,
       sortOrder: query.sortOrder,

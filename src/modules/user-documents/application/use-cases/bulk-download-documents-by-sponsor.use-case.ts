@@ -18,7 +18,24 @@ import {
 
 const ZIP_FILENAME = 'documentos_sponsor';
 
+const SIN_PROGRAMA = 'SIN PROGRAMA';
+const SIN_PAIS = 'SIN PAIS';
+
+/**
+ * Deja el texto usable como nombre de carpeta dentro del ZIP.
+ *
+ * `/` y `\` son separadores de ruta: un programa llamado "WAT/USA" partiría la carpeta en dos
+ * niveles sin que nadie lo pidiera. El resto de caracteres que Windows rechaza al extraer se
+ * cambian también, porque un ZIP que no se puede descomprimir no le sirve a nadie.
+ */
+function toFolderSegment(value: string | null, fallback: string): string {
+  const limpio = (value ?? '').replace(/[\\/:*?"<>|]/g, '-').trim();
+  return limpio || fallback;
+}
+
 const NOT_FOUND_REASON = 'DNI no encontrado.';
+const NO_PROCESO_ABIERTO_REASON =
+  'El participante no tiene un proceso en curso: solo se descargan los documentos del proceso activo.';
 const NO_DOCUMENTS_REASON = 'El participante no tiene documentos subidos para combinar.';
 const UNSUPPORTED_SPONSOR_REASON = `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE}, ${INTRAX_SPONSOR_CODE}, ${CENET_SPONSOR_CODE} o ${AAG_SPONSOR_CODE}).`;
 const AAG_MISSING_VACATION_LETTER_REASON =
@@ -53,11 +70,9 @@ export class BulkDownloadDocumentsBySponsorUseCase {
     vacationLetter?: VacationLetterFile,
   ): Promise<BulkDownloadDocumentsBySponsorResult> {
     const zip = new JSZip();
-    const aspireFolder = zip.folder(ASPIRE_SPONSOR_CODE)!;
-    const unitedFolder = zip.folder(UNITED_SPONSOR_CODE)!;
-    const intraxFolder = zip.folder(INTRAX_SPONSOR_CODE)!;
-    const cenetFolder = zip.folder(CENET_SPONSOR_CODE)!;
-    const aagFolder = zip.folder(AAG_SPONSOR_CODE)!;
+    // Las carpetas ya no se crean por adelantado: el ZIP se agrupa por programa y país, y esos
+    // valores salen de cada participante. Se crean solas al escribir el primer archivo dentro
+    // —JSZip arma los niveles intermedios de la ruta—, así que ninguna queda vacía.
     const skipped: BulkDownloadSkippedEntry[] = [];
     let hasAnyFile = false;
     let vacationLetterUploaded = false;
@@ -73,6 +88,24 @@ export class BulkDownloadDocumentsBySponsorUseCase {
 
         const fullName = this.buildFullName(participant);
 
+        // Un ciclo finalizado está congelado y su expediente no entra en la descarga masiva: si el
+        // participante no tiene un proceso abierto, se omite antes de armar nada.
+        //
+        // Sin esto el paquete se armaba igual, porque el expediente se resuelve por
+        // `User.procesoVisibleId` y ese puntero queda apuntando al proceso FINALIZADO cuando se
+        // cierra — ver `ProcesoPrismaRepository.finalizar`.
+        const procesoAbierto = await this.userDocumentsRepo.findProcesoAbiertoByUserId(participant.id);
+        if (!procesoAbierto) {
+          skipped.push({ dni, fullName, reason: NO_PROCESO_ABIERTO_REASON });
+          continue;
+        }
+
+        // Prefijo programa/país del ciclo. El sponsor se agrega dentro de cada rama, porque el
+        // paquete ASPIRE es un archivo suelto y los demás son una subcarpeta por participante.
+        const grupo =
+          `${toFolderSegment(procesoAbierto.programName, SIN_PROGRAMA)}/` +
+          `${toFolderSegment(procesoAbierto.countryName, SIN_PAIS)}`;
+
         if (participant.sponsorCode === ASPIRE_SPONSOR_CODE) {
           const buffer = await this.sponsorDocumentBuilder.buildAspirePdf(participant.id);
           if (!buffer) {
@@ -81,7 +114,7 @@ export class BulkDownloadDocumentsBySponsorUseCase {
           }
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant);
-          aspireFolder.file(`${baseFilename}.pdf`, buffer);
+          zip.file(`${grupo}/${ASPIRE_SPONSOR_CODE}/${baseFilename}.pdf`, buffer);
           hasAnyFile = true;
           continue;
         }
@@ -94,8 +127,8 @@ export class BulkDownloadDocumentsBySponsorUseCase {
           }
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
-          const participantFolder = unitedFolder.folder(baseFilename)!;
-          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          const destino = `${grupo}/${UNITED_SPONSOR_CODE}/${baseFilename}`;
+          outputs.forEach(({ filename, buffer }) => zip.file(`${destino}/${filename}`, buffer));
           hasAnyFile = true;
           continue;
         }
@@ -108,8 +141,8 @@ export class BulkDownloadDocumentsBySponsorUseCase {
           }
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
-          const participantFolder = intraxFolder.folder(baseFilename)!;
-          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          const destino = `${grupo}/${INTRAX_SPONSOR_CODE}/${baseFilename}`;
+          outputs.forEach(({ filename, buffer }) => zip.file(`${destino}/${filename}`, buffer));
           hasAnyFile = true;
           continue;
         }
@@ -122,8 +155,8 @@ export class BulkDownloadDocumentsBySponsorUseCase {
           }
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
-          const participantFolder = cenetFolder.folder(baseFilename)!;
-          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          const destino = `${grupo}/${CENET_SPONSOR_CODE}/${baseFilename}`;
+          outputs.forEach(({ filename, buffer }) => zip.file(`${destino}/${filename}`, buffer));
           hasAnyFile = true;
           continue;
         }
@@ -146,8 +179,8 @@ export class BulkDownloadDocumentsBySponsorUseCase {
           }
 
           const baseFilename = this.sponsorDocumentBuilder.buildBaseFilename(participant, ' - ');
-          const participantFolder = aagFolder.folder(baseFilename)!;
-          outputs.forEach(({ filename, buffer }) => participantFolder.file(filename, buffer));
+          const destino = `${grupo}/${AAG_SPONSOR_CODE}/${baseFilename}`;
+          outputs.forEach(({ filename, buffer }) => zip.file(`${destino}/${filename}`, buffer));
           hasAnyFile = true;
           continue;
         }

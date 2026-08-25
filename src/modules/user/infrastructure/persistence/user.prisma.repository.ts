@@ -484,6 +484,10 @@ export class UserPrismaRepository implements IUserRepository {
       : undefined;
 
     const where = {
+      // Un ciclo finalizado está congelado y no entra en el reporte: solo se exportan los
+      // participantes con un proceso abierto. Se filtra por `activo` y no por `estado` porque es
+      // la columna sobre la que la base garantiza como mucho un proceso abierto por participante.
+      procesos: { some: { activo: true } },
       ...this.statusWhereFragment(status, generalStatus),
       ...(roleId && { roleId }),
       ...(countryId && { countryId }),
@@ -925,10 +929,15 @@ export class UserPrismaRepository implements IUserRepository {
     optionProgramId,
     statusSolRetiro,
     generalStatus,
+    procesoEstado,
     search,
     sortBy,
     sortOrder,
   }: ExportUsersFilters): Promise<ExportUserRow[]> {
+    // El reporte cubre solo ciclos en curso, así que pedir los finalizados no puede devolver nada.
+    // Se corta acá en vez de armar una consulta contradictoria (`activo: true` + FINALIZADO).
+    if (procesoEstado === 'FINALIZADO') return [];
+
     let searchIds: string[] | undefined;
     if (search) {
       const terms = search.split(/[\s+]+/).map((t) => t.trim()).filter(Boolean);
@@ -972,6 +981,10 @@ export class UserPrismaRepository implements IUserRepository {
       : undefined;
 
     const where = {
+      // Un ciclo finalizado está congelado y no entra en el reporte: solo se exportan los
+      // participantes con un proceso abierto. Se filtra por `activo` y no por `estado` porque es
+      // la columna sobre la que la base garantiza como mucho un proceso abierto por participante.
+      procesos: { some: { activo: true } },
       ...this.statusWhereFragment(status, generalStatus),
       ...(roleId && { roleId }),
       ...(countryId && { countryId }),

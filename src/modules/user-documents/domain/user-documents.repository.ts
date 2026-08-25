@@ -142,6 +142,16 @@ export interface ParticipantSponsorInfo {
   sponsorCode: string | null;
 }
 
+/**
+ * Proceso abierto del participante, con el programa y el país **del ciclo** — no los del `User`,
+ * que pueden haber cambiado después de abrirlo. La descarga masiva los usa para agrupar el ZIP.
+ */
+export interface ProcesoAbiertoInfo {
+  id: string;
+  programName: string | null;
+  countryName: string | null;
+}
+
 export interface UserEmailContext {
   email: string | null;
   nombreParticipante: string;
@@ -203,8 +213,9 @@ export interface IUserDocumentsRepository {
     documentId: string | null,
     documentSponsorId: string | null,
   ): Promise<UserDocumentTargetHistoryItem[]>;
+  findProcesoAbiertoByUserId(userId: string): Promise<ProcesoAbiertoInfo | null>;
   findUserDocumentIdForTarget(
-    userId: string,
+    procesoId: string,
     documentId: string,
     sponsorId: string | null,
   ): Promise<string | null>;

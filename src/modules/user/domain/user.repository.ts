@@ -213,6 +213,12 @@ export interface ExportUsersFilters {
   optionProgramId?: string;
   statusSolRetiro?: 'ACCEPTED' | 'INPROCESS';
   generalStatus?: 'ACTIVO' | 'INACTIVO';
+  /**
+   * Estado del ciclo, el mismo filtro que la tabla de /participant. Se acepta para que el Excel
+   * salga con el mismo criterio que la pantalla, pero el export **solo cubre ciclos en curso**:
+   * con `FINALIZADO` devuelve vacío, porque un proceso cerrado no se exporta.
+   */
+  procesoEstado?: 'EN_PROCESO' | 'FINALIZADO';
   search?: string;
   sortBy?: 'firstname' | 'lastfathername';
   sortOrder?: 'asc' | 'desc';

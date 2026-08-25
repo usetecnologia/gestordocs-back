@@ -77,8 +77,20 @@ export class BulkAceptarDocumentUseCase {
 
     await this.syncUserDocumentsUseCase.execute(userId);
 
+    // Un ciclo finalizado está congelado: no se edita. El DNI queda listado como omitido.
+    //
+    // Va DESPUÉS del sync a propósito: el participante que todavía no tiene ningún proceso recibe
+    // el primero —abierto— dentro de esa llamada, y preguntando antes se lo omitiría por error.
+    // El sync no reabre nada: sobre un ciclo cerrado sale sin tocar el expediente.
+    const procesoAbierto = await this.userDocumentsRepo.findProcesoAbiertoByUserId(userId);
+    if (!procesoAbierto) {
+      throw new Error(
+        `El participante con DNI "${dni}" no tiene un proceso en curso (su proceso está finalizado): se omite.`,
+      );
+    }
+
     const userDocumentId = await this.userDocumentsRepo.findUserDocumentIdForTarget(
-      userId,
+      procesoAbierto.id,
       documentId,
       sponsorId,
     );

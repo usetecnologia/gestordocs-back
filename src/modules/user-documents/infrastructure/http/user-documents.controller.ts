@@ -137,16 +137,22 @@ export class UserDocumentsController {
   @ApiOperation({
     summary: 'Descargar de forma masiva los documentos de varios participantes, agrupados por sponsor',
     description:
-      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip con cinco carpetas: ASPIRE (un PDF combinado y ' +
-      'sellado por participante), UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante con PROOF, ' +
-      'ULETTER, PBC, PASSPORT y JO), INTRAX (una subcarpeta {dni} - {apellidos, nombres} por participante con ' +
-      'ULETTER, TRANSLATION, PASSPORT y PEF), CENET (una subcarpeta {dni} - {apellidos, nombres} por participante ' +
-      'con ULETTER, PASSPORT, ENGLISH, FEE, JO y PHOTO — este último en su formato de imagen original) y AAG ' +
-      '(una subcarpeta {dni} - {apellidos, nombres} por participante con ULETTER y PASSPORT). El campo ' +
+      'Recibe hasta 100 DNIs. Genera documentos_sponsor.zip agrupado en {PROGRAMA}/{PAIS}/{SPONSOR}, tomando el ' +
+      'programa y el país del proceso ABIERTO de cada participante (p. ej. `WAT USA/PERU/UNITED/...`). Solo se ' +
+      'crean las carpetas que terminan con archivos dentro: si ningún participante del lote es de un programa, ' +
+      'país o sponsor, esa carpeta no aparece. Dentro de {SPONSOR} la estructura es la de siempre: ASPIRE (un PDF ' +
+      'combinado y sellado por participante), UNITED (una subcarpeta {dni} - {apellidos, nombres} por participante ' +
+      'con PROOF, ULETTER, PBC, PASSPORT y JO), INTRAX (una subcarpeta {dni} - {apellidos, nombres} por ' +
+      'participante con ULETTER, TRANSLATION, PASSPORT y PEF), CENET (una subcarpeta {dni} - {apellidos, nombres} ' +
+      'por participante con ULETTER, PASSPORT, ENGLISH, FEE, JO y PHOTO — este último en su formato de imagen ' +
+      'original) y AAG (una subcarpeta {dni} - {apellidos, nombres} por participante con ULETTER y PASSPORT). ' +
+      'Un programa o país sin nombre cae en `SIN PROGRAMA` / `SIN PAIS`. El campo ' +
       '`vacationLetter` es un único PDF que se reutiliza para todos los participantes AAG del lote — si no se ' +
-      'adjunta, esos DNIs se listan como omitidos. Los DNIs no encontrados, sin sponsor soportado o sin ' +
-      'documentos NO detienen el proceso: se omiten y se listan en el header X-Skipped-Participants como JSON ' +
-      'codificado con encodeURIComponent.',
+      'adjunta, esos DNIs se listan como omitidos. Solo se descarga el expediente del proceso ABIERTO: los ' +
+      'participantes que solo tienen procesos FINALIZADOS se omiten, porque un ciclo cerrado está congelado. ' +
+      'Los DNIs no encontrados, sin proceso en curso, sin sponsor soportado o sin documentos NO detienen el ' +
+      'proceso: se omiten y se listan en el header X-Skipped-Participants como JSON codificado con ' +
+      'encodeURIComponent.',
   })
   @ApiBody({
     schema: {
@@ -307,9 +313,11 @@ export class UserDocumentsController {
     summary: 'Aceptar un documento de forma masiva para varios participantes',
     description:
       'Recibe un array de DNIs y aprueba (REVISADO) el documento indicado por documentId para cada uno. ' +
-      'Si el documento está asociado a un sponsor, se debe enviar también sponsorId. Al finalizar, ' +
-      'se reevalúa el estado general de cada participante afectado (ver TerminarRevisionUseCase). ' +
-      'Los DNIs sin ese documento asignado no detienen el proceso: se listan en errors.',
+      'Si el documento está asociado a un sponsor, se debe enviar también sponsorId. La acción cae ' +
+      'siempre sobre el proceso ABIERTO del participante: los que solo tienen procesos FINALIZADOS ' +
+      'se omiten, porque un ciclo cerrado no se edita. Al finalizar, se reevalúa el estado general ' +
+      'de cada participante afectado (ver TerminarRevisionUseCase). Los DNIs omitidos —sin proceso ' +
+      'en curso o sin ese documento asignado— no detienen el proceso: se listan en errors.',
   })
   @ApiOkResponse({ type: BulkReviewDocumentResponseDto })
   async bulkAceptarDocument(
@@ -327,9 +335,10 @@ export class UserDocumentsController {
     description:
       'Recibe un array de DNIs y marca como OBSERVADO el documento indicado por documentId para cada uno, ' +
       'registrando la observación y, opcionalmente, etiquetas. Si el documento está asociado a un sponsor, ' +
-      'se debe enviar también sponsorId. Al finalizar, se reevalúa el estado general de cada participante ' +
-      'afectado (ver TerminarRevisionUseCase). Los DNIs sin ese documento asignado no detienen el proceso: ' +
-      'se listan en errors.',
+      'se debe enviar también sponsorId. La acción cae siempre sobre el proceso ABIERTO del participante: ' +
+      'los que solo tienen procesos FINALIZADOS se omiten, porque un ciclo cerrado no se edita. Al finalizar, ' +
+      'se reevalúa el estado general de cada participante afectado (ver TerminarRevisionUseCase). Los DNIs ' +
+      'omitidos —sin proceso en curso o sin ese documento asignado— no detienen el proceso: se listan en errors.',
   })
   @ApiOkResponse({ type: BulkReviewDocumentResponseDto })
   async bulkObservarDocument(

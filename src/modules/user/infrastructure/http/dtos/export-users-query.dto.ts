@@ -11,6 +11,18 @@ export class ExportUsersQueryDto {
   status?: UserStatus;
 
   @ApiPropertyOptional({
+    enum: ['EN_PROCESO', 'FINALIZADO'],
+    description:
+      'Mismo filtro de ciclo que la tabla de /participant. Debe declararse acá aunque el export ' +
+      'solo cubra ciclos en curso: con `forbidNonWhitelisted` activo, no declararlo hacía que la ' +
+      'descarga fallara con 400 cada vez que el usuario tenía el filtro "Proceso" puesto en pantalla. ' +
+      'Con `FINALIZADO` el Excel sale vacío: un proceso cerrado no se exporta.',
+  })
+  @IsOptional()
+  @IsIn(['EN_PROCESO', 'FINALIZADO'])
+  procesoEstado?: 'EN_PROCESO' | 'FINALIZADO';
+
+  @ApiPropertyOptional({
     example: 'uuid-del-rol',
     description: 'Si no se envía, se exportan por defecto los usuarios con rol Participante.',
   })

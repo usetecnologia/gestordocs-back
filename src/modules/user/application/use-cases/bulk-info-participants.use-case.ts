@@ -6,6 +6,7 @@ import { ResendService } from '@shared/resend/resend.service';
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
+import { IProcesoRepository, PROCESO_REPOSITORY } from '@modules/proceso/domain/proceso.repository';
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
 
 const DEFAULT_PASSWORD = 'password26';
@@ -82,6 +83,8 @@ export interface BulkInfoParticipantsResult {
   totalReceived: number;
   filteredOut: number;
   skippedRegistered: number;
+  /** Sincronizados a nivel de datos, pero sin recalcular su estado: no tienen ciclo abierto. */
+  skippedRevisionSinCicloAbierto: number;
   created: string[];
   updated: string[];
   reactivated: string[];
@@ -112,6 +115,7 @@ export class BulkInfoParticipantsUseCase {
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
+    @Inject(PROCESO_REPOSITORY) private readonly procesoRepo: IProcesoRepository,
     private readonly resendService: ResendService,
   ) {}
 
@@ -127,7 +131,16 @@ export class BulkInfoParticipantsUseCase {
   async execute(options: BulkInfoParticipantsOptions = {}): Promise<BulkInfoParticipantsResult> {
     if (this.isRunning) {
       this.logger.warn('BulkInfoParticipants — ya hay una sincronización en curso, se omite esta ejecución.');
-      return { totalReceived: 0, filteredOut: 0, skippedRegistered: 0, created: [], updated: [], reactivated: [], errors: [] };
+      return {
+        totalReceived: 0,
+        filteredOut: 0,
+        skippedRegistered: 0,
+        skippedRevisionSinCicloAbierto: 0,
+        created: [],
+        updated: [],
+        reactivated: [],
+        errors: [],
+      };
     }
     this.isRunning = true;
 
@@ -157,6 +170,7 @@ export class BulkInfoParticipantsUseCase {
       totalReceived: participants.length,
       filteredOut: 0,
       skippedRegistered: 0,
+      skippedRevisionSinCicloAbierto: 0,
       created: [],
       updated: [],
       reactivated: [],
@@ -189,7 +203,8 @@ export class BulkInfoParticipantsUseCase {
 
     this.logger.log(
       `BulkInfoParticipants — descartados (no Perú/WAT USA): ${result.filteredOut}, descartados (status Registered): ${result.skippedRegistered}, ` +
-        `creados: ${result.created.length}, actualizados: ${result.updated.length}, reactivados: ${result.reactivated.length}, errores: ${result.errors.length}.`,
+        `creados: ${result.created.length}, actualizados: ${result.updated.length}, reactivados: ${result.reactivated.length}, ` +
+        `sin recalcular estado (ciclo cerrado): ${result.skippedRevisionSinCicloAbierto}, errores: ${result.errors.length}.`,
     );
 
     await this.notifyAdmin(
@@ -201,6 +216,7 @@ export class BulkInfoParticipantsUseCase {
         `Creados: ${result.created.length}`,
         `Actualizados: ${result.updated.length}`,
         `Reactivados: ${result.reactivated.length}${result.reactivated.length ? ` -> ${result.reactivated.join(', ')}` : ''}`,
+        `Sin recalcular estado (proceso finalizado): ${result.skippedRevisionSinCicloAbierto}`,
         `Errores: ${result.errors.length}${result.errors.length ? ` -> ${result.errors.slice(0, 50).join(', ')}${result.errors.length > 50 ? ' (+' + (result.errors.length - 50) + ' más)' : ''}` : ''}`,
       ].join('\n'),
     );
@@ -311,6 +327,21 @@ export class BulkInfoParticipantsUseCase {
     const sponsorDateGone =
       existing?.status === 'ENVIADO_SPONSOR' && !data.fechadeenvioalsponsor;
 
+    // Sin ciclo abierto no se reevalúa nada. `TerminarRevision` resuelve el expediente y la fila de
+    // historial por `User.procesoVisibleId`, y ese puntero apunta al proceso FINALIZADO en cuanto el
+    // ciclo se cierra —ver `ProcesoPrismaRepository.finalizar`—: recalculaba el estado leyendo un
+    // expediente archivado y le colgaba una entrada nueva de `UserHistoryStatus` a un ciclo que
+    // debería estar congelado, en cada corrida del cron diario.
+    //
+    // El upsert de arriba sí se mantiene: son datos de Workuse a nivel `User`/`Person`, no cuelgan
+    // del proceso, y de él dependen la reactivación desde INACTIVO y el re-ingreso a un ciclo nuevo.
+    const cicloAbierto = await this.procesoRepo.findAbiertoByParticipante(credentials.id);
+    if (!cicloAbierto) {
+      result.skippedRevisionSinCicloAbierto++;
+      this.registrarResultado(data.dni, result, isReactivation, !!existing);
+      return;
+    }
+
     if (
       noHistoryReactivation ||
       sponsorDateGone ||
@@ -319,12 +350,21 @@ export class BulkInfoParticipantsUseCase {
       await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID, suppressParticipantEmail);
     }
 
+    this.registrarResultado(data.dni, result, isReactivation, !!existing);
+  }
+
+  private registrarResultado(
+    dni: string,
+    result: BulkInfoParticipantsResult,
+    isReactivation: boolean,
+    existed: boolean,
+  ): void {
     if (isReactivation) {
-      result.reactivated.push(data.dni);
-    } else if (existing) {
-      result.updated.push(data.dni);
+      result.reactivated.push(dni);
+    } else if (existed) {
+      result.updated.push(dni);
     } else {
-      result.created.push(data.dni);
+      result.created.push(dni);
     }
   }
 }
