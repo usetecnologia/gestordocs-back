@@ -16,6 +16,7 @@ import { CrearNuevoProcesoUseCase } from './application/use-cases/crear-nuevo-pr
 import { FinalizarProcesoUseCase } from './application/use-cases/finalizar-proceso.use-case';
 import { ContinuarProcesoUseCase } from './application/use-cases/continuar-proceso.use-case';
 import { FindHistorialProcesosUseCase } from './application/use-cases/find-historial-procesos.use-case';
+import { FinalizarProcesoPorRetiroUseCase } from './application/use-cases/finalizar-proceso-por-retiro.use-case';
 
 const useCases = [
   EnsureProcesoInicialUseCase,
@@ -23,6 +24,7 @@ const useCases = [
   FinalizarProcesoUseCase,
   ContinuarProcesoUseCase,
   FindHistorialProcesosUseCase,
+  FinalizarProcesoPorRetiroUseCase,
 ];
 
 @Module({

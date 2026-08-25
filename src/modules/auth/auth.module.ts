@@ -35,6 +35,7 @@ import { EMAIL_LOG_REPOSITORY } from '@modules/email-template/domain/email-log.r
 import { EmailLogPrismaRepository } from '@modules/email-template/infrastructure/persistence/email-log.prisma.repository';
 import { EmailDispatchService } from '@modules/email-template/application/services/email-dispatch.service';
 import { EmailLogService } from '@modules/email-template/application/services/email-log.service';
+import { FinalizarProcesoPorRetiroUseCase } from '@modules/proceso/application/use-cases/finalizar-proceso-por-retiro.use-case';
 
 const useCases = [
   LoginUseCase,
@@ -44,6 +45,7 @@ const useCases = [
   EnsureProcesoInicialUseCase,
   CrearNuevoProcesoUseCase,
   TerminarRevisionUseCase,
+  FinalizarProcesoPorRetiroUseCase,
 ];
 
 @Module({

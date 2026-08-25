@@ -4,6 +4,7 @@ import {
   ApiOperation,
   ApiOkResponse,
   ApiBadRequestResponse,
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiUnauthorizedResponse,
   ApiServiceUnavailableResponse,
@@ -50,8 +51,16 @@ export class AuthController {
   @Post('autologin')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Autologin por DNI vía Workuse — crea o actualiza el usuario' })
+  @ApiOperation({
+    summary: 'Autologin por DNI vía Workuse — crea o actualiza el usuario',
+    description:
+      'Si Workuse reporta al participante como retirado, se le finaliza automáticamente el proceso ' +
+      'abierto y se corta el ingreso con 403. Se usa 403 y no 401 a propósito: la identidad se ' +
+      'resolvió bien, lo que falta es permiso — y el frontend distingue ese caso para mostrar el ' +
+      'mensaje de retiro en vez de los pasos de reintento.',
+  })
   @ApiOkResponse({ type: LoginResponseDto })
+  @ApiForbiddenResponse({ description: 'El participante está retirado del programa.' })
   @ApiNotFoundResponse({ description: 'DNI no encontrado en Workuse o país no configurado.' })
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
   @ApiServiceUnavailableResponse({ description: 'No se pudo conectar con el servicio externo.' })

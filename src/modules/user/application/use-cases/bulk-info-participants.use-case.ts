@@ -7,6 +7,10 @@ import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/us
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
 import { IProcesoRepository, PROCESO_REPOSITORY } from '@modules/proceso/domain/proceso.repository';
+import {
+  esEstadoDeRetiro,
+  FinalizarProcesoPorRetiroUseCase,
+} from '@modules/proceso/application/use-cases/finalizar-proceso-por-retiro.use-case';
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
 
 const DEFAULT_PASSWORD = 'password26';
@@ -85,6 +89,8 @@ export interface BulkInfoParticipantsResult {
   skippedRegistered: number;
   /** Sincronizados a nivel de datos, pero sin recalcular su estado: no tienen ciclo abierto. */
   skippedRevisionSinCicloAbierto: number;
+  /** DNIs cuyo ciclo se cerró solo en esta corrida por quedar retirados. */
+  finalizadosPorRetiro: string[];
   created: string[];
   updated: string[];
   reactivated: string[];
@@ -116,6 +122,7 @@ export class BulkInfoParticipantsUseCase {
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
     @Inject(PROCESO_REPOSITORY) private readonly procesoRepo: IProcesoRepository,
+    private readonly finalizarProcesoPorRetiro: FinalizarProcesoPorRetiroUseCase,
     private readonly resendService: ResendService,
   ) {}
 
@@ -136,6 +143,7 @@ export class BulkInfoParticipantsUseCase {
         filteredOut: 0,
         skippedRegistered: 0,
         skippedRevisionSinCicloAbierto: 0,
+        finalizadosPorRetiro: [],
         created: [],
         updated: [],
         reactivated: [],
@@ -171,6 +179,7 @@ export class BulkInfoParticipantsUseCase {
       filteredOut: 0,
       skippedRegistered: 0,
       skippedRevisionSinCicloAbierto: 0,
+      finalizadosPorRetiro: [],
       created: [],
       updated: [],
       reactivated: [],
@@ -204,7 +213,8 @@ export class BulkInfoParticipantsUseCase {
     this.logger.log(
       `BulkInfoParticipants — descartados (no Perú/WAT USA): ${result.filteredOut}, descartados (status Registered): ${result.skippedRegistered}, ` +
         `creados: ${result.created.length}, actualizados: ${result.updated.length}, reactivados: ${result.reactivated.length}, ` +
-        `sin recalcular estado (ciclo cerrado): ${result.skippedRevisionSinCicloAbierto}, errores: ${result.errors.length}.`,
+        `sin recalcular estado (ciclo cerrado): ${result.skippedRevisionSinCicloAbierto}, ` +
+        `ciclos cerrados por retiro: ${result.finalizadosPorRetiro.length}, errores: ${result.errors.length}.`,
     );
 
     await this.notifyAdmin(
@@ -217,6 +227,7 @@ export class BulkInfoParticipantsUseCase {
         `Actualizados: ${result.updated.length}`,
         `Reactivados: ${result.reactivated.length}${result.reactivated.length ? ` -> ${result.reactivated.join(', ')}` : ''}`,
         `Sin recalcular estado (proceso finalizado): ${result.skippedRevisionSinCicloAbierto}`,
+        `Ciclos cerrados por retiro: ${result.finalizadosPorRetiro.length}${result.finalizadosPorRetiro.length ? ` -> ${result.finalizadosPorRetiro.join(', ')}` : ''}`,
         `Errores: ${result.errors.length}${result.errors.length ? ` -> ${result.errors.slice(0, 50).join(', ')}${result.errors.length > 50 ? ' (+' + (result.errors.length - 50) + ' más)' : ''}` : ''}`,
       ].join('\n'),
     );
@@ -338,6 +349,16 @@ export class BulkInfoParticipantsUseCase {
     const cicloAbierto = await this.procesoRepo.findAbiertoByParticipante(credentials.id);
     if (!cicloAbierto) {
       result.skippedRevisionSinCicloAbierto++;
+      this.registrarResultado(data.dni, result, isReactivation, !!existing);
+      return;
+    }
+
+    // Retirado: el ciclo se cierra solo y no hay nada que reevaluar — su estado ya es el final.
+    // Va antes del bloque de abajo y no dentro: `INACTIVO` está en la lista de bloqueados, así que
+    // ese bloque no correría igual, pero dejarlo implícito escondería la regla.
+    if (esEstadoDeRetiro(credentials.status)) {
+      await this.finalizarProcesoPorRetiro.execute(credentials.id, ADMIN_CREATED_BY_ID);
+      result.finalizadosPorRetiro.push(data.dni);
       this.registrarResultado(data.dni, result, isReactivation, !!existing);
       return;
     }

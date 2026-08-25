@@ -52,6 +52,7 @@ import { BulkInfoParticipantsUseCase } from './application/use-cases/bulk-info-p
 import { InfoParticipantUseCase } from './application/use-cases/info-participant.use-case';
 import { ExportParticipantsDocumentsUseCase } from './application/use-cases/export-participants-documents.use-case';
 import { BulkInfoParticipantsSchedulerService } from './application/services/bulk-info-participants.scheduler.service';
+import { FinalizarProcesoPorRetiroUseCase } from '@modules/proceso/application/use-cases/finalizar-proceso-por-retiro.use-case';
 
 const useCases = [
   CreateUserUseCase,
@@ -69,6 +70,7 @@ const useCases = [
   CloseObservationUseCase,
   BulkLoadUsersUseCase,
   BulkInfoParticipantsUseCase,
+  FinalizarProcesoPorRetiroUseCase,
   InfoParticipantUseCase,
   ExportParticipantsDocumentsUseCase,
   TerminarRevisionUseCase,

@@ -1,8 +1,8 @@
 import {
+  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { IAutoLoginRepository, AUTOLOGIN_REPOSITORY } from '../../domain/autologin.repository';
@@ -14,6 +14,10 @@ import type { WorkuseParticipant } from '@shared/workuse/interfaces/workuse-part
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
+import {
+  esEstadoDeRetiro,
+  FinalizarProcesoPorRetiroUseCase,
+} from '@modules/proceso/application/use-cases/finalizar-proceso-por-retiro.use-case';
 
 const DEFAULT_PASSWORD = 'password26';
 const ADMIN_CREATED_BY_ID = 'd5165eff-2df4-4a87-a65e-3ea50cf4ad3d';
@@ -62,6 +66,7 @@ export class AutoLoginUseCase {
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
+    private readonly finalizarProcesoPorRetiro: FinalizarProcesoPorRetiroUseCase,
   ) {}
 
   async execute(dni: string): Promise<LoginResult> {
@@ -170,8 +175,18 @@ export class AutoLoginUseCase {
       currentStatus = (await this.autoLoginRepo.findByDni(dni))?.status ?? currentStatus;
     }
 
-    if (currentStatus === 'INACTIVO') {
-      throw new UnauthorizedException('El usuario se encuentra retirado y no puede iniciar sesión.');
+    if (esEstadoDeRetiro(currentStatus)) {
+      // El retiro cierra el ciclo. Se hace acá, antes de cortar el ingreso, porque este es uno de
+      // los dos momentos en que el sistema se entera del retiro (el otro es la sincronización
+      // masiva). Es idempotente: si ya se le cerró, no hace nada.
+      await this.finalizarProcesoPorRetiro.execute(credentials.id, ADMIN_CREATED_BY_ID);
+
+      // 403 y no 401 a propósito: el participante fue identificado sin problema, lo que no tiene es
+      // permiso para entrar. Además, el interceptor del frontend reacciona al 401 intentando
+      // refrescar el token y puede terminar en un logout — que se comería este mensaje.
+      throw new ForbiddenException(
+        'Te encuentras retirado del programa y tu proceso fue finalizado, por lo que ya no puedes ingresar al sistema. Si crees que se trata de un error, comunícate con USE.',
+      );
     }
 
     const role = credentials.role.code ?? credentials.role.name;

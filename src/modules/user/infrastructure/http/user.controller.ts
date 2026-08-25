@@ -176,7 +176,10 @@ export class UserController {
   @ApiOperation({
     summary:
       'Sincroniza un solo participante desde Workuse (userinfo2) por DNI — crea, actualiza o reactiva según corresponda. ' +
-      'A diferencia de bulk-info-participants, se ejecuta de forma síncrona (no es background job) y no notifica por correo al admin.',
+      'A diferencia de bulk-info-participants, se ejecuta de forma síncrona (no es background job) y no notifica por correo al admin. ' +
+      'Si Workuse lo reporta retirado, se le finaliza automáticamente el proceso abierto y el mensaje de respuesta lo indica. ' +
+      'Al participante sin ciclo abierto se le actualizan los datos igual, pero NO se le recalcula el estado documental: ' +
+      'un proceso finalizado está congelado.',
   })
   @ApiOkResponse({ type: InfoParticipantResponseDto })
   @ApiNotFoundResponse({ description: 'Participante no encontrado en Workuse o país no encontrado en la base de datos.' })
@@ -188,7 +191,12 @@ export class UserController {
       updated: 'Participante actualizado correctamente.',
       reactivated: 'Participante reactivado correctamente.',
     };
-    return { message: messageByAction[result.action] };
+    // El cierre del ciclo por retiro se avisa acá y no solo en el log: esta acción es síncrona y
+    // sale por un toast, así que es el único momento en que quien la disparó puede enterarse.
+    const aviso = result.procesoFinalizadoPorRetiro
+      ? ' Quedó retirado, así que se finalizó su proceso.'
+      : '';
+    return { message: `${messageByAction[result.action]}${aviso}` };
   }
 
   @Get()

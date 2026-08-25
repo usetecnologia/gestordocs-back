@@ -5,6 +5,11 @@ import type { WorkuseParticipant } from '@shared/workuse/interfaces/workuse-part
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { IUserStatusPort, USER_STATUS_PORT } from '@modules/user-documents/domain/user-status.port';
+import {
+  esEstadoDeRetiro,
+  FinalizarProcesoPorRetiroUseCase,
+} from '@modules/proceso/application/use-cases/finalizar-proceso-por-retiro.use-case';
+import { IProcesoRepository, PROCESO_REPOSITORY } from '@modules/proceso/domain/proceso.repository';
 import { IPasswordHasher, PASSWORD_HASHER } from '../../domain/password-hasher.port';
 
 const DEFAULT_PASSWORD = 'password26';
@@ -81,6 +86,8 @@ export type InfoParticipantAction = 'created' | 'updated' | 'reactivated';
 export interface InfoParticipantResult {
   dni: string;
   action: InfoParticipantAction;
+  /** `true` si esta sincronización le cerró el ciclo por haber quedado retirado. */
+  procesoFinalizadoPorRetiro: boolean;
 }
 
 @Injectable()
@@ -92,6 +99,8 @@ export class InfoParticipantUseCase {
     private readonly syncUserDocumentsUseCase: SyncUserDocumentsUseCase,
     private readonly terminarRevisionUseCase: TerminarRevisionUseCase,
     @Inject(USER_STATUS_PORT) private readonly userStatusPort: IUserStatusPort,
+    private readonly finalizarProcesoPorRetiro: FinalizarProcesoPorRetiroUseCase,
+    @Inject(PROCESO_REPOSITORY) private readonly procesoRepo: IProcesoRepository,
   ) {}
 
   async execute(dni: string): Promise<InfoParticipantResult> {
@@ -189,15 +198,36 @@ export class InfoParticipantUseCase {
     const sponsorDateGone =
       existing?.status === 'ENVIADO_SPONSOR' && !data.fechadeenvioalsponsor;
 
-    if (
+    // Retirado: el ciclo se cierra solo y no hay nada que reevaluar — su estado ya es el final.
+    // Misma regla que en AutoLogin y BulkInfoParticipants; los tres caminos por los que el sistema
+    // se entera de un retiro la aplican igual.
+    let procesoFinalizadoPorRetiro = false;
+    if (esEstadoDeRetiro(credentials.status)) {
+      procesoFinalizadoPorRetiro = await this.finalizarProcesoPorRetiro.execute(
+        credentials.id,
+        ADMIN_CREATED_BY_ID,
+      );
+    } else if (
       noHistoryReactivation ||
       sponsorDateGone ||
       !STATUSES_LOCKED_FROM_DOCUMENT_SYNC.has(credentials.status)
     ) {
-      await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID, false);
+      // Sin ciclo abierto no se reevalúa nada. `TerminarRevision` resuelve el expediente y la fila
+      // de historial por `User.procesoVisibleId`, y ese puntero apunta al proceso FINALIZADO en
+      // cuanto el ciclo se cierra —ver `ProcesoPrismaRepository.finalizar`—: recalculaba el estado
+      // leyendo un expediente archivado y le colgaba una entrada nueva de `UserHistoryStatus` a un
+      // ciclo que debería estar congelado.
+      //
+      // Va DESPUÉS del sync a propósito: el participante que todavía no tiene ningún proceso recibe
+      // el primero —abierto— dentro de esa llamada, y preguntando antes se lo saltaría por error.
+      // Misma guarda que en BulkInfoParticipants.
+      const cicloAbierto = await this.procesoRepo.findAbiertoByParticipante(credentials.id);
+      if (cicloAbierto) {
+        await this.terminarRevisionUseCase.execute(credentials.id, ADMIN_CREATED_BY_ID, false);
+      }
     }
 
     const action: InfoParticipantAction = isReactivation ? 'reactivated' : existing ? 'updated' : 'created';
-    return { dni: data.dni, action };
+    return { dni: data.dni, action, procesoFinalizadoPorRetiro };
   }
 }
