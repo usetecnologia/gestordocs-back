@@ -47,12 +47,6 @@ import {
  * exactamente el mismo árbol que produce la descarga — comparten el planificador.
  */
 
-export type { AttachedInput } from '@modules/sponsor-package/application/services/sponsor-package-planner.service';
-export {
-  NO_DOCUMENTS_REASON,
-  NO_PACKAGE_REASON,
-} from '@modules/sponsor-package/application/services/sponsor-package-planner.service';
-
 /** Un archivo listo para escribirse, con su ruta relativa dentro del paquete del participante. */
 export interface PackageEntry {
   readonly path: string;

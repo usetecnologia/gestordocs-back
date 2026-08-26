@@ -17,12 +17,12 @@ import {
   VacationLetterFile,
 } from '../services/sponsor-document-builder.service';
 import { getErrorMessage } from '../services/document-assembler.service';
+import { SponsorPackageEngine } from '../services/sponsor-package-engine.service';
 import {
   AttachedInput,
   NO_DOCUMENTS_REASON,
   NO_PACKAGE_REASON,
-  SponsorPackageEngine,
-} from '../services/sponsor-package-engine.service';
+} from '@modules/sponsor-package/application/services/sponsor-package-planner.service';
 import { assertAttachedInputsAreValid } from '@modules/sponsor-package/application/use-cases/find-required-inputs.use-case';
 
 const ZIP_FILENAME = 'documentos_sponsor';

@@ -85,7 +85,8 @@ testing un tiempo antes de quemar ese puente.
 
 | Problema | Qué hacer |
 |---|---|
-| **`npm run start` del backend NO arranca**: `Cannot read properties of undefined (reading 'checkJsDirective')`. Es incompatibilidad de `@nestjs/cli` 11.0.23 con TypeScript 5.9.3. Es previo a este trabajo. | Levantarlo con `npx ts-node -r tsconfig-paths/register src/main.ts` |
+| **`npm run start` del backend no arranca** con `nest start`. `npm run build` sí funciona. | Levantarlo con `npx ts-node -r tsconfig-paths/register src/main.ts`, o `npm run build && node dist/src/main` |
+| **No uses `export … from '@alias'`** (re-export con path alias). Rompe `nest build` con `Cannot read properties of undefined (reading 'checkJsDirective')`. Ver §7. | Importar y re-exportar por separado, o importar del módulo de origen |
 | **Redis no corre** en el entorno de desarrollo. Login y descarga funcionan; el refresh token no. | Convivir con eso, o levantar un Redis en `localhost:6379` |
 | **Las rutas son `/api/...`, NO `/api/v1/...`**. `enableVersioning()` nunca se llama, así que el `version: '1'` de los controllers se ignora. | No busques `/api/v1`; no existe |
 | La base de testing es **remota** (`161.132.45.31:3397`, base `testdocs`). `NODE_ENV=production` en el `.env` a pesar de ser testing. | Cualquier script toca datos reales de testing |
@@ -214,6 +215,20 @@ Con 12 CPUs, Jest lanzaba 11 workers compilando con ts-jest en paralelo y dejaba
 No es cosmético: `Test.compile()` instancia todos los providers, y `PrismaService` **abre un pool
 contra la base real** en su constructor. Sin los overrides, el test se conectaba al servidor remoto
 y tardaba minutos.
+
+**Nunca uses `export { X } from '@modules/...'` (re-export con path alias).**
+Rompe `nest build` con `Cannot read properties of undefined (reading 'checkJsDirective')`.
+
+El hook `tsconfig-paths.hook.js` de `@nestjs/cli` reescribe los path aliases al emitir. Para los
+`import` sintetiza nodos que funcionan bien, pero en la rama de `ExportDeclaration` el nodo nuevo
+queda sin `parent`. Cuando el archivo además tiene una clase decorada que se referencia a sí misma
+—como `new Logger(MiClase.name)`, que está por todo el proyecto—, TypeScript entra en
+`trySubstituteClassAlias`, camina la cadena de `parent` para encontrar el `SourceFile`, obtiene
+`undefined` y explota.
+
+`npx tsc` no falla: el crash es exclusivo del hook de la CLI. El proyecto no tenía ningún re-export
+con alias hasta que se agregó uno acá; se quitó. Si volvés a necesitarlo, importá y exportá en dos
+pasos, o hacé que el consumidor importe del módulo de origen.
 
 **El camino histórico se conserva intacto y sus constantes también.**
 Son la referencia contra la que el test de paridad verifica que la configuración sembrada produce el

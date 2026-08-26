@@ -18,10 +18,10 @@ import {
   VacationLetterFile,
 } from '../services/sponsor-document-builder.service';
 import {
-  AttachedInput,
   PackageEntry,
   SponsorPackageEngine,
 } from '../services/sponsor-package-engine.service';
+import type { AttachedInput } from '@modules/sponsor-package/application/services/sponsor-package-planner.service';
 import { assertAttachedInputsAreValid } from '@modules/sponsor-package/application/use-cases/find-required-inputs.use-case';
 import { PackageStructure } from '@modules/sponsor-package/domain/sponsor-package.enums';
 
