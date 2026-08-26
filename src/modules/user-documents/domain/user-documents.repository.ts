@@ -148,6 +148,9 @@ export interface ParticipantSponsorInfo {
  */
 export interface ProcesoAbiertoInfo {
   id: string;
+  /** Ids del ciclo. Son con los que se resuelve qué paquete de descarga le toca al participante. */
+  programId: string;
+  countryId: string;
   programName: string | null;
   countryName: string | null;
 }
@@ -199,6 +202,17 @@ export interface IUserDocumentsRepository {
   findUserIdByDni(dni: string): Promise<string | null>;
   findDocumentTargetBySiglasCode(
     siglasCode: string,
+    context: UserApplicabilityContext,
+  ): Promise<DocumentTargetResult>;
+  /**
+   * Igual que `findDocumentTargetBySiglasCode` pero identificando el documento por su id.
+   *
+   * Lo usa el motor configurable: las fuentes de un paquete apuntan a `Documents.id` por FK, no a
+   * la sigla. Resolver por sigla obliga a un `findFirst` y `Documents.siglasCode` no tiene índice
+   * único, así que con dos documentos activos que compartan sigla se tomaría uno arbitrario.
+   */
+  findDocumentTargetById(
+    documentId: string,
     context: UserApplicabilityContext,
   ): Promise<DocumentTargetResult>;
   upsertUserDocumentWithStatus(data: BulkUploadFileData): Promise<void>;

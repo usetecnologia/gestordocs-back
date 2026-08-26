@@ -37,6 +37,28 @@ const EMPTY_APPLICABILITY_CONTEXT: UserApplicabilityContext = {
 };
 
 /**
+ * Lo mínimo para decidir si un documento le corresponde a un participante: sus vínculos de programa
+ * (con los países de cada descripción) y sus vínculos de sponsor. Lo comparten la resolución por
+ * sigla y la resolución por id.
+ */
+const DOCUMENT_TARGET_SELECT = {
+  id: true,
+  documentPrograms: {
+    where: { status: true },
+    select: {
+      programId: true,
+      descriptionCountries: { select: { countryId: true } },
+    },
+  },
+  documentSponsors: {
+    where: { status: true },
+    select: { id: true, sponsor: { select: { code: true } } },
+  },
+} satisfies Prisma.DocumentsSelect;
+
+type PrismaDocumentTarget = Prisma.DocumentsGetPayload<{ select: typeof DOCUMENT_TARGET_SELECT }>;
+
+/**
  * Choque contra los índices únicos de `UserDocuments` (uq_user_documents_sponsor_active /
  * uq_user_documents_document_active), que impiden dos registros activos del mismo documento
  * para un mismo participante.
@@ -606,26 +628,37 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
 
   async findDocumentTargetBySiglasCode(
     siglasCode: string,
-    { sponsorCode, programId, countryId }: UserApplicabilityContext,
+    context: UserApplicabilityContext,
   ): Promise<DocumentTargetResult> {
     const doc = await this.prisma.documents.findFirst({
       where: { siglasCode, status: true },
-      select: {
-        id: true,
-        documentPrograms: {
-          where: { status: true },
-          select: {
-            programId: true,
-            descriptionCountries: { select: { countryId: true } },
-          },
-        },
-        documentSponsors: {
-          where: { status: true },
-          select: { id: true, sponsor: { select: { code: true } } },
-        },
-      },
+      select: DOCUMENT_TARGET_SELECT,
     });
 
+    return this.evaluarAplicabilidad(doc, context);
+  }
+
+  async findDocumentTargetById(
+    documentId: string,
+    context: UserApplicabilityContext,
+  ): Promise<DocumentTargetResult> {
+    const doc = await this.prisma.documents.findFirst({
+      where: { id: documentId, status: true },
+      select: DOCUMENT_TARGET_SELECT,
+    });
+
+    return this.evaluarAplicabilidad(doc, context);
+  }
+
+  /**
+   * Criterio único de aplicabilidad, compartido por la resolución por sigla y por id. Estaba
+   * inline en `findDocumentTargetBySiglasCode`; se extrajo para que los dos caminos no puedan
+   * divergir — si divergieran, el mismo documento entraría a un paquete y no al otro.
+   */
+  private evaluarAplicabilidad(
+    doc: PrismaDocumentTarget | null,
+    { sponsorCode, programId, countryId }: UserApplicabilityContext,
+  ): DocumentTargetResult {
     if (!doc) return { found: false };
 
     // Mismo criterio estricto de programa y país que `findApplicableForParticipant`: si el
@@ -873,6 +906,9 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
         id: true,
         // Programa y país salen del proceso, no del `User`: son los del ciclo que se está
         // descargando, y el participante pudo haber cambiado de programa después de abrirlo.
+        // Los ids, además del nombre, porque son con los que se resuelve el alcance del paquete.
+        programId: true,
+        countryId: true,
         program: { select: { name: true } },
         country: { select: { name: true } },
       },
@@ -880,6 +916,8 @@ export class UserDocumentsPrismaRepository implements IUserDocumentsRepository {
     if (!proceso) return null;
     return {
       id: proceso.id,
+      programId: proceso.programId,
+      countryId: proceso.countryId,
       programName: proceso.program?.name ?? null,
       countryName: proceso.country?.name ?? null,
     };

@@ -1,25 +1,35 @@
-import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import JSZip from 'jszip';
+import { envs } from '@config/envs';
 import {
   IUserDocumentsRepository,
   ParticipantSponsorInfo,
+  ProcesoAbiertoInfo,
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
 import {
   AAG_SPONSOR_CODE,
   ASPIRE_SPONSOR_CODE,
   CENET_SPONSOR_CODE,
-  getErrorMessage,
   INTRAX_SPONSOR_CODE,
   SponsorDocumentBuilder,
   UNITED_SPONSOR_CODE,
   VacationLetterFile,
 } from '../services/sponsor-document-builder.service';
+import { getErrorMessage } from '../services/document-assembler.service';
+import {
+  AttachedInput,
+  NO_DOCUMENTS_REASON,
+  NO_PACKAGE_REASON,
+  SponsorPackageEngine,
+} from '../services/sponsor-package-engine.service';
+import { assertAttachedInputsAreValid } from '@modules/sponsor-package/application/use-cases/find-required-inputs.use-case';
 
 const ZIP_FILENAME = 'documentos_sponsor';
 
 const SIN_PROGRAMA = 'SIN PROGRAMA';
 const SIN_PAIS = 'SIN PAIS';
+
 
 /**
  * Deja el texto usable como nombre de carpeta dentro del ZIP.
@@ -36,11 +46,43 @@ function toFolderSegment(value: string | null, fallback: string): string {
 const NOT_FOUND_REASON = 'DNI no encontrado.';
 const NO_PROCESO_ABIERTO_REASON =
   'El participante no tiene un proceso en curso: solo se descargan los documentos del proceso activo.';
-const NO_DOCUMENTS_REASON = 'El participante no tiene documentos subidos para combinar.';
 const UNSUPPORTED_SPONSOR_REASON = `El participante no pertenece a un sponsor soportado (${ASPIRE_SPONSOR_CODE}, ${UNITED_SPONSOR_CODE}, ${INTRAX_SPONSOR_CODE}, ${CENET_SPONSOR_CODE} o ${AAG_SPONSOR_CODE}).`;
 const AAG_MISSING_VACATION_LETTER_REASON =
   'El sponsor AAG requiere adjuntar el PDF de VacationLetter en la descarga masiva.';
 const PROCESSING_ERROR_REASON = 'Ocurrió un error al procesar los documentos del participante.';
+
+
+/** Slug histórico del adjunto de AAG. El camino viejo solo conoce este. */
+const VACATION_LETTER_SLUG = 'vacationLetter';
+
+const LEGACY_MAX_SIZE_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Extrae el VacationLetter para el camino histórico, que solo entiende ese adjunto.
+ *
+ * Reproduce acá la validación que hacía `ParseOptionalPdfPipe` en el controller: con la flag apagada
+ * el comportamiento tiene que ser exactamente el de antes, y el pipe ya no puede correr porque el
+ * tipo y el tamaño aceptados ahora dependen de la configuración.
+ */
+function extraerVacationLetterLegacy(
+  attached: readonly AttachedInput[],
+): VacationLetterFile | undefined {
+  const archivo = attached.find((a) => a.slug === VACATION_LETTER_SLUG);
+  if (!archivo) return undefined;
+
+  if (archivo.mimetype !== 'application/pdf') {
+    throw new BadRequestException('El archivo debe ser un PDF.');
+  }
+  if (archivo.buffer.length > LEGACY_MAX_SIZE_BYTES) {
+    throw new BadRequestException('El tamaño del archivo no debe exceder 10 MB.');
+  }
+
+  return {
+    buffer: archivo.buffer,
+    mimetype: archivo.mimetype,
+    originalname: archivo.originalname,
+  };
+}
 
 export interface BulkDownloadSkippedEntry {
   dni: string;
@@ -55,6 +97,12 @@ export interface BulkDownloadDocumentsBySponsorResult {
   skipped: BulkDownloadSkippedEntry[];
 }
 
+/** Participante ya resuelto, para no volver a consultarlo en la segunda pasada. */
+interface ParticipanteResuelto {
+  dni: string;
+  participant: ParticipantSponsorInfo | null;
+}
+
 @Injectable()
 export class BulkDownloadDocumentsBySponsorUseCase {
   private readonly logger = new Logger(BulkDownloadDocumentsBySponsorUseCase.name);
@@ -63,9 +111,107 @@ export class BulkDownloadDocumentsBySponsorUseCase {
     @Inject(USER_DOCUMENTS_REPOSITORY)
     private readonly userDocumentsRepo: IUserDocumentsRepository,
     private readonly sponsorDocumentBuilder: SponsorDocumentBuilder,
+    private readonly engine: SponsorPackageEngine,
   ) {}
 
-  async execute(
+  execute(
+    dnis: string[],
+    attached: readonly AttachedInput[] = [],
+  ): Promise<BulkDownloadDocumentsBySponsorResult> {
+    return envs.SPONSOR_PACKAGES_FROM_DB
+      ? this.executeFromConfig(dnis, attached)
+      : this.executeLegacy(dnis, extraerVacationLetterLegacy(attached));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Camino configurable: las reglas salen de `sponsor_packages`.
+  // ---------------------------------------------------------------------------
+
+  private async executeFromConfig(
+    dnis: string[],
+    attached: readonly AttachedInput[],
+  ): Promise<BulkDownloadDocumentsBySponsorResult> {
+    const zip = new JSZip();
+    const skipped: BulkDownloadSkippedEntry[] = [];
+    let hasAnyFile = false;
+
+    // Primera pasada: resolver los participantes para saber qué sponsors aparecen en el lote y
+    // cargar sus reglas de una sola consulta, en vez de una por DNI.
+    const resueltos: ParticipanteResuelto[] = [];
+    for (const dni of dnis) {
+      resueltos.push({ dni, participant: await this.userDocumentsRepo.findParticipantInfoByDni(dni) });
+    }
+
+    const catalog = await this.engine.loadCatalog(
+      resueltos.map((r) => r.participant?.sponsorCode ?? null),
+    );
+
+    // El tipo y el tamaño aceptados los define la configuración, así que se validan acá y no en un
+    // pipe: recién con el catálogo resuelto se sabe qué pide cada adjunto.
+    assertAttachedInputsAreValid(catalog.inputs, attached);
+
+    // Los insumos se archivan una sola vez por petición: un mismo adjunto se reutiliza para todo
+    // el lote y no tiene sentido subirlo cien veces.
+    await this.engine.archiveInputs(catalog, attached);
+
+    for (const { dni, participant } of resueltos) {
+      try {
+        if (!participant) {
+          skipped.push({ dni, fullName: null, reason: NOT_FOUND_REASON });
+          continue;
+        }
+
+        const fullName = this.buildFullName(participant);
+
+        const procesoAbierto = await this.userDocumentsRepo.findProcesoAbiertoByUserId(participant.id);
+        if (!procesoAbierto) {
+          skipped.push({ dni, fullName, reason: NO_PROCESO_ABIERTO_REASON });
+          continue;
+        }
+
+        const paquete = catalog.resolve(participant.sponsorCode, {
+          programId: procesoAbierto.programId,
+          countryId: procesoAbierto.countryId,
+        });
+        if (!paquete) {
+          skipped.push({ dni, fullName, reason: NO_PACKAGE_REASON });
+          continue;
+        }
+
+        const { entries, skipReason } = await this.engine.buildForParticipant({
+          userId: participant.id,
+          participant,
+          proceso: procesoAbierto,
+          paquete,
+          attached,
+        });
+
+        if (skipReason) {
+          skipped.push({ dni, fullName, reason: skipReason });
+          continue;
+        }
+
+        const grupo = this.engine.buildGroupPath(paquete, participant, procesoAbierto);
+        for (const entry of entries) {
+          zip.file(`${grupo}/${entry.path}`, entry.buffer);
+        }
+        hasAnyFile = true;
+      } catch (error) {
+        // Un participante con datos inesperados no debe tumbar la descarga masiva de los demás.
+        this.logger.warn(`Error procesando DNI "${dni}": ${getErrorMessage(error)}`);
+        skipped.push({ dni, fullName: null, reason: PROCESSING_ERROR_REASON });
+      }
+    }
+
+    return this.finish(zip, hasAnyFile, skipped);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Camino histórico: las reglas son las constantes de `SponsorDocumentBuilder`.
+  // Se borra en la entrega 4, cuando la flag lleve tiempo prendida.
+  // ---------------------------------------------------------------------------
+
+  private async executeLegacy(
     dnis: string[],
     vacationLetter?: VacationLetterFile,
   ): Promise<BulkDownloadDocumentsBySponsorResult> {
@@ -102,9 +248,7 @@ export class BulkDownloadDocumentsBySponsorUseCase {
 
         // Prefijo programa/país del ciclo. El sponsor se agrega dentro de cada rama, porque el
         // paquete ASPIRE es un archivo suelto y los demás son una subcarpeta por participante.
-        const grupo =
-          `${toFolderSegment(procesoAbierto.programName, SIN_PROGRAMA)}/` +
-          `${toFolderSegment(procesoAbierto.countryName, SIN_PAIS)}`;
+        const grupo = this.buildLegacyGroupPath(procesoAbierto);
 
         if (participant.sponsorCode === ASPIRE_SPONSOR_CODE) {
           const buffer = await this.sponsorDocumentBuilder.buildAspirePdf(participant.id);
@@ -193,6 +337,22 @@ export class BulkDownloadDocumentsBySponsorUseCase {
       }
     }
 
+    return this.finish(zip, hasAnyFile, skipped);
+  }
+
+  /** Prefijo `{PROGRAMA}/{PAIS}` del camino histórico. El sponsor lo agrega cada rama. */
+  private buildLegacyGroupPath(proceso: ProcesoAbiertoInfo): string {
+    return (
+      `${toFolderSegment(proceso.programName, SIN_PROGRAMA)}/` +
+      `${toFolderSegment(proceso.countryName, SIN_PAIS)}`
+    );
+  }
+
+  private async finish(
+    zip: JSZip,
+    hasAnyFile: boolean,
+    skipped: BulkDownloadSkippedEntry[],
+  ): Promise<BulkDownloadDocumentsBySponsorResult> {
     if (!hasAnyFile) {
       throw new NotFoundException('Ningún participante tiene documentos disponibles para descargar.');
     }

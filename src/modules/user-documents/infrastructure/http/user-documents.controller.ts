@@ -57,6 +57,7 @@ import { BulkExtractPassportDataUseCase } from '../../application/use-cases/bulk
 import { DocumentResponseDto } from '@modules/document/infrastructure/http/dtos/document-response.dto';
 import { UploadFileDocumentDto } from './dtos/upload-file-document.dto';
 import { BulkDownloadBySponsorDto } from './dtos/bulk-download-by-sponsor.dto';
+import type { AttachedInput } from '@modules/sponsor-package/application/services/sponsor-package-planner.service';
 import { UserDocumentWithHistoryDto } from './dtos/find-user-documents-response.dto';
 import { AceptarDocumentDto, ObservarDocumentDto } from './dtos/review-document.dto';
 import { FindUserDocumentsQueryDto } from './dtos/find-user-documents-query.dto';
@@ -69,7 +70,23 @@ import { BulkObservarDocumentDto } from './dtos/bulk-observar-document.dto';
 import { BulkReviewDocumentResponseDto } from './dtos/bulk-review-document-response.dto';
 import { RevisionMasivaPasaporteResponseDto } from './dtos/revision-masiva-pasaporte-response.dto';
 import { MaxFileSizePipe } from './pipes/max-file-size.pipe';
-import { ParseOptionalPdfPipe } from './pipes/parse-optional-pdf.pipe';
+
+
+/**
+ * Convierte los archivos del multipart en adjuntos del paquete.
+ *
+ * El `fieldname` ES el slug: así lo declara el admin en `sponsor_package_inputs.slug` y así lo manda
+ * el front. No se valida acá el tipo ni el tamaño — eso depende de qué paquete aplique, y el
+ * controller todavía no lo sabe; lo hace el caso de uso con la configuración ya resuelta.
+ */
+function toAttachedInputs(files: MulterFile[] | undefined): AttachedInput[] {
+  return (files ?? []).map((file) => ({
+    slug: file.fieldname,
+    buffer: file.buffer,
+    mimetype: file.mimetype,
+    originalname: file.originalname,
+  }));
+}
 
 @ApiTags('user-documents')
 @ApiBearerAuth('access-token')
@@ -132,7 +149,10 @@ export class UserDocumentsController {
   @Roles(...STAFF_ROLES)
   @Post('download-by-sponsor/bulk')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('vacationLetter'))
+  // AnyFilesInterceptor y no FileInterceptor('vacationLetter'): el nombre del campo lo define la
+  // configuración del paquete (`sponsor_package_inputs.slug`), así que el controller no puede saberlo
+  // de antemano. Con el nombre fijo, un adjunto nuevo configurado en el admin nunca llegaba.
+  @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Descargar de forma masiva los documentos de varios participantes, agrupados por sponsor',
@@ -185,12 +205,12 @@ export class UserDocumentsController {
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos.' })
   async downloadBySponsorBulk(
     @Body() dto: BulkDownloadBySponsorDto,
-    @UploadedFile(new ParseOptionalPdfPipe()) vacationLetter: MulterFile | undefined,
+    @UploadedFiles() files: MulterFile[] | undefined,
     @Res() res: Response,
   ): Promise<void> {
     const { buffer, filename, contentType, skipped } = await this.bulkDownloadDocumentsBySponsorUseCase.execute(
       dto.dnis,
-      vacationLetter,
+      toAttachedInputs(files),
     );
 
     res.setHeader('Content-Type', contentType);
@@ -202,7 +222,7 @@ export class UserDocumentsController {
   @Roles(...STAFF_ROLES)
   @Post('download-by-sponsor/:userId')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('vacationLetter'))
+  @UseInterceptors(AnyFilesInterceptor())
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: 'Descargar los documentos del participante según su sponsor',
@@ -242,12 +262,12 @@ export class UserDocumentsController {
   })
   async downloadBySponsor(
     @Param('userId', ParseUUIDPipe) userId: string,
-    @UploadedFile(new ParseOptionalPdfPipe()) vacationLetter: MulterFile | undefined,
+    @UploadedFiles() files: MulterFile[] | undefined,
     @Res() res: Response,
   ): Promise<void> {
     const { buffer, filename, contentType } = await this.downloadDocumentsBySponsorUseCase.execute(
       userId,
-      vacationLetter,
+      toAttachedInputs(files),
     );
 
     const asciiFallback = filename

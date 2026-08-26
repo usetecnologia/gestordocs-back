@@ -41,9 +41,12 @@ import { BulkAceptarDocumentUseCase } from './application/use-cases/bulk-aceptar
 import { BulkObservarDocumentUseCase } from './application/use-cases/bulk-observar-document.use-case';
 import { BulkExtractPassportDataUseCase } from './application/use-cases/bulk-extract-passport-data.use-case';
 import { SponsorDocumentBuilder } from './application/services/sponsor-document-builder.service';
+import { DocumentAssembler } from './application/services/document-assembler.service';
+import { SponsorPackageEngine } from './application/services/sponsor-package-engine.service';
+import { SponsorPackageModule } from '@modules/sponsor-package/sponsor-package.module';
 
 @Module({
-  imports: [PrismaModule, AppJwtModule, AwsS3Module, ResendModule],
+  imports: [PrismaModule, AppJwtModule, AwsS3Module, ResendModule, SponsorPackageModule],
   controllers: [UserDocumentsController],
   providers: [
     UploadFileDocumentUseCase,
@@ -63,6 +66,8 @@ import { SponsorDocumentBuilder } from './application/services/sponsor-document-
     BulkObservarDocumentUseCase,
     BulkExtractPassportDataUseCase,
     SponsorDocumentBuilder,
+    DocumentAssembler,
+    SponsorPackageEngine,
     EmailDispatchService,
     EmailLogService,
     { provide: USER_DOCUMENTS_REPOSITORY, useClass: UserDocumentsPrismaRepository },

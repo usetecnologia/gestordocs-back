@@ -17,6 +17,7 @@ import { ProcesoModule } from '@modules/proceso/proceso.module';
 import { ProgramModule } from '@modules/program/program.module';
 import { RoleModule } from '@modules/role/role.module';
 import { SponsorModule } from '@modules/sponsor/sponsor.module';
+import { SponsorPackageModule } from '@modules/sponsor-package/sponsor-package.module';
 import { TemporadaModule } from '@modules/temporada/temporada.module';
 import { UserModule } from '@modules/user/user.module';
 import { UserDocumentsModule } from '@modules/user-documents/user-documents.module';
@@ -50,6 +51,7 @@ import { UserDocumentsModule } from '@modules/user-documents/user-documents.modu
     ProgramModule,
     RoleModule,
     SponsorModule,
+    SponsorPackageModule,
     TemporadaModule,
     UserModule,
     UserDocumentsModule,

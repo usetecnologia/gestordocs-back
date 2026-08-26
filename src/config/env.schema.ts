@@ -42,6 +42,16 @@ export const envSchema = z.object({
   // Si no se define, se reutilizan las credenciales principales.
   READONLY_USER_DB: z.string().optional(),
   READONLY_PASSWORD_DB: z.string().optional(),
+  // Paquetes de descarga por sponsor: cuando está en 'true', las reglas de armado salen de la base
+  // (`sponsor_packages`); cuando no, de las constantes de `SponsorDocumentBuilder`. Apagado por
+  // defecto — se prende recién cuando el test comparador confirma que los dos caminos producen el
+  // mismo árbol. Prender y apagar es una variable, no un rollback.
+  //
+  // No se usa z.coerce.boolean() a propósito: convierte la cadena "false" en true.
+  SPONSOR_PACKAGES_FROM_DB: z
+    .string()
+    .default('false')
+    .transform((value) => value.trim().toLowerCase() === 'true'),
 });
 
 export type Env = z.infer<typeof envSchema>;

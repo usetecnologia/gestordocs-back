@@ -76,6 +76,7 @@ model Country {
   users                               User[]
   documentProgramDescriptionCountries DocumentProgramDescriptionCountry[]
   procesos                            Proceso[]
+  sponsorPackages                     SponsorPackage[]
 }
 
 model Program {
@@ -92,6 +93,7 @@ model Program {
   documentPrograms DocumentProgram[]
   temporadas       Temporada[]
   procesos         Proceso[]
+  sponsorPackages  SponsorPackage[]
 }
 
 model Sponsor {
@@ -106,6 +108,7 @@ model Sponsor {
   users            User[]
   documentSponsors DocumentSponsor[]
   procesos         Proceso[]
+  sponsorPackages  SponsorPackage[]
 }
 
 model OptionProgram {
@@ -202,11 +205,11 @@ model Proceso {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
-  userDocuments     UserDocuments[]
-  userObservations  UserObservations[]
-  emailLogs         EmailLog[]
-  userHistories     UserHistoryStatus[]
-  vistoPor          User[]             @relation("UserProcesoVisible")
+  userDocuments    UserDocuments[]
+  userObservations UserObservations[]
+  emailLogs        EmailLog[]
+  userHistories    UserHistoryStatus[]
+  vistoPor         User[]              @relation("UserProcesoVisible")
 
   participante  User          @relation("ProcesoParticipante", fields: [participanteId], references: [id])
   finalizadoBy  User?         @relation("ProcesoFinalizadoBy", fields: [finalizadoById], references: [id], onDelete: Restrict)
@@ -250,17 +253,17 @@ model User {
   /// exports y el embudo lo necesitan para acotar el expediente sin una subconsulta por fila.
   /// Lo escribe el repositorio de proceso en los tres momentos en que puede cambiar: al abrir uno,
   /// al finalizarlo y al reabrirlo. `null` para el staff de USE, que no tiene procesos.
-  procesoVisibleId      String?    @map("proceso_visible_id") @db.VarChar(36)
+  procesoVisibleId String? @map("proceso_visible_id") @db.VarChar(36)
 
-  createdAt             DateTime   @default(now()) @map("created_at")
-  updatedAt             DateTime   @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  role           Role     @relation(fields: [roleId], references: [id])
-  procesoVisible Proceso? @relation("UserProcesoVisible", fields: [procesoVisibleId], references: [id], onDelete: Restrict)
-  country       Country?       @relation(fields: [countryId], references: [id])
-  sponsor       Sponsor?       @relation(fields: [sponsorId], references: [id])
-  program       Program?       @relation(fields: [programId], references: [id])
-  optionProgram OptionProgram? @relation(fields: [optionProgramId], references: [id])
+  role           Role           @relation(fields: [roleId], references: [id])
+  procesoVisible Proceso?       @relation("UserProcesoVisible", fields: [procesoVisibleId], references: [id], onDelete: Restrict)
+  country        Country?       @relation(fields: [countryId], references: [id])
+  sponsor        Sponsor?       @relation(fields: [sponsorId], references: [id])
+  program        Program?       @relation(fields: [programId], references: [id])
+  optionProgram  OptionProgram? @relation(fields: [optionProgramId], references: [id])
 
   documentsCreated        Documents[]       @relation("DocumentsCreatedBy")
   procesos                Proceso[]         @relation("ProcesoParticipante")
@@ -281,6 +284,9 @@ model User {
   emailTemplatesCreated EmailTemplate[] @relation("EmailTemplateCreatedBy")
   emailTemplatesUpdated EmailTemplate[] @relation("EmailTemplateUpdatedBy")
   emailLogs             EmailLog[]
+
+  sponsorPackagesCreated SponsorPackage[] @relation("SponsorPackageCreatedBy")
+  sponsorPackagesUpdated SponsorPackage[] @relation("SponsorPackageUpdatedBy")
 
   @@index([procesoVisibleId], map: "idx_user_proceso_visible")
 }
@@ -327,9 +333,9 @@ model UserObservationEtiquetas {
 }
 
 model UserHistoryStatus {
-  id     String     @id @default(uuid()) @db.VarChar(36)
-  userId String
-  status UserStatus
+  id          String     @id @default(uuid()) @db.VarChar(36)
+  userId      String
+  status      UserStatus
   /// Ciclo al que pertenece el cambio de estado. Un ciclo nuevo arranca con su línea de tiempo
   /// limpia: los estados del ciclo anterior siguen existiendo, pero no se le muestran. Nullable
   /// porque las primeras entradas de un participante son anteriores a su primer proceso — cuando
@@ -384,6 +390,9 @@ model Documents {
   documentSponsors DocumentSponsor[]
   userDocuments    UserDocuments[]
   documentPrograms DocumentProgram[]
+
+  sponsorPackageSources SponsorPackageOutputSource[]
+  sponsorPackageStamps  SponsorPackageOutputStamp[]
 
   @@index([type], map: "idx_documents_type")
   @@index([showHired], map: "idx_documents_show_hired")
@@ -479,7 +488,7 @@ model DocumentProgramDescriptionCountry {
 }
 
 model UserDocuments {
-  id                String                @id @default(uuid()) @db.VarChar(36)
+  id                String  @id @default(uuid()) @db.VarChar(36)
   documentSponsorId String?
   documentId        String?
   userId            String
@@ -490,10 +499,10 @@ model UserDocuments {
   /// participante no se le puede abrir un proceso, no se le crean documentos.
   procesoId String @map("proceso_id") @db.VarChar(36)
 
-  status            DocumentSponsorStatus
-  statusDocument    Boolean               @default(true) @map("status_document")
-  createdAt         DateTime              @default(now()) @map("created_at")
-  updatedAt         DateTime              @updatedAt @map("updated_at")
+  status         DocumentSponsorStatus
+  statusDocument Boolean               @default(true) @map("status_document")
+  createdAt      DateTime              @default(now()) @map("created_at")
+  updatedAt      DateTime              @updatedAt @map("updated_at")
 
   documentSponsors DocumentSponsor? @relation(fields: [documentSponsorId], references: [id])
   documents        Documents?       @relation(fields: [documentId], references: [id])
@@ -501,8 +510,6 @@ model UserDocuments {
   proceso          Proceso          @relation(fields: [procesoId], references: [id], onDelete: Restrict)
 
   userDocumentHistory UserDocumentHistory[]
-
-  @@index([procesoId], map: "idx_user_documents_proceso")
   // NO reintroducir un @@unique que incluya statusDocument en la clave. Se intentó
   // (20260730120000_add_user_documents_active_unique) para cerrar la condición de carrera del
   // sync, y rompía el guardado de documentos: con la clave (userId, documentId, statusDocument)
@@ -512,6 +519,8 @@ model UserDocuments {
   // Para volver a intentarlo hace falta un índice parcial "solo sobre los activos", que
   // MariaDB no tiene: se emula con una columna que valga 1 si está activo y NULL si no,
   // manteniéndola sincronizada en TODOS los puntos que tocan statusDocument.
+
+  @@index([procesoId], map: "idx_user_documents_proceso")
 }
 
 model UserDocumentHistory {
@@ -633,4 +642,206 @@ model EmailLog {
   @@index([sentAt], map: "idx_email_log_sent_at")
   @@index([procesoId], map: "idx_email_log_proceso")
   @@map("historial_correos")
+}
+
+// ---------------------------------------------------------------------------
+// Paquetes de descarga por sponsor
+//
+// Las reglas que arman el ZIP que se le manda al sponsor vivían como constantes y una cadena de
+// `if` en `SponsorDocumentBuilder`. Acá pasan a ser datos: un paquete por sponsor, con sus archivos
+// de salida, los documentos que entran a cada uno y en qué orden.
+//
+// Tres niveles: SponsorPackage -> SponsorPackageOutput -> SponsorPackageOutputSource.
+// ---------------------------------------------------------------------------
+
+/// ARCHIVO_SUELTO: el paquete produce un único archivo con el nombre del participante (caso ASPIRE).
+/// CARPETA_POR_PARTICIPANTE: una subcarpeta por participante con los archivos dentro (el resto).
+enum PackageStructure {
+  ARCHIVO_SUELTO
+  CARPETA_POR_PARTICIPANTE
+
+  @@map("package_structure")
+}
+
+/// PDF_COMBINADO: las fuentes se combinan en un solo PDF.
+/// ARCHIVO_ORIGINAL: la primera fuente con archivo se entrega tal cual, sin convertir
+/// (es el caso del PHOTO de CENET).
+enum PackageOutputMode {
+  PDF_COMBINADO
+  ARCHIVO_ORIGINAL
+
+  @@map("package_output_mode")
+}
+
+/// Qué hacer cuando una fuente no tiene archivo para ese participante.
+/// OMITIR_FUENTE es el comportamiento histórico: la fuente se cae y el archivo se arma con el resto.
+enum PackageOnMissing {
+  OMITIR_FUENTE
+  OMITIR_ARCHIVO
+  OMITIR_PARTICIPANTE
+
+  @@map("package_on_missing")
+}
+
+enum PackageStampAnchor {
+  BOTTOM_RIGHT
+  BOTTOM_LEFT
+  TOP_RIGHT
+  TOP_LEFT
+
+  @@map("package_stamp_anchor")
+}
+
+/// La regla raíz. Su alcance es (sponsor, programa?, país?) y se resuelve por especificidad:
+/// sponsor+programa+país > sponsor+programa > sponsor+país > sponsor.
+///
+/// NO lleva `@@unique([sponsorId, programId, countryId])` a propósito: MariaDB considera cada NULL
+/// distinto, así que ese índice permitiría dos paquetes con (UNITED, NULL, NULL) sin protestar —
+/// justo el caso que hay que impedir. La unicidad del alcance se valida en el use case.
+model SponsorPackage {
+  id   String @id @default(uuid()) @db.VarChar(36)
+  name String @db.VarChar(150)
+
+  // Sin @db.VarChar(36) a propósito: Sponsor.id, Program.id y Country.id usan el String por
+  // defecto de Prisma (VARCHAR(191)). MariaDB exige que la FK coincida exactamente con la columna
+  // referenciada, así que estas tres columnas tienen que ser VARCHAR(191). Es la misma razón por
+  // la que `Proceso` las declara así — ver el comentario de ese modelo.
+  sponsorId String  @map("sponsor_id")
+  /// null = el paquete aplica a todos los programas.
+  programId String? @map("program_id")
+  /// null = el paquete aplica a todos los países.
+  countryId String? @map("country_id")
+
+  structure          PackageStructure @default(CARPETA_POR_PARTICIPANTE)
+  /// Agrupación del ZIP en la descarga masiva. La descarga individual no la usa.
+  folderPathTemplate String           @default("{PROGRAMA}/{PAIS}/{SPONSOR}") @map("folder_path_template") @db.VarChar(300)
+  /// Nombre del archivo suelto o de la carpeta del participante.
+  itemNameTemplate   String           @default("{dni} - {apellidos}, {nombres}") @map("item_name_template") @db.VarChar(300)
+  fallbackPrograma   String           @default("SIN PROGRAMA") @map("fallback_programa") @db.VarChar(100)
+  fallbackPais       String           @default("SIN PAIS") @map("fallback_pais") @db.VarChar(100)
+  /// Desempate cuando dos paquetes tienen la misma especificidad. Mayor gana.
+  priority           Int              @default(0)
+  status             Boolean          @default(true)
+  createdById        String?          @map("created_by_id") @db.VarChar(36)
+  updatedById        String?          @map("updated_by_id") @db.VarChar(36)
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  sponsor   Sponsor  @relation(fields: [sponsorId], references: [id], onDelete: Restrict)
+  program   Program? @relation(fields: [programId], references: [id], onDelete: Restrict)
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: Restrict)
+  createdBy User?    @relation("SponsorPackageCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?    @relation("SponsorPackageUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  outputs SponsorPackageOutput[]
+  inputs  SponsorPackageInput[]
+
+  @@index([sponsorId], map: "idx_sponsor_packages_sponsor")
+  @@index([programId], map: "idx_sponsor_packages_program")
+  @@index([countryId], map: "idx_sponsor_packages_country")
+  @@index([status], map: "idx_sponsor_packages_status")
+  @@map("sponsor_packages")
+}
+
+/// Un archivo dentro del paquete: ULETTER.pdf, PASSPORT.pdf, PHOTO.jpg…
+/// La extensión no se guarda: la pone el modo (`.pdf`) o el formato real del archivo original.
+model SponsorPackageOutput {
+  id            String            @id @default(uuid()) @db.VarChar(36)
+  packageId     String            @map("package_id") @db.VarChar(36)
+  filename      String            @db.VarChar(150)
+  mode          PackageOutputMode @default(PDF_COMBINADO)
+  order         Int               @default(0)
+  /// Emite el archivo aunque ninguna fuente haya aportado páginas. Replica el ULETTER.pdf de AAG,
+  /// que hoy siempre sale porque el VacationLetter se agrega antes de combinar.
+  emitWhenEmpty Boolean           @default(false) @map("emit_when_empty")
+  status        Boolean           @default(true)
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  package SponsorPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+
+  sources SponsorPackageOutputSource[]
+  stamps  SponsorPackageOutputStamp[]
+
+  @@unique([packageId, filename], map: "uq_sponsor_package_output")
+  @@index([packageId], map: "idx_sponsor_package_outputs_package")
+  @@map("sponsor_package_outputs")
+}
+
+/// Un documento del participante —o un insumo adjunto en la descarga— que entra a ese archivo.
+///
+/// Apunta a `Documents.id` y no al string de siglas a propósito: `Documents.siglasCode` no tiene
+/// índice único, así que resolver por sigla con `findFirst` toma un documento arbitrario cuando
+/// hay dos activos con la misma. Por FK eso no puede pasar.
+///
+/// Exactamente uno de `documentId` / `inputId` debe estar presente. No se puede expresar como
+/// constraint en MariaDB: se valida en el use case.
+model SponsorPackageOutputSource {
+  id         String           @id @default(uuid()) @db.VarChar(36)
+  outputId   String           @map("output_id") @db.VarChar(36)
+  documentId String?          @map("document_id") @db.VarChar(36)
+  inputId    String?          @map("input_id") @db.VarChar(36)
+  order      Int              @default(0)
+  onMissing  PackageOnMissing @default(OMITIR_FUENTE) @map("on_missing")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  output   SponsorPackageOutput @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  document Documents?           @relation(fields: [documentId], references: [id], onDelete: Restrict)
+  input    SponsorPackageInput? @relation(fields: [inputId], references: [id], onDelete: Cascade)
+
+  @@index([outputId], map: "idx_sponsor_package_sources_output")
+  @@index([documentId], map: "idx_sponsor_package_sources_document")
+  @@index([inputId], map: "idx_sponsor_package_sources_input")
+  @@map("sponsor_package_output_sources")
+}
+
+/// El sello que se estampa sobre las páginas de un archivo. Reemplaza `SELLO_TRANSLATION_PNG_BASE64`
+/// y las constantes SEAL_*: el PNG vive en S3 y la posición es configurable.
+model SponsorPackageOutputStamp {
+  id             String             @id @default(uuid()) @db.VarChar(36)
+  outputId       String             @map("output_id") @db.VarChar(36)
+  assetUrl       String             @map("asset_url") @db.Text
+  /// Estampa solo sobre las páginas que aportó este documento (hoy: TRANSLATION).
+  /// null = sobre todas las páginas del archivo.
+  onlyDocumentId String?            @map("only_document_id") @db.VarChar(36)
+  widthPt        Int                @default(120) @map("width_pt")
+  marginXPt      Int                @default(20) @map("margin_x_pt")
+  marginYPt      Int                @default(90) @map("margin_y_pt")
+  anchor         PackageStampAnchor @default(BOTTOM_RIGHT)
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  output       SponsorPackageOutput @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  onlyDocument Documents?           @relation(fields: [onlyDocumentId], references: [id], onDelete: Restrict)
+
+  @@index([outputId], map: "idx_sponsor_package_stamps_output")
+  @@index([onlyDocumentId], map: "idx_sponsor_package_stamps_document")
+  @@map("sponsor_package_output_stamps")
+}
+
+/// Un archivo que el staff adjunta al momento de descargar y que se reutiliza para todos los
+/// participantes del lote. Generaliza el VacationLetter de AAG, hoy cableado en el código.
+model SponsorPackageInput {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  packageId       String   @map("package_id") @db.VarChar(36)
+  /// Nombre del campo en el multipart. Hoy: "vacationLetter".
+  slug            String   @db.VarChar(60)
+  label           String   @db.VarChar(150)
+  required        Boolean  @default(true)
+  mimeType        String   @default("application/pdf") @map("mime_type") @db.VarChar(100)
+  maxSizeMb       Int      @default(10) @map("max_size_mb")
+  /// Sube el archivo a S3 como constancia. No se persiste la URL en ningún lado, igual que hoy.
+  archiveToS3     Boolean  @default(false) @map("archive_to_s3")
+  s3Folder        String?  @map("s3_folder") @db.VarChar(150)
+  archiveFilename String?  @map("archive_filename") @db.VarChar(150)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  package SponsorPackage               @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  sources SponsorPackageOutputSource[]
+
+  @@unique([packageId, slug], map: "uq_sponsor_package_input")
+  @@index([packageId], map: "idx_sponsor_package_inputs_package")
+  @@map("sponsor_package_inputs")
 }
