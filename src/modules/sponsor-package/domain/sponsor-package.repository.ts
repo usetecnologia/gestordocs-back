@@ -13,6 +13,10 @@ export interface SponsorPackageFilters {
   sponsorId?: string;
   programId?: string;
   countryId?: string;
+  /** Varios sponsors a la vez. Si viene, manda sobre `sponsorId`. */
+  sponsorIds?: string[];
+  /** Varios países a la vez. Si viene, manda sobre `countryId`. */
+  countryIds?: string[];
   status?: boolean;
   structure?: PackageStructure;
 }

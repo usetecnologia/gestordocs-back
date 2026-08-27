@@ -56,13 +56,28 @@ export class SponsorPackagePrismaRepository implements ISponsorPackageRepository
     sponsorId,
     programId,
     countryId,
+    sponsorIds,
+    countryIds,
     status,
     structure,
   }: SponsorPackageFilters): Promise<{ data: SponsorPackageListItem[]; total: number }> {
+    // Las listas mandan sobre el id suelto: el front manda `sponsorIds`/`countryIds` y el singular
+    // queda para los consumidores viejos del endpoint.
+    const sponsorFilter = sponsorIds?.length
+      ? { sponsorId: { in: sponsorIds } }
+      : sponsorId
+        ? { sponsorId }
+        : {};
+    const countryFilter = countryIds?.length
+      ? { countryId: { in: countryIds } }
+      : countryId
+        ? { countryId }
+        : {};
+
     const where: Prisma.SponsorPackageWhereInput = {
-      ...(sponsorId && { sponsorId }),
+      ...sponsorFilter,
+      ...countryFilter,
       ...(programId && { programId }),
-      ...(countryId && { countryId }),
       ...(status !== undefined && { status }),
       ...(structure && { structure }),
       ...(search && {

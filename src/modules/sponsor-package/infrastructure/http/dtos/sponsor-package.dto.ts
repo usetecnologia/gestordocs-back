@@ -22,6 +22,7 @@ import {
   PackageStampAnchor,
   PackageStructure,
 } from '../../../domain/sponsor-package.enums';
+import { toIdList } from '@common/utils/query-list.util';
 
 /** El select de alcance manda '' cuando el admin elige "Todos". Se normaliza a null, no a undefined. */
 const emptyToNull = ({ value }: { value: unknown }) => (value === '' ? null : value);
@@ -59,6 +60,30 @@ export class FindSponsorPackagesQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() sponsorId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() programId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() countryId?: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: 'uuid-sponsor-1,uuid-sponsor-2',
+    description:
+      'Uno o varios sponsors, separados por coma. Si se envía, tiene prioridad sobre `sponsorId`.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => toIdList(value))
+  @IsArray()
+  @IsUUID('all', { each: true })
+  sponsorIds?: string[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: 'uuid-pais-1,uuid-pais-2',
+    description:
+      'Uno o varios países, separados por coma. Si se envía, tiene prioridad sobre `countryId`.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => toIdList(value))
+  @IsArray()
+  @IsUUID('all', { each: true })
+  countryIds?: string[];
 
   @ApiPropertyOptional({ type: Boolean })
   @IsOptional()
