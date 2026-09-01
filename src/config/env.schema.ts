@@ -42,6 +42,9 @@ export const envSchema = z.object({
   // Si no se define, se reutilizan las credenciales principales.
   READONLY_USER_DB: z.string().optional(),
   READONLY_PASSWORD_DB: z.string().optional(),
+  // Autologin por email desde la intranet — ver AUTOLOGIN-INTRANET.md
+  INTRANET_VALIDATION_URL: z.string().url(),
+  INTRANET_VALIDATION_TOKEN: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

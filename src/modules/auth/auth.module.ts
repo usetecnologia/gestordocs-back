@@ -4,6 +4,7 @@ import { AppJwtModule } from '@shared/jwt/jwt.module';
 import { BcryptModule } from '@shared/bcrypt/bcrypt.module';
 import { ResendModule } from '@shared/resend/resend.module';
 import { WorkuseModule } from '@shared/workuse/workuse.module';
+import { IntranetModule } from '@shared/intranet/intranet.module';
 import { AUTH_REPOSITORY } from './domain/auth.repository';
 import { PASSWORD_VERIFIER } from './domain/password-verifier.port';
 import { PASSWORD_HASHER } from './domain/password-hasher.port';
@@ -15,6 +16,7 @@ import { AuthController } from './infrastructure/http/auth.controller';
 import { LoginUseCase } from './application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from './application/use-cases/refresh-token.use-case';
 import { AutoLoginUseCase } from './application/use-cases/autologin.use-case';
+import { IntranetLoginUseCase } from './application/use-cases/intranet-login.use-case';
 import { SyncUserDocumentsUseCase } from '@modules/user-documents/application/use-cases/sync-user-documents.use-case';
 import { TerminarRevisionUseCase } from '@modules/user-documents/application/use-cases/terminar-revision.use-case';
 import { USER_DOCUMENTS_REPOSITORY } from '@modules/user-documents/domain/user-documents.repository';
@@ -36,12 +38,13 @@ const useCases = [
   LoginUseCase,
   RefreshTokenUseCase,
   AutoLoginUseCase,
+  IntranetLoginUseCase,
   SyncUserDocumentsUseCase,
   TerminarRevisionUseCase,
 ];
 
 @Module({
-  imports: [PrismaModule, AppJwtModule, BcryptModule, ResendModule, WorkuseModule],
+  imports: [PrismaModule, AppJwtModule, BcryptModule, ResendModule, WorkuseModule, IntranetModule],
   controllers: [AuthController],
   providers: [
     ...useCases,

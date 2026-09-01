@@ -7,14 +7,17 @@ import {
   ApiNotFoundResponse,
   ApiUnauthorizedResponse,
   ApiServiceUnavailableResponse,
+  ApiForbiddenResponse,
 } from '@nestjs/swagger';
 import { Public } from '@common/decorators/public.decorator';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case';
 import { AutoLoginUseCase } from '../../application/use-cases/autologin.use-case';
+import { IntranetLoginUseCase } from '../../application/use-cases/intranet-login.use-case';
 import { LoginDto } from './dtos/login.dto';
 import { RefreshTokenDto } from './dtos/refresh-token.dto';
 import { AutoLoginDto } from './dtos/autologin.dto';
+import { IntranetLoginDto } from './dtos/intranet-login.dto';
 import { LoginResponseDto, TokensResponseDto } from './dtos/auth-response.dto';
 
 @ApiTags('auth')
@@ -24,6 +27,7 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly autoLoginUseCase: AutoLoginUseCase,
+    private readonly intranetLoginUseCase: IntranetLoginUseCase,
   ) {}
 
   @Post('login')
@@ -57,5 +61,17 @@ export class AuthController {
   @ApiServiceUnavailableResponse({ description: 'No se pudo conectar con el servicio externo.' })
   autoLogin(@Body() dto: AutoLoginDto): Promise<LoginResponseDto> {
     return this.autoLoginUseCase.execute(dto.dni) as Promise<LoginResponseDto>;
+  }
+
+  @Post('intranet')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Autologin por email vía intranet — no crea usuarios' })
+  @ApiOkResponse({ type: LoginResponseDto })
+  @ApiBadRequestResponse({ description: 'Email inválido.' })
+  @ApiForbiddenResponse({ description: 'El email no fue validado por la intranet.' })
+  @ApiUnauthorizedResponse({ description: 'El usuario no existe o está inactivo en la plataforma.' })
+  intranetLogin(@Body() dto: IntranetLoginDto): Promise<LoginResponseDto> {
+    return this.intranetLoginUseCase.execute(dto) as Promise<LoginResponseDto>;
   }
 }
