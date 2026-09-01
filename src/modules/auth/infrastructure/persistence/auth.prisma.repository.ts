@@ -71,6 +71,16 @@ export class AuthPrismaRepository implements IAuthRepository {
     return this.findUserWithPerson({ email });
   }
 
+  async findAllByEmail(email: string): Promise<AuthCredentials[]> {
+    const users = await this.prisma.user.findMany({ where: { email }, include: AUTH_USER_INCLUDE });
+    return Promise.all(
+      users.map(async (user) => {
+        const person = await this.prisma.person.findUnique({ where: { id: user.id } });
+        return toCredentials(user as PrismaAuthUser, person as PersonModel | null);
+      }),
+    );
+  }
+
   findByUsername(username: string): Promise<AuthCredentials | null> {
     return this.findUserWithPerson({ username });
   }

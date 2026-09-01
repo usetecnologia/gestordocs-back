@@ -2,6 +2,7 @@ import type { AuthCredentials } from './auth-credentials';
 
 export interface IAuthRepository {
   findByEmail(email: string): Promise<AuthCredentials | null>;
+  findAllByEmail(email: string): Promise<AuthCredentials[]>;
   findByUsername(username: string): Promise<AuthCredentials | null>;
   findById(id: string): Promise<AuthCredentials | null>;
 }

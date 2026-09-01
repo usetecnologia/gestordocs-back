@@ -17,8 +17,16 @@ export class IntranetLoginUseCase {
   async execute(dto: IntranetLoginDto): Promise<LoginResult> {
     await this.intranetValidationService.validate(dto.email);
 
-    const credentials = await this.authRepository.findByEmail(dto.email);
-    if (!credentials || credentials.status !== 'ACTIVO') {
+    const candidates = (await this.authRepository.findAllByEmail(dto.email)).filter(
+      (candidate) => candidate.status !== 'INACTIVO',
+    );
+
+    // Un mismo email puede tener varias cuentas (p. ej. Administrador y Participante).
+    // Se prioriza cualquier cuenta que no sea Participante (staff) sobre la de Participante.
+    const credentials =
+      candidates.find((candidate) => candidate.role.code !== 'PARTICIPANTE') ?? candidates[0];
+
+    if (!credentials) {
       throw new UnauthorizedException(
         'Usuario no encontrado, no tienes acceso a esta plataforma, comunícate con el ' +
           'administrador para que te dé acceso, gracias.',
