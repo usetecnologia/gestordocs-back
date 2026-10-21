@@ -7,6 +7,7 @@ import {
   USER_DOCUMENTS_REPOSITORY,
 } from '../../domain/user-documents.repository';
 import { IUserStatusPort, USER_STATUS_PORT } from '../../domain/user-status.port';
+import { AiReviewUploadedDocumentUseCase } from './ai-review-uploaded-document.use-case';
 
 @Injectable()
 export class UploadFileDocumentUseCase {
@@ -16,6 +17,7 @@ export class UploadFileDocumentUseCase {
     @Inject(USER_STATUS_PORT)
     private readonly userStatusPort: IUserStatusPort,
     private readonly awsS3Service: AwsS3Service,
+    private readonly aiReview: AiReviewUploadedDocumentUseCase,
   ) {}
 
   async execute(file: MulterFile, dto: UploadFileDocumentDto): Promise<void> {
@@ -82,5 +84,15 @@ export class UploadFileDocumentUseCase {
     }
 
     await this.userStatusPort.updateStatus(userDoc.userId, newUserStatus, dto.userCreatedId ?? undefined);
+
+    // Solo lo que sube el participante: lo que sube un administrador ya lo vio una persona. La
+    // revisión corre en segundo plano y solo actúa si el documento tiene la IA activada.
+    if (isParticipant) {
+      this.aiReview.schedule({
+        userDocumentId: userDoc.id,
+        file: { buffer: file.buffer, originalname: file.originalname },
+        fileUrl: url,
+      });
+    }
   }
 }

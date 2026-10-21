@@ -1,5 +1,5 @@
 import type { Document } from './document.entity';
-import type { TypeDocument, TypeHired } from './document.enums';
+import type { DocumentAiProfile, TypeDocument, TypeHired } from './document.enums';
 
 export interface DocumentFilters {
   page: number;
@@ -59,6 +59,9 @@ export interface CreateDocumentData {
   instructions?: string;
   required?: boolean;
   status?: boolean;
+  aiEnabled?: boolean;
+  aiProfile?: DocumentAiProfile | null;
+  aiInstructions?: string | null;
   sponsors?: DocumentSponsorInputData[];
   programs?: DocumentProgramInputData[];
   createdById?: string;
@@ -75,6 +78,9 @@ export interface UpdateDocumentData {
   instructions?: string;
   required?: boolean;
   status?: boolean;
+  aiEnabled?: boolean;
+  aiProfile?: DocumentAiProfile | null;
+  aiInstructions?: string | null;
   sponsors?: DocumentSponsorInputData[];
   programs?: DocumentProgramInputData[];
   updatedById?: string;

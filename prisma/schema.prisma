@@ -47,6 +47,10 @@ enum TypeHired {
   ALL
 }
 
+enum DocumentAiProfile {
+  PASSPORT
+}
+
 enum DocumentSponsorStatus {
   PENDIENTE
   SUBIDO
@@ -380,6 +384,11 @@ model Documents {
   instructions String?      @db.Text
   required     Boolean      @default(false)
   status       Boolean      @default(true)
+  // Revisión con IA. `aiProfile` define qué se extrae (prompt base + esquema en código) y
+  // `aiInstructions` son indicaciones extra del administrador que no cambian el formato de salida.
+  aiEnabled      Boolean            @default(false) @map("ai_enabled")
+  aiProfile      DocumentAiProfile? @map("ai_profile")
+  aiInstructions String?            @map("ai_instructions") @db.Text
   createdById  String?      @map("created_by_id") @db.VarChar(36)
   updatedById  String?      @map("updated_by_id") @db.VarChar(36)
   createdAt    DateTime     @default(now()) @map("created_at")
@@ -510,6 +519,7 @@ model UserDocuments {
   proceso          Proceso          @relation(fields: [procesoId], references: [id], onDelete: Restrict)
 
   userDocumentHistory UserDocumentHistory[]
+  aiReviews           UserDocumentAiReview[]
   // NO reintroducir un @@unique que incluya statusDocument en la clave. Se intentó
   // (20260730120000_add_user_documents_active_unique) para cerrar la condición de carrera del
   // sync, y rompía el guardado de documentos: con la clave (userId, documentId, statusDocument)
@@ -844,4 +854,30 @@ model SponsorPackageInput {
   @@unique([packageId, slug], map: "uq_sponsor_package_input")
   @@index([packageId], map: "idx_sponsor_package_inputs_package")
   @@map("sponsor_package_inputs")
+}
+
+/// Resultado de cada revisión automática con IA de un documento subido por el participante.
+/// Es la trazabilidad de lo que la IA leyó y decidió: el revisor la consulta sobre todo en los
+/// casos que la IA deja para revisión manual, donde no queda ningún historial de aprobación u
+/// observación.
+model UserDocumentAiReview {
+  id              String   @id @default(uuid()) @db.VarChar(36)
+  userDocumentsId String   @map("user_documents_id") @db.VarChar(36)
+  /// APROBADO | OBSERVADO | REVISION_MANUAL | ERROR
+  decision        String   @db.VarChar(20)
+  /// Motivos legibles de la decisión (para el revisor).
+  motivo          String   @db.Text
+  /// Texto de la observación registrada, si la IA observó.
+  observacion     String?  @db.Text
+  fileUrl         String?  @map("file_url") @db.Text
+  /// Reporte de extracción, comparación con el registro y preparación del archivo.
+  resultado       Json?
+  modelo          String?  @db.VarChar(100)
+  duracionMs      Int?     @map("duracion_ms")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  userDocuments UserDocuments @relation(fields: [userDocumentsId], references: [id], onDelete: Cascade)
+
+  @@index([userDocumentsId], map: "idx_user_document_ai_reviews_user_document")
+  @@map("user_document_ai_reviews")
 }

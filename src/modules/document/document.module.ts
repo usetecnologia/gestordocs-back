@@ -15,6 +15,10 @@ import { UpdateDocumentOrderUseCase } from './application/use-cases/update-docum
 import { NormalizeDocumentOrderUseCase } from './application/use-cases/normalize-document-order.use-case';
 import { DeleteDocumentUseCase } from './application/use-cases/delete-document.use-case';
 import { FindAllActiveDocumentsUseCase } from './application/use-cases/find-all-active-documents.use-case';
+import { TestDocumentAiExtractionUseCase } from './application/use-cases/test-document-ai-extraction.use-case';
+import { FindDocumentAiPromptUseCase } from './application/use-cases/find-document-ai-prompt.use-case';
+import { DOCUMENT_AI_EXTRACTOR_PORT } from './domain/ai/document-ai-extractor.port';
+import { OpenAiDocumentAiExtractorClient } from './infrastructure/external/openai-document-ai-extractor.client';
 
 const useCases = [
   CreateDocumentUseCase,
@@ -27,6 +31,8 @@ const useCases = [
   NormalizeDocumentOrderUseCase,
   DeleteDocumentUseCase,
   FindAllActiveDocumentsUseCase,
+  TestDocumentAiExtractionUseCase,
+  FindDocumentAiPromptUseCase,
 ];
 
 @Module({
@@ -35,6 +41,7 @@ const useCases = [
   providers: [
     ...useCases,
     { provide: DOCUMENT_REPOSITORY, useClass: DocumentPrismaRepository },
+    { provide: DOCUMENT_AI_EXTRACTOR_PORT, useClass: OpenAiDocumentAiExtractorClient },
     JwtAuthGuard,
   ],
 })

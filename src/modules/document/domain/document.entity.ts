@@ -1,4 +1,4 @@
-import type { TypeDocument, TypeHired } from './document.enums';
+import type { DocumentAiProfile, TypeDocument, TypeHired } from './document.enums';
 
 export interface DocumentSponsorItem {
   id: string;
@@ -52,6 +52,9 @@ export class Document {
     public instructions: string | null,
     public required: boolean,
     public status: boolean,
+    public aiEnabled: boolean,
+    public aiProfile: DocumentAiProfile | null,
+    public aiInstructions: string | null,
     public readonly createdById: string | null,
     public updatedById: string | null,
     public readonly createdAt: Date,

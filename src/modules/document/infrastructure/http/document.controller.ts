@@ -10,7 +10,10 @@ import {
   Query,
   ParseUUIDPipe,
   BadRequestException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -22,7 +25,10 @@ import {
   ApiUnauthorizedResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
+  ApiConsumes,
 } from '@nestjs/swagger';
+import type { MulterFile } from '@modules/user-documents/domain/multer-file.interface';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import { PaginationResultDto, toPaginationResult } from '@common/dtos/pagination-result.dto';
@@ -42,6 +48,11 @@ import { UpdateDocumentDto } from './dtos/update-document.dto';
 import { UpdateDocumentOrderDto } from './dtos/update-document-order.dto';
 import { DocumentCountryResponseDto, DocumentResponseDto } from './dtos/document-response.dto';
 import { FindDocumentsQueryDto } from './dtos/find-documents-query.dto';
+import { TestDocumentAiExtractionDto } from './dtos/test-document-ai-extraction.dto';
+import { ParseAiSampleFilePipe } from './pipes/parse-ai-sample-file.pipe';
+import { TestDocumentAiExtractionUseCase } from '../../application/use-cases/test-document-ai-extraction.use-case';
+import { FindDocumentAiPromptUseCase } from '../../application/use-cases/find-document-ai-prompt.use-case';
+import { DocumentAiProfile } from '../../domain/document.enums';
 
 @ApiTags('documents')
 @ApiBearerAuth('access-token')
@@ -60,7 +71,58 @@ export class DocumentController {
     private readonly normalizeDocumentOrder: NormalizeDocumentOrderUseCase,
     private readonly deleteDocument: DeleteDocumentUseCase,
     private readonly findAllActiveDocuments: FindAllActiveDocumentsUseCase,
+    private readonly testDocumentAiExtraction: TestDocumentAiExtractionUseCase,
+    private readonly findDocumentAiPrompt: FindDocumentAiPromptUseCase,
   ) {}
+
+  @Get('ai/prompt')
+  @ApiOperation({
+    summary: 'Prompt base de la IA para un perfil',
+    description: 'Devuelve el prompt base tal como lo recibe la IA, para mostrarlo en el formulario.',
+  })
+  @ApiQuery({ name: 'profile', required: false, enum: DocumentAiProfile })
+  @ApiOkResponse({ description: 'Prompt base y encabezado de las instrucciones adicionales.' })
+  @ApiBadRequestResponse({ description: 'Perfil desconocido.' })
+  findAiPrompt(@Query('profile') profile?: string) {
+    const resolved = (profile ?? DocumentAiProfile.PASSPORT) as DocumentAiProfile;
+    if (!Object.values(DocumentAiProfile).includes(resolved)) {
+      throw new BadRequestException(`Perfil de IA desconocido: ${profile}.`);
+    }
+    return this.findDocumentAiPrompt.execute(resolved);
+  }
+
+  @Post('ai/test-extraction')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Probar la extracción con IA sobre un archivo de muestra',
+    description:
+      'Extrae los datos del archivo con el perfil e instrucciones enviados (aunque no estén guardados) ' +
+      'e indica qué se obtuvo y qué no. No guarda nada ni modifica ningún documento.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'profile'],
+      properties: {
+        file: { type: 'string', format: 'binary', description: 'Imagen JPG/PNG/WEBP o PDF (máx. 15 MB)' },
+        profile: { type: 'string', enum: ['PASSPORT'] },
+        instructions: { type: 'string' },
+      },
+    },
+  })
+  @ApiCreatedResponse({ description: 'Reporte de la extracción.' })
+  @ApiBadRequestResponse({ description: 'Archivo ausente, demasiado grande o de formato no soportado.' })
+  testAiExtraction(
+    @UploadedFile(new ParseAiSampleFilePipe()) file: MulterFile,
+    @Body() dto: TestDocumentAiExtractionDto,
+  ) {
+    return this.testDocumentAiExtraction.execute({
+      profile: dto.profile,
+      instructions: dto.instructions ?? null,
+      file,
+    });
+  }
 
   @Post()
   @ApiOperation({

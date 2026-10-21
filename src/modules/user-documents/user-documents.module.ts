@@ -27,6 +27,12 @@ import { UserStatusPrisma } from './infrastructure/persistence/user-status.prism
 import { OpenAiPassportExtractorClient } from './infrastructure/external/openai-passport-extractor.client';
 import { UserDocumentsController } from './infrastructure/http/user-documents.controller';
 import { UploadFileDocumentUseCase } from './application/use-cases/upload-file-document.use-case';
+import { AiReviewUploadedDocumentUseCase } from './application/use-cases/ai-review-uploaded-document.use-case';
+import { FindAiReviewsUseCase } from './application/use-cases/find-ai-reviews.use-case';
+import { AI_REVIEW_REPOSITORY } from './domain/ai-review.repository';
+import { AiReviewPrismaRepository } from './infrastructure/persistence/ai-review.prisma.repository';
+import { DOCUMENT_AI_EXTRACTOR_PORT } from '@modules/document/domain/ai/document-ai-extractor.port';
+import { OpenAiDocumentAiExtractorClient } from '@modules/document/infrastructure/external/openai-document-ai-extractor.client';
 import { FindUserDocumentsUseCase } from './application/use-cases/find-user-documents.use-case';
 import { SyncUserDocumentsUseCase } from './application/use-cases/sync-user-documents.use-case';
 import { AceptarDocumentUseCase } from './application/use-cases/aceptar-document.use-case';
@@ -50,6 +56,8 @@ import { SponsorPackageModule } from '@modules/sponsor-package/sponsor-package.m
   controllers: [UserDocumentsController],
   providers: [
     UploadFileDocumentUseCase,
+    AiReviewUploadedDocumentUseCase,
+    FindAiReviewsUseCase,
     FindUserDocumentsUseCase,
     SyncUserDocumentsUseCase,
     EnsureProcesoInicialUseCase,
@@ -75,6 +83,8 @@ import { SponsorPackageModule } from '@modules/sponsor-package/sponsor-package.m
     { provide: PROCESO_REPOSITORY, useClass: ProcesoPrismaRepository },
     { provide: USER_STATUS_PORT, useClass: UserStatusPrisma },
     { provide: PASSPORT_EXTRACTOR_PORT, useClass: OpenAiPassportExtractorClient },
+    { provide: DOCUMENT_AI_EXTRACTOR_PORT, useClass: OpenAiDocumentAiExtractorClient },
+    { provide: AI_REVIEW_REPOSITORY, useClass: AiReviewPrismaRepository },
     { provide: EMAIL_ACTION_REPOSITORY, useClass: EmailActionPrismaRepository },
     { provide: EMAIL_TEMPLATE_REPOSITORY, useClass: EmailTemplatePrismaRepository },
     { provide: EMAIL_LOG_REPOSITORY, useClass: EmailLogPrismaRepository },

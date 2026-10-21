@@ -4,6 +4,7 @@ import type { UpdateDocumentDto } from '../../infrastructure/http/dtos/update-do
 import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import type { Document } from '../../domain/document.entity';
 import { assertProgramsAreValid } from '../validators/document-programs.validator';
+import { assertAiConfigIsValid } from '../validators/document-ai-config.validator';
 
 @Injectable()
 export class UpdateDocumentUseCase {
@@ -20,6 +21,11 @@ export class UpdateDocumentUseCase {
     if (!existing)
       throw new NotFoundException(`Documento #${id} no encontrado.`);
 
+    assertAiConfigIsValid({
+      type: dto.type ?? existing.type,
+      aiEnabled: dto.aiEnabled ?? existing.aiEnabled,
+      aiProfile: dto.aiProfile !== undefined ? dto.aiProfile : existing.aiProfile,
+    });
     await assertProgramsAreValid(dto.programs ?? [], this.repo);
 
     return this.repo.update(id, { ...dto, updatedById: user.sub });

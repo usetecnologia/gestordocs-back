@@ -15,7 +15,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { TypeDocument, TypeHired } from '../../../domain/document.enums';
+import { DocumentAiProfile, TypeDocument, TypeHired } from '../../../domain/document.enums';
 
 export const emptyToUndefined = ({ value }: { value: unknown }) => (value === '' ? undefined : value);
 
@@ -25,6 +25,38 @@ export const emptyToUndefined = ({ value }: { value: unknown }) => (value === ''
  * que la quita esperaria que se quite.
  */
 export const emptyToNull = ({ value }: { value: unknown }) => (value === '' ? null : value);
+
+export const AI_INSTRUCTIONS_MAX_LENGTH = 2000;
+
+/**
+ * Campos de la pestaña "IA", compartidos por create y update. Las instrucciones vacías se guardan
+ * como null para que borrarlas en el formulario realmente las borre.
+ */
+export class DocumentAiConfigDto {
+  @ApiPropertyOptional({ example: false, default: false, description: 'Activa la revisión con IA' })
+  @IsOptional()
+  @IsBoolean()
+  aiEnabled?: boolean;
+
+  @ApiPropertyOptional({ enum: DocumentAiProfile, nullable: true, description: 'Qué debe extraer la IA' })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsEnum(DocumentAiProfile)
+  aiProfile?: DocumentAiProfile | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 'Los pasaportes suelen ser peruanos; la página de datos puede venir como segunda página del PDF.',
+    description: 'Indicaciones adicionales para la IA. No cambian el formato de los datos extraídos.',
+  })
+  @Transform(emptyToNull)
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null)
+  @IsString()
+  @MaxLength(AI_INSTRUCTIONS_MAX_LENGTH)
+  aiInstructions?: string | null;
+}
 
 export class DocumentSponsorInputDto {
   @ApiProperty({ example: 'uuid-sponsor' })
@@ -100,7 +132,7 @@ export class DocumentProgramInputDto {
   descriptions?: DocumentProgramDescriptionInputDto[];
 }
 
-export class CreateDocumentDto {
+export class CreateDocumentDto extends DocumentAiConfigDto {
   @ApiPropertyOptional({ example: 'Pasaporte Vigente' })
   @Transform(emptyToUndefined)
   @IsOptional()

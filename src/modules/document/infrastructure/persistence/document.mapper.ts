@@ -5,7 +5,7 @@ import {
   DocumentProgramItem,
   DocumentSponsorItem,
 } from '../../domain/document.entity';
-import { TypeDocument, TypeHired } from '../../domain/document.enums';
+import { DocumentAiProfile, TypeDocument, TypeHired } from '../../domain/document.enums';
 
 export const DOCUMENT_FULL_INCLUDE = {
   createdBy: { select: { id: true, username: true, email: true } },
@@ -83,6 +83,9 @@ export class DocumentMapper {
       raw.instructions,
       raw.required,
       raw.status,
+      raw.aiEnabled,
+      raw.aiProfile as unknown as DocumentAiProfile | null,
+      raw.aiInstructions,
       raw.createdById,
       raw.updatedById,
       raw.createdAt,

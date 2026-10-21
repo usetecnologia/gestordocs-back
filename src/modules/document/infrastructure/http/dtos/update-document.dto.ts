@@ -13,9 +13,14 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { TypeDocument, TypeHired } from '../../../domain/document.enums';
-import { DocumentProgramInputDto, DocumentSponsorInputDto, emptyToUndefined } from './create-document.dto';
+import {
+  DocumentAiConfigDto,
+  DocumentProgramInputDto,
+  DocumentSponsorInputDto,
+  emptyToUndefined,
+} from './create-document.dto';
 
-export class UpdateDocumentDto {
+export class UpdateDocumentDto extends DocumentAiConfigDto {
   @ApiPropertyOptional({ example: 'Pasaporte Vigente' })
   @Transform(emptyToUndefined)
   @IsOptional()

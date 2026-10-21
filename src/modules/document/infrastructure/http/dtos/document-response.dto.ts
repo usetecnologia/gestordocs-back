@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TypeDocument, TypeHired } from '../../../domain/document.enums';
+import { DocumentAiProfile, TypeDocument, TypeHired } from '../../../domain/document.enums';
 
 class UserRefDto {
   @ApiProperty() id!: string;
@@ -79,6 +79,11 @@ export class DocumentResponseDto {
   @ApiPropertyOptional({ example: 1 }) order!: number | null;
   @ApiProperty({ example: false }) required!: boolean;
   @ApiProperty({ example: true }) status!: boolean;
+  @ApiProperty({ example: false, description: 'Revisión con IA activa para este documento' })
+  aiEnabled!: boolean;
+  @ApiPropertyOptional({ enum: DocumentAiProfile, nullable: true }) aiProfile!: DocumentAiProfile | null;
+  @ApiPropertyOptional({ nullable: true, description: 'Instrucciones adicionales para la IA' })
+  aiInstructions!: string | null;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) createdById!: string | null;
   @ApiPropertyOptional({ example: 'uuid-del-usuario' }) updatedById!: string | null;
   @ApiProperty() createdAt!: Date;

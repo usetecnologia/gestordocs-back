@@ -4,6 +4,7 @@ import type { CreateDocumentDto } from '../../infrastructure/http/dtos/create-do
 import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
 import type { Document } from '../../domain/document.entity';
 import { assertProgramsAreValid } from '../validators/document-programs.validator';
+import { assertAiConfigIsValid } from '../validators/document-ai-config.validator';
 
 @Injectable()
 export class CreateDocumentUseCase {
@@ -12,6 +13,11 @@ export class CreateDocumentUseCase {
   ) {}
 
   async execute(dto: CreateDocumentDto, user: JwtPayload): Promise<Document> {
+    assertAiConfigIsValid({
+      type: dto.type,
+      aiEnabled: dto.aiEnabled ?? false,
+      aiProfile: dto.aiProfile ?? null,
+    });
     await assertProgramsAreValid(dto.programs ?? [], this.repo);
 
     return this.repo.create({ ...dto, createdById: user.sub });

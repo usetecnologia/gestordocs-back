@@ -38,6 +38,8 @@ import { MulterFile } from '../../domain/multer-file.interface';
 import { JwtAuthGuard } from '@common/guards/jwt-auth.guard';
 import { RolesGuard } from '@common/guards/roles.guard';
 import { Roles } from '@common/decorators/roles.decorator';
+import { FindAiReviewsUseCase } from '../../application/use-cases/find-ai-reviews.use-case';
+import { AiReviewResponseDto } from './dtos/ai-review-response.dto';
 import { RoleCode, STAFF_ROLES, STAFF_AND_PARTICIPANT_ROLES } from '@common/enums/role-code.enum';
 import { CurrentUser } from '@common/decorators/current-user.decorator';
 import type { JwtPayload } from '@shared/jwt/interfaces/jwt-payload.interface';
@@ -109,7 +111,22 @@ export class UserDocumentsController {
     private readonly bulkAceptarDocumentUseCase: BulkAceptarDocumentUseCase,
     private readonly bulkObservarDocumentUseCase: BulkObservarDocumentUseCase,
     private readonly bulkExtractPassportDataUseCase: BulkExtractPassportDataUseCase,
+    private readonly findAiReviewsUseCase: FindAiReviewsUseCase,
   ) {}
+
+  @Roles(...STAFF_ROLES)
+  @Get('ai-reviews/:userId')
+  @ApiOperation({
+    summary: 'Revisiones con IA de los documentos de un participante',
+    description:
+      'La revisión más reciente de cada documento: decisión de la IA (aprobado, observado, para ' +
+      'revisión manual o error) y sus motivos. Solo para el staff.',
+  })
+  @ApiParam({ name: 'userId', description: 'UUID del participante' })
+  @ApiOkResponse({ type: [AiReviewResponseDto] })
+  findAiReviews(@Param('userId', ParseUUIDPipe) userId: string): Promise<AiReviewResponseDto[]> {
+    return this.findAiReviewsUseCase.execute(userId);
+  }
 
   @Roles(...STAFF_AND_PARTICIPANT_ROLES)
   @Get('documents-by-sponsor')
