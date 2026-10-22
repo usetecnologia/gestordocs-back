@@ -28,7 +28,10 @@ RUN npm run build
 # Etapa 2: Production
 FROM node:20-alpine AS production
 
-RUN apk add --no-cache openssl libc6-compat
+# poppler-utils (pdftoppm/pdfinfo) rasteriza los PDF de pasaporte antes de mandarlos a la IA.
+# Reemplaza a @napi-rs/canvas, cuyo binario usa AVX y mataba el proceso con "Illegal
+# instruction" (exit 132) en el VPS, que expone una CPU QEMU generica sin esas instrucciones.
+RUN apk add --no-cache openssl libc6-compat poppler-utils
 
 WORKDIR /app
 
